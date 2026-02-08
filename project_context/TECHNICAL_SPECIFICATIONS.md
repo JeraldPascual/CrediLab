@@ -144,14 +144,16 @@ export async function executeCode(code, languageId, stdin) {
 
 ## Test Case Implementation
 
-### Single Hardcoded Challenge (MVP)
+### Two Professor-Style Java Problems (MVP)
 ```javascript
 // src/data/challenges.js
-export const mvpChallenge = {
-  id: 'hello-user',
-  title: 'Personalized Greeting',
-  description: 'Write a Java program that reads a name from input and prints "Hello, [name]!"',
-  boilerplate: `import java.util.Scanner;
+export const challenges = [
+  {
+    id: 'greeting-program',
+    title: 'Personalized Greeting',
+    description: 'Write a Java program that reads a name from input and prints "Hello, [name]! Welcome to CrediLab."',
+    credits: 50,
+    boilerplate: `import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
@@ -160,13 +162,38 @@ public class Main {
 
     }
 }`,
-  testCases: [
-    { stdin: 'Alice', expectedOutput: 'Hello, Alice!' },
-    { stdin: 'Bob', expectedOutput: 'Hello, Bob!' },
-    { stdin: 'Charlie', expectedOutput: 'Hello, Charlie!' }
-  ],
-  languageId: 62 // Java (Judge0 language ID)
-};
+    testCases: [
+      { stdin: 'Alice', expectedOutput: 'Hello, Alice! Welcome to CrediLab.' },
+      { stdin: 'Bob', expectedOutput: 'Hello, Bob! Welcome to CrediLab.' },
+      { stdin: 'Charlie', expectedOutput: 'Hello, Charlie! Welcome to CrediLab.' }
+    ],
+    languageId: 62 // Java (Judge0 language ID)
+  },
+  {
+    id: 'grade-calculator',
+    title: 'Student Grade Calculator',
+    description: 'Write a Java program that reads a student name and 3 exam scores from input, calculates the average, and prints the name, average, and letter grade (A: 90+, B: 80-89, C: 70-79, D: 60-69, F: below 60).',
+    credits: 100,
+    boilerplate: `import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Read name, then 3 scores
+        // Calculate average
+        // Determine letter grade
+        // Print: "[name]: Average = [avg], Grade = [letter]"
+
+    }
+}`,
+    testCases: [
+      { stdin: 'Juan\n85\n90\n95', expectedOutput: 'Juan: Average = 90.0, Grade = A' },
+      { stdin: 'Maria\n70\n75\n80', expectedOutput: 'Maria: Average = 75.0, Grade = C' },
+      { stdin: 'Pedro\n50\n55\n45', expectedOutput: 'Pedro: Average = 50.0, Grade = F' }
+    ],
+    languageId: 62
+  }
+];
 ```
 
 ### Verification Logic
@@ -263,49 +290,112 @@ export function useFocusTracker(maxViolations = 3) {
 }
 ```
 
-## Blockchain Integration
+## Credit & Reward System
 
-### Gasless Minting Setup (Thirdweb)
-1. Deploy ERC-1155 contract via Thirdweb dashboard
-2. Configure Claim Conditions:
-   - Max claims per wallet: 1
-   - Price: 0 (Free)
-   - Enable gasless claiming (Thirdweb relayer)
-3. Add contract address to environment variables
-
-### Minting Logic
+### Global Credit Pool
 ```javascript
-// src/utils/mint.js
-import { useContract, useClaimNFT } from '@thirdweb-dev/react';
+// src/utils/credits.js
+import { doc, getDoc, updateDoc, increment, serverTimestamp } from 'firebase/firestore';
+import { db } from './firebase';
 
-export function useMintBadge() {
-  const { contract } = useContract(process.env.REACT_APP_CONTRACT_ADDRESS);
-  const { mutateAsync: claimNFT, isLoading } = useClaimNFT(contract);
+const CREDIT_POOL_DOC = doc(db, 'system', 'credit_pool');
 
-  const mintBadge = async (codeHash) => {
-    try {
-      // Claim token ID 0 with metadata
-      await claimNFT({
-        tokenId: 0,
-        quantity: 1,
-        metadata: {
-          codeHash,
-          timestamp: Date.now(),
-          challenge: 'hello-user'
-        }
-      });
-      return { success: true };
-    } catch (error) {
-      console.error('Minting failed:', error);
-      return { success: false, error: error.message };
-    }
-  };
+// Get remaining credits in the global pool
+export async function getRemainingCredits() {
+  const snap = await getDoc(CREDIT_POOL_DOC);
+  return snap.exists() ? snap.data().remaining : 0;
+}
 
-  return { mintBadge, isLoading };
+// Award credits to a user after completing a challenge
+export async function awardCredits(userId, challengeId, baseCredits, completionTimeMs) {
+  // Speed bonus: under 5 minutes = +20% bonus
+  const FIVE_MINUTES = 5 * 60 * 1000;
+  const speedBonus = completionTimeMs < FIVE_MINUTES ? Math.floor(baseCredits * 0.2) : 0;
+  const totalCredits = baseCredits + speedBonus;
+
+  // Check if user already completed this challenge
+  const userDoc = await getDoc(doc(db, 'users', userId));
+  const completedChallenges = userDoc.data()?.completedChallenges || [];
+  if (completedChallenges.includes(challengeId)) {
+    throw new Error('Challenge already completed');
+  }
+
+  // Deduct from global pool
+  await updateDoc(CREDIT_POOL_DOC, {
+    remaining: increment(-totalCredits)
+  });
+
+  // Add to user's balance
+  await updateDoc(doc(db, 'users', userId), {
+    credits: increment(totalCredits),
+    completedChallenges: [...completedChallenges, challengeId],
+    lastCompletedAt: serverTimestamp()
+  });
+
+  return { awarded: totalCredits, speedBonus };
+}
+```
+
+### Leaderboard
+```javascript
+// src/utils/leaderboard.js
+import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { db } from './firebase';
+
+export function subscribeToLeaderboard(callback, maxResults = 20) {
+  const q = query(
+    collection(db, 'users'),
+    orderBy('credits', 'desc'),
+    limit(maxResults)
+  );
+
+  return onSnapshot(q, (snapshot) => {
+    const leaderboard = snapshot.docs.map((doc, index) => ({
+      rank: index + 1,
+      displayName: doc.data().displayName,
+      credits: doc.data().credits || 0,
+      challengesCompleted: doc.data().completedChallenges?.length || 0
+    }));
+    callback(leaderboard);
+  });
+}
+```
+
+### Wallet Integration (No Paid SDKs)
+```javascript
+// src/utils/wallet.js
+// MetaMask connection (Desktop - Student A)
+export async function connectMetaMask() {
+  if (!window.ethereum) {
+    throw new Error('MetaMask is not installed');
+  }
+  const accounts = await window.ethereum.request({
+    method: 'eth_requestAccounts'
+  });
+  return accounts[0];
+}
+
+// Listen for wallet address changes
+export function onWalletChange(callback) {
+  if (window.ethereum) {
+    window.ethereum.on('accountsChanged', (accounts) => {
+      callback(accounts[0] || null);
+    });
+  }
 }
 ```
 
 ## Firebase Firestore Schema
+
+### System Configuration
+```javascript
+// Collection: system, Document: credit_pool
+{
+  totalCredits: 10000,       // Fixed total (= ₱10,000 PHP)
+  remaining: 10000,          // Decreases as students earn credits
+  createdAt: timestamp
+}
+```
 
 ### User Profiles
 ```javascript
@@ -314,17 +404,12 @@ export function useMintBadge() {
   uid: "firebase-auth-uid",
   email: "user@example.com",
   displayName: "John Doe",
+  walletAddress: "0x...",     // Linked MetaMask or WalletConnect address
   createdAt: timestamp,
-  completedChallenges: ["hello-user"],
-  integrityScore: 100, // Decreases with cheat flags
-  badges: [
-    {
-      tokenId: 0,
-      challengeId: "hello-user",
-      mintedAt: timestamp,
-      transactionHash: "0x..."
-    }
-  ]
+  credits: 150,               // Total credits earned
+  completedChallenges: ["greeting-program", "grade-calculator"],
+  integrityScore: 100,        // Decreases with cheat flags
+  lastCompletedAt: timestamp
 }
 ```
 
@@ -333,21 +418,24 @@ export function useMintBadge() {
 // Collection: integrity_logs
 {
   uid: "firebase-auth-uid",
-  challengeId: "hello-user",
+  challengeId: "greeting-program",
   timestamp: timestamp,
+  codeHash: "sha256-hash-of-submitted-code",
   flags: {
     keystrokeVelocity: true/false,
     focusLoss: 2,
     contextMenuAttempts: 0
   },
-  result: "passed" | "failed" | "terminated"
+  result: "passed" | "failed" | "terminated",
+  creditsAwarded: 50,
+  completionTimeMs: 180000    // 3 minutes
 }
 ```
 
 ## Performance Optimization
 
 ### Bundle Splitting
-- Lazy load blockchain components (Thirdweb SDK) only when user connects wallet
+- Lazy load wallet components only when user connects wallet
 - Code-split CodeMirror language modes (load Java syntax only when needed)
 - Use dynamic imports for Lite Mode components
 
@@ -374,8 +462,8 @@ export function useMintBadge() {
 ### Pre-Demo Checklist (Morning of Mar 5)
 1. Test full user flow on staging environment
 2. Check Judge0 API status (https://rapidapi.com/judge0-official/api/judge0-ce)
-3. Verify Thirdweb gasless relayer balance
-4. Confirm backup wallets have MATIC
+3. Verify Firebase Firestore credit pool is initialized (10,000 credits)
+4. Confirm MetaMask and WalletConnect work on demo devices
 5. Load backup demo video on USB drive
 
 ### Live Demo Strategy
@@ -386,10 +474,10 @@ export function useMintBadge() {
 
 ### Post-Demo Questions Preparation
 - **Q: "What if someone bypasses your anti-cheat?"**
-  - A: "The blockchain creates an audit trail. We can revoke badges or flag accounts post-event. Our MVP focuses on deterrence."
+  - A: "The system creates an audit trail in Firestore with code hashes. We can revoke credits or flag accounts post-event. Our MVP focuses on deterrence."
 
-- **Q: "How do you prevent gas drain?"**
-  - A: "Smart contract enforces 1 badge per wallet. Thirdweb's gasless relayer has built-in rate limits. We also monitor minting activity."
+- **Q: "How does the credit system work?"**
+  - A: "We have a fixed pool of 10,000 credits visible to all students. They earn credits by completing challenges correctly and quickly. It creates urgency and motivates speed. The leaderboard adds friendly competition."
 
 - **Q: "Can this scale to thousands of users?"**
-  - A: "Yes. We'd self-host Judge0 with horizontal scaling. Firebase and Polygon handle high throughput natively."
+  - A: "Yes. We'd self-host Judge0 with horizontal scaling. Firebase handles high throughput natively. The credit pool can be reset or expanded as needed."

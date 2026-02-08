@@ -21,25 +21,26 @@ We have conducted a "Red Team" audit of the architecture. Below are the identifi
     *   **Backup Demo Video:** Pre-record full flow demonstration in case of API failure during live presentation.
 *   **The Judge's Defense:** *"For this MVP, we are utilizing public Judge0 infrastructure with Vercel Serverless Functions as a secure proxy layer. This keeps costs zero (no credit card required) while maintaining API security. In production, we would self-host Judge0 Docker containers on cloud infrastructure (AWS/GCP) with load balancing to guarantee throughput and 99.9% uptime."*
 
-### Risk 3: The "Gas Drain" Attack
-*   **The Vulnerability:** A malicious user or bug could spam the "Mint" button, draining the team's relayer funds (MATIC) and preventing others from minting.
+### Risk 3: Credit System Abuse
+*   **The Vulnerability:** A malicious user could try to earn credits multiple times for the same challenge, or use multiple accounts to drain the credit pool faster.
 *   **The Hackathon Patch:**
-    *   **Strict Claim Conditions:** Configure Thirdweb contract to allow "Max 1 Claim per Wallet".
-    *   **UI State Locking:** Disable the mint button immediately after the first click (`isMinting` flag).
-*   **The Judge's Defense:** *"We implement a multi-layered security approach. First, our Smart Contract enforces a strict 'One Badge Per Wallet' policy via Claim Conditions. Second, our frontend application checks the user's on-chain balance before even presenting the mint option, ensuring efficient gas usage."*
+    *   **Duplicate Protection:** Firestore checks if a challenge has already been completed by the user (by Google UID or wallet address) before awarding credits.
+    *   **UI State Locking:** Disable the "Earn Credits" button immediately after the first successful completion.
+    *   **Rate Limiting:** Combined with the 10-second execution cooldown, prevents rapid-fire completions.
+*   **The Judge's Defense:** *"We implement server-side duplicate checking in Firestore. Each user can only earn credits once per challenge, enforced by both frontend state and backend validation. The global credit pool creates a natural cap on total rewards."*
 
 ### Risk 4: The "God Mode" Injection (Client-Side Trust)
-*   **The Vulnerability:** Since we verify code in the browser (Client-Side), a savvy user could use Chrome DevTools to force-enable the "Mint" button without passing the test (`God Mode`).
-*   **The Hackathon Patch: "The Badge of Shame" (Audit Log)**
-    *   **Strategy:** We do not block the button. Instead, we require the **Code Content** to be part of the Minting Transaction.
-    *   **The Trap:** The Smart Contract stores a hash of the code (`SHA256(UserCode)`). If a hacker forces a mint with empty/bad code, their permanent blockchain record will point to "Garbage Code."
-    *   **The Defense:** *"We assume the client can be compromised. That is why our system is designed for **Public Accountability**. If a user hacks the UI to mint a badge, they pay gas fees to create an immutable record of their own cheating. The badge is valid, but the metadata proves they are a fraud."*
+*   **The Vulnerability:** Since we verify code in the browser (Client-Side), a savvy user could use Chrome DevTools to force-enable the "Earn Credits" button without passing the test (`God Mode`).
+*   **The Hackathon Patch: "The Audit Trail" (Integrity Log)**
+    *   **Strategy:** We do not just rely on the button. Instead, we require the **Code Content Hash** to be stored alongside the credit award.
+    *   **The Trap:** Firestore stores a `SHA256(UserCode)` hash. If a hacker forces a credit award with empty/bad code, the integrity log proves their submission was garbage.
+    *   **The Defense:** *"We assume the client can be compromised. That is why our system is designed for **Public Accountability**. If a user hacks the UI to earn credits, their Firestore record contains the code hash proving they cheated. We can revoke credits post-event."*
 
 ### Risk 5: The "API Blackout" (Demo Failure)
 *   **The Vulnerability:** The public Judge0 API might be down or slow during our 5-minute presentation.
 *   **The Hackathon Patch: "Backup Demo Strategy"**
     *   **Primary Strategy:** Pre-record a complete demo video showing the full user flow as fallback.
-    *   **Secondary Strategy:** Have 5 backup wallets with pre-funded MATIC for minting demonstrations.
+    *   **Secondary Strategy:** Have the Firestore credit pool pre-initialized with 10,000 credits for demo.
     *   **Demo Setup:** Test the entire flow on presentation day morning to verify API availability.
     *   **Presentation Approach:** Lead with live demo, switch to video if technical issues arise while explaining: "This is a pre-recorded demonstration of our working prototype."
 
@@ -60,30 +61,30 @@ We have conducted a "Red Team" audit of the architecture. Below are the identifi
     *   **Time Constraint:** Setting up Docker, security hardening, and server management takes 2-3 days minimum.
     *   **Complexity:** Requires VPS management, SSL certificates, firewall rules—too much for 1st-year students in 3 weeks.
     *   **Cost:** ~$10-20/month for VPS hosting during development.
-    *   **Conclusion:** We document self-hosting as "Production Roadmap" but use public API + Firebase Functions for MVP to ship faster.
+    *   **Conclusion:** We document self-hosting as "Production Roadmap" but use public API + Vercel Serverless Functions for MVP to ship faster.
 
 ---
 
 ## Part 3: Execution Risks (Process Survival)
 
 ### Risk 6: Mobile Wallet UX Hell (Demo Failure)
-*   **The Danger:** Trying to demo on a real phone often fails due to wallet app switching/crashing.
+*   **The Danger:** Trying to demo WalletConnect on a real phone often fails due to wallet app switching/crashing.
 *   **The Workaround: "Desktop-First, Mobile-View Second"**
     *   **Devtools Demo:** Record the demo on a Laptop using Chrome DevTools set to "Pixel 5" dimensions.
     *   **Live Demo:** If live, say: *"We are showing this on a laptop for screen visibility, but the code is optimized for mobile."*
 
-### Risk 7: Amoy Testnet Congestion
-*   **The Danger:** Gas spikes or faucet limits prevent transactions during the demo.
-*   **The Workaround: "The Faucet Stash"**
-    *   **Task:** Claim MATIC daily into 5 different backup wallets. Do not rely on a single wallet.
+### Risk 7: Credit Pool Depletion During Demo
+*   **The Danger:** If too many test runs happen before the demo, the credit pool might show a low or zero balance.
+*   **The Workaround: "Fresh Pool Reset"**
+    *   **Task:** Reset the Firestore credit pool to 10,000 credits the morning of the demo. Use a simple admin script or Firebase Console.
 
 ---
 
 ## Part 3: Leveraging Our Strengths (How we win)
 
-### Strength 1: The SBT Narrative (Innovation)
-*   **Strategy:** Start the pitch with: *"How do we know a digital certificate wasn't just copy-pasted?"*
-*   **Winning Move:** Show the "Metadata" of the SBT on PolygonScan. Point to the "Proof of Effort" hash. This technical depth impresses judges.
+### Strength 1: The Credit System Narrative (Innovation)
+*   **Strategy:** Start the pitch with: *"How do we motivate students to learn to code when certifications cost hundreds of dollars?"*
+*   **Winning Move:** Show the live leaderboard and credit pool depleting in real-time. Point to the wallet-linked credentials with code hashes. This technical depth impresses judges.
 
 ### Strength 2: "Lite Mode" (SDG Impact)
 *   **Strategy:** Prove support for low-end devices visually.
@@ -96,12 +97,12 @@ We have conducted a "Red Team" audit of the architecture. Below are the identifi
 
 We have identified critical technical conflicts between our tools. Here are the required patches.
 
-### Conflict 1: The "Vite vs. Web3" Crash
-*   **The Issue:** `Uncaught ReferenceError: Buffer is not defined`. Vite (Browser Native) does not support Node.js globals required by the Thirdweb/Ethers SDK.
-*   **The Fix:** We **MUST** install and configure `vite-plugin-node-polyfills` in `vite.config.js` immediately upon project initialization.
+### Conflict 1: MetaMask/WalletConnect + Ethereum Integration
+*   **The Issue:** Direct wallet integration requires handling provider detection, chain switching, and error states across different browsers and devices. Ethereum integration adds complexity (smart contracts, network selection).
+*   **The Fix:** Use lightweight libraries like `ethers.js` or `web3.js` for Ethereum interaction on Sepolia testnet (zero gas costs). `vite-plugin-node-polyfills` required for Buffer support. Student B will determine the optimal Ethereum integration approach (on-chain storage vs smart contracts). **Important:** Sepolia testnet only — no mainnet, no real ETH required.
 
 ### Conflict 2: The "Wallet Swap" Logic Exploit
-*   **The Exploit:** A user passes the test with Wallet A, disconnects, connects Wallet B, and mints using the stale "Passed" state.
+*   **The Exploit:** A user passes the test with Wallet A, disconnects, connects Wallet B, and earns credits using the stale "Passed" state.
 *   **The Fix (Strict Reset Hook):**
     ```javascript
     useEffect(() => {
@@ -112,8 +113,8 @@ We have identified critical technical conflicts between our tools. Here are the 
     ```
 
 ### Conflict 3: The "Dual Identity" Confusion
-*   **The Issue:** User logs in with Google (Account A) but connects Metamask (Account B). Who gets the badge?
-*   **The Policy:** The **Wallet Holder** (Account B) gets the badge. The Google Account (Account A) is only used for saving the "Audit Log" to Firestore. We accept this separation to preserve privacy.
+*   **The Issue:** User logs in with Google (Account A) but connects MetaMask (Account B). Who gets the credits?
+*   **The Policy:** Credits are tied to the **Google Account** (stored in Firestore). The **Wallet Address** is linked to the user profile for credential verification purposes. The Google Account is the primary identity for credit tracking and leaderboard.
 
 ### Conflict 4: CORS & Judge0 API
 *   **The Issue:** Browser blocks direct requests to Judge0 API from `localhost` or production domain due to CORS restrictions.
@@ -128,5 +129,5 @@ We have identified critical technical conflicts between our tools. Here are the 
 | Common Hackathon Idea | Why it often fails | Why CrediLab is better |
 | :--- | :--- | :--- |
 | **"Trash Collection App"** | Requires physical logistics (trucks/bins). Hard to demo. | **Purely Digital:** It works instantly. No physical dependencies. |
-| **"Donation Crowdfunding"** | Boring. Hundreds exist. Blockchain used only for "payments". | **Novel Use Case:** Uses Blockchain for *Identity & Reputation* (Web3 Identity). |
+| **"Donation Crowdfunding"** | Boring. Hundreds exist. Blockchain used only for "payments". | **Novel Use Case:** Uses wallet-linked credentials and credit incentives to gamify learning. |
 | **"LMS / Classroom"** | Too big. Teams try to build Moodle and fail. | **Micro-Scope:** We only do *Verification*. Focused, finishable MVP. |

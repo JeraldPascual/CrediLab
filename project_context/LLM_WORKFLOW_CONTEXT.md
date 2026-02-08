@@ -16,7 +16,8 @@
 - **Serverless Proxy:** Vercel Serverless Functions (API Routes) - *Secures API calls, hides Judge0 credentials, no credit card required.*
 - **Backend:** Firebase (Auth/Firestore) - *Serverless architecture only.*
 - **Hosting:** Vercel - *Free tier with automatic deployments from GitHub.*
-- **Blockchain:** Polygon Amoy Testnet (Thirdweb SDK) - *ERC-1155 Soulbound Tokens with Gasless Minting (Free Tier).*
+- **Blockchain:** Ethereum Sepolia Testnet via MetaMask (desktop) and WalletConnect (mobile) — *Student B exploring on-chain credential verification or smart contracts. Zero gas costs (testnet only, no real ETH required).*
+- **Reward System:** Credit-based system stored in Firebase Firestore — *Fixed pool of 10,000 credits (= ₱10,000 PHP). Leaderboard with no material benefits.*
 
 ---
 
@@ -25,7 +26,7 @@
 
 1.  **Anti-Paste (Heuristic):** Do not just block `onPaste`. Instead, calculate **Keystroke Velocity**. If `(chars / time) > 50`, flag as suspicious.
 2.  **Focus Tracking:** Watch `window.onblur` and `document.visibilityState`. Count violations.
-3.  **Gas Protection:** Check `balanceOf(user)` before enabling the Mint button. Disable button immediately on click.
+3.  **Duplicate Protection:** Check Firestore if user already completed a challenge before awarding credits. Disable earning for completed challenges.
 4.  **Rate Limiting:** Debounce the "Run Code" button (10s cooldown) to prevent Judge0 API abuse.
 
 ---
@@ -34,7 +35,7 @@
 1.  **No Heavy Assets:** Do not import large libraries (e.g., no Three.js, no heavy Lottie files).
 2.  **"Lite Mode" Logic:** All UI components must have a check for `isLiteMode`. If true, render minimal HTML/CSS (no syntax highlighting, no gradients). Auto-detect: `navigator.hardwareConcurrency <= 2` enables Lite Mode. Performance gain: ~40% smaller bundle, ~200MB less memory.
 3.  **Error Handling:** Never leave a `catch` block empty. Always show user feedback (e.g., "Compiler busy, retrying..."). Pre-record backup demo video in case of API failure.
-4.  **Optimistic UI:** For blockchain actions, show success state immediately after the transaction is signed, don't wait for block confirmation to unfreeze the UI.
+4.  **Optimistic UI:** For credit awarding, show success state immediately after Firestore write, don't wait for leaderboard update to unfreeze the UI.
 5.  **API Security:** Never expose Judge0 API keys in frontend. All execution requests must go through Vercel Serverless Functions proxy.
 
 ---
