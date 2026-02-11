@@ -112,36 +112,29 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void updateUI(boolean isConnected) {
+        Log.d("MainActivity", "updateUI called with isConnected: " + isConnected);
         if (isConnected) {
-            // Assuming connectStatus, connectButton, walletAddress are members of
-            // ActivityMainBinding or defined elsewhere
-            // Since they are not, I'm mapping them to existing binding elements based on
-            // context.
-            // This part of the code might need further adjustment if the original intent
-            // was different.
-            binding.btnConnect.setText(getString(R.string.disconnect_wallet)); // Assuming connectButton maps to
-                                                                               // btnConnect
+            String address = walletManager.getWalletAddress();
+            Log.d("MainActivity", "updateUI: Connected. Address: " + address);
+            // ... (rest of true branch)
+            binding.btnConnect.setText(getString(R.string.disconnect_wallet));
             binding.btnConnect.setBackgroundTintList(
                     getResources().getColorStateList(R.color.error, getTheme()));
             binding.layoutActions.setVisibility(View.VISIBLE);
             binding.btnRefresh.setVisibility(View.VISIBLE);
-            binding.tvWalletAddress.setVisibility(View.VISIBLE); // Assuming walletAddress maps to tvWalletAddress
-            binding.tvWalletAddress.setText(WalletManager.truncateAddress(walletManager.getWalletAddress())); // Set
-                                                                                                              // address
-                                                                                                              // when
-                                                                                                              // connected
-            // connectStatus and its color are not directly mappable without more context,
-            // so they are omitted or would require new UI elements.
+            binding.tvWalletAddress.setVisibility(View.VISIBLE);
+            binding.tvWalletAddress.setText(WalletManager.truncateAddress(address));
         } else {
+            Log.d("MainActivity", "updateUI: Disconnected");
+            // ... (rest of false branch)
             binding.tvBalance.setText("--");
-            binding.btnConnect.setText(getString(R.string.connect_wallet)); // Assuming connectButton maps to btnConnect
+            binding.btnConnect.setText(getString(R.string.connect_wallet));
             binding.btnConnect.setBackgroundTintList(
                     getResources().getColorStateList(R.color.primary, getTheme()));
             binding.layoutActions.setVisibility(View.GONE);
             binding.btnRefresh.setVisibility(View.GONE);
-            binding.tvWalletAddress.setVisibility(View.GONE); // Assuming walletAddress maps to tvWalletAddress
-            binding.tvWalletAddress.setText(""); // Clear address when disconnected
-            // connectStatus and its color are not directly mappable without more context.
+            binding.tvWalletAddress.setVisibility(View.GONE);
+            binding.tvWalletAddress.setText("");
         }
     }
 

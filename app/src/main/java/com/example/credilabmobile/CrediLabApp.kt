@@ -50,9 +50,11 @@ class CrediLabApp : Application() {
             blockExplorerUrl = "https://sepolia.etherscan.io"
         )
         
+        Log.d("CrediLabApp", "Initializing Web3Modal...")
         Web3Modal.initialize(
             init = Modal.Params.Init(core = CoreClient),
             onSuccess = {
+                Log.d("CrediLabApp", "Web3Modal Initialized Successfully") // Added logging
                 try {
                      // Check if setChains expects varargs or list
                      Web3Modal.setChains(listOf(sepolia))
@@ -61,7 +63,7 @@ class CrediLabApp : Application() {
                 }
             },
             onError = { error ->
-                android.util.Log.e("CrediLabApp", "Web3Modal error: ${error.throwable.stackTraceToString()}")
+                Log.e("CrediLabApp", "Web3Modal Initialization Error: ${error.throwable.message}") // Changed logging
             }
         )
     }
