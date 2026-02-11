@@ -5,7 +5,8 @@
 
 ## Phase 1: Setup & Core Logic (Now - Feb 16)
 *Goal: Have a working skeleton for Checkpoint 1.*
-- [ ] **Initialize Project:** Git, React (Vite), Firebase Config, ESLint.
+- [x] **Initialize Project:** Git, React (Vite), Firebase Config, ESLint.
+- [x] **Monorepo Structure:** Create `/src` (frontend), `/api` (serverless backend), `/web3` (blockchain — Student B's domain, open for revision).
 - [ ] **UI/UX Skeleton:** Landing Page, Code Editor Page, Output Panel (Responsive).
 - [ ] **Authentication:** Firebase Login (Google only for MVP—faster than email/password).
 - [ ] **Vercel Setup:** Create `/api` folder with serverless function for Judge0 proxy (no credit card needed).

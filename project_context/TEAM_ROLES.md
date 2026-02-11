@@ -42,6 +42,23 @@
 
 ---
 
+## Monorepo Folder Ownership
+The project uses a **monorepo** — all code in one repository, organized by responsibility:
+
+| Folder | Owner | Purpose |
+|--------|-------|---------|
+| `/src` | Student A | Frontend React app (components, pages, hooks, utils, data) |
+| `/api` | Student A | Vercel Serverless Functions (Judge0 proxy, backend logic) |
+| `/web3` | Student B | Blockchain, wallet, Ethereum Sepolia integration. **Open for revision.** |
+| `/project_context` | Student C + Team | Documentation, onboarding, specs |
+
+**Rules:**
+- Work primarily in your own folder. Coordinate before editing someone else's.
+- Student B has full autonomy over `/web3` — the initial structure is a scaffold, not a mandate.
+- Shared configs (`package.json`, `vite.config.js`, `.env.local`) require team agreement before changes.
+
+---
+
 ## MVP Scope Awareness
 - **We ARE building:** Student coding (desktop) + credit earning + leaderboard + wallet-linked credentials + TWO professor-style Java problems with user input.
 - **We are NOT building:** Professor dashboard, advanced anti-cheat, paid blockchain transactions. These are "Phase 2" future work.

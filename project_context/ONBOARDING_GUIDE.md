@@ -26,17 +26,19 @@ We are 1st-year students building a **credit-based reward system** with Ethereum
 *   **Think of Ethereum Sepolia** as the "global truth ledger" for testing. You can store credential proofs on-chain or use smart contracts for the credit system without spending real ETH.
 *   **Flexibility:** You have the freedom to decide the best approach — whether that's storing hashes on-chain, using a simple smart contract, or hybrid (Firestore + Ethereum Sepolia).
 
+### Your Folder: `/web3`
+All your blockchain and wallet code lives in `/web3`. The initial scaffold includes:
+- `/web3/contracts/` — Smart contracts (Solidity) if you choose to deploy on Sepolia.
+- `/web3/wallet/` — MetaMask + WalletConnect integration logic.
+- `/web3/utils/` — Web3 helpers (ethers.js wrappers, hashing).
+- `/web3/README.md` — Your notes on approach decisions.
+
+**This is YOUR folder.** The structure is a starting point — reorganize, rename, or add subfolders as you see fit. You have full autonomy here.
+
 ### Key Concept: The Credit Pool + Ethereum Credentials
 *   **What is it?** A fixed pool of 10,000 credits displayed to all students (= ₱10,000 PHP for understanding).
 *   **Why Ethereum Sepolia?** Sepolia testnet provides immutable proof for testing. Credentials stored on-chain can't be faked or deleted, and it costs zero real money (testnet only).
 *   **Leaderboard:** Ranks students by credits earned. No material benefits, just bragging rights.
-
-### Your Zero-to-Hero Checklist (Week 1)
-1.  [ ] **Set Up MetaMask:** Install MetaMask browser extension and create a wallet.
-2.  [ ] **Learn WalletConnect:** Your responsibility is integrating WalletConnect for mobile wallet connection.
-3.  [ ] **Explore Ethereum Sepolia:** Research simple smart contracts (Solidity basics) or on-chain data storage on Sepolia testnet. Decide what makes sense for our MVP (zero gas costs, testnet only).
-4.  [ ] **Understand Firestore:** The credit pool and leaderboard live in Firebase Firestore. Learn basic Firestore read/write.
-5.  [ ] **Test Wallet Flow:** Practice connecting a wallet on mobile using WalletConnect QR code.
 
 ---
 

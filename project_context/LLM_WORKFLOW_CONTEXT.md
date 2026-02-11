@@ -40,11 +40,40 @@
 
 ---
 
-## **Directory Structure Map**
-- `/src/components`: Reusable UI (Button, Card).
-- `/src/pages`: Route views (Home, Editor, Profile).
-- `/src/utils`: Helper logic (Judge0 API fetcher, Anti-Cheat calculator).
-- `/project_context`: Documentation sources (Read these if unsure).
+## **Directory Structure Map (Monorepo)**
+This project uses a **monorepo** structure — frontend, backend, and blockchain code all live in one repository with dedicated folders.
+
+```
+CrediLab/
+├── src/                    # Frontend (React + Vite) — Student A
+│   ├── components/         # Reusable UI (Button, Card, Modal)
+│   ├── pages/              # Route views (Home, Editor, Profile)
+│   ├── hooks/              # Custom React hooks (useKeystrokeTracker, useFocusTracker)
+│   ├── utils/              # Helper logic (Judge0 fetcher, verifier, credits)
+│   ├── data/               # Static data (challenges.js, constants)
+│   ├── assets/             # Images, icons, fonts
+│   ├── App.jsx             # Root component
+│   └── main.jsx            # Entry point
+├── api/                    # Backend (Vercel Serverless Functions) — Student A
+│   └── execute-code.js     # Judge0 proxy (secures API key, rate limits)
+├── web3/                   # Blockchain & Wallet (Ethereum Sepolia) — Student B
+│   ├── contracts/          # Smart contracts (Solidity) if applicable
+│   ├── wallet/             # MetaMask + WalletConnect integration logic
+│   ├── utils/              # Web3 helpers (ethers.js wrappers, hash utils)
+│   └── README.md           # Student B's notes & approach decisions
+├── project_context/        # Documentation (Read these if unsure)
+├── public/                 # Static files (index.html, favicon)
+├── package.json            # Dependencies & scripts
+├── vite.config.js          # Vite configuration
+├── tailwind.config.js      # Tailwind CSS configuration
+├── vercel.json             # Vercel deployment config
+└── .env.local              # Environment variables (NEVER commit)
+```
+
+**Ownership Rules:**
+- **Student A** owns `/src` and `/api`. Frontend + backend logic.
+- **Student B** owns `/web3`. Blockchain, wallet, and Ethereum integration. **This folder is open for revision by Student B** — the initial structure is a starting point.
+- **Student C** owns `/project_context` (docs) and performs QA across all folders.
 
 ---
 

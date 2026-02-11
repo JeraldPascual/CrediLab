@@ -35,5 +35,14 @@
 - **Purpose:** Wallet address serves as decentralized identity for credential verification.
 - **Implementation:** Direct MetaMask/WalletConnect integration with Sepolia testnet. Student B will determine final Ethereum integration approach (on-chain storage or smart contracts).
 
+## Project Structure (Monorepo)
+All code lives in a single repository organized into three dedicated folders:
+- **`/src`** — Frontend React app (Student A). Components, pages, hooks, utils, data.
+- **`/api`** — Vercel Serverless Functions (Student A). Judge0 proxy and backend logic.
+- **`/web3`** — Blockchain & Wallet logic (Student B). Smart contracts, wallet integration, web3 utils. **Open for revision by Student B.**
+- **`/project_context`** — Documentation (Student C + team).
+
+This monorepo approach keeps deployment simple (Vercel auto-detects `/api`), collaboration clear (each student owns their folder), and scaling easy.
+
 ## Tools
 - **Version Control:** GitHub.
