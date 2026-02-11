@@ -19,8 +19,8 @@ class CrediLabApp : Application() {
         val appMetaData = Core.Model.AppMetaData(
             name = "CrediLab",
             description = "CrediLab Wallet App",
-            url = "credilab.app",
-            icons = listOf("https://credilab.app/icon.png"),
+            url = "https://walletconnect.com", // Must be a valid, live URL to avoid validation errors
+            icons = listOf("https://avatars.githubusercontent.com/u/37784886"), // Generic valid icon
             redirect = "kotlin-web3modal://request"
         )
 
