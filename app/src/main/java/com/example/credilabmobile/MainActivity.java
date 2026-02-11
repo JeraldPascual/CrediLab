@@ -46,6 +46,17 @@ public class MainActivity extends AppCompatActivity {
         binding.btnRefresh.setOnClickListener(v -> fetchBalance());
 
         updateUI();
+
+        // Listen for WalletConnect session changes
+        WalletConnectHelper.INSTANCE.setConnectionListener(isConnected -> {
+            runOnUiThread(() -> {
+                updateUI();
+                if (isConnected) {
+                    fetchBalance();
+                }
+            });
+            return kotlin.Unit.INSTANCE;
+        });
     }
 
     @Override
