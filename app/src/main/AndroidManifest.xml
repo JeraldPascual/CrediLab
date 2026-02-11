@@ -31,12 +31,23 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="kotlin-web3modal" />
+                <data android:scheme="credilab" />
             </intent-filter>
         </activity>
 
         <activity android:name=".SendActivity" />
         <activity android:name=".ReceiveActivity" />
     </application>
+    
+    <queries>
+        <package android:name="io.metamask" />
+        <package android:name="com.wallet.crypto.trustapp" />
+        <package android:name="com.coinbase.wallet" />
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="https" />
+        </intent>
+    </queries>
 
 </manifest>

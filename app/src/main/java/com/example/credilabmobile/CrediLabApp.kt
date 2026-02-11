@@ -21,7 +21,7 @@ class CrediLabApp : Application() {
             description = "CrediLab Wallet App",
             url = "https://walletconnect.com", // Must be a valid, live URL to avoid validation errors
             icons = listOf("https://avatars.githubusercontent.com/u/37784886"), // Generic valid icon
-            redirect = "kotlin-web3modal://request"
+            redirect = "credilab://request"
         )
 
         CoreClient.initialize(
