@@ -1,6 +1,7 @@
 package com.example.credilabmobile
 
 import android.app.Application
+import android.util.Log // Added import
 import com.walletconnect.android.Core
 import com.walletconnect.android.CoreClient
 import com.walletconnect.android.relay.ConnectionType
