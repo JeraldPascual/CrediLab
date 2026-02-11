@@ -21,4 +21,3 @@ dependencyResolutionManagement {
 
 rootProject.name = "CrediLab Mobile"
 include(":app")
- 
