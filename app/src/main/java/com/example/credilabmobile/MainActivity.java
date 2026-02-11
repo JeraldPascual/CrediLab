@@ -28,7 +28,7 @@ public class MainActivity extends AppCompatActivity {
 
         walletManager = WalletManager.getInstance(this);
         web3Helper = new Web3Helper();
-        helper = new WalletConnectHelper(); // Constructor takes no arguments
+        helper = new WalletConnectHelper(this); // Initialize helper with context
 
         binding.btnConnect.setOnClickListener(v -> {
             helper.connect(getSupportFragmentManager());
@@ -70,16 +70,26 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         // Check manually on resume in case redirect failed but connection succeeded
         // specially on Xiaomi/MIUI devices
-        if (helper != null) {
-            String address = helper.getSessionAddress();
-            Log.d("MainActivity", "onResume check - Address: " + address);
-            if (address != null && !walletManager.isConnected()) { // Only update if not already connected via
-                                                                   // walletManager
-                walletManager.setWalletAddress(address); // Update walletManager with session address
+        // Use walletManager.getWalletAddress() to leverage fallback to
+        // SharedPreferences
+        String address = walletManager.getWalletAddress();
+        Log.d("MainActivity", "onResume check - Address: " + address);
+
+        if (address != null && !address.isEmpty()) {
+            // We have an address (from Web3Modal or Prefs)
+            // Ensure UI is up to date
+            updateUI(true);
+            binding.tvWalletAddress.setText(address);
+            fetchBalance();
+
+            // Explicitly sync if needed, though getWalletAddress does the fallback lookup
+        } else {
+            // Not connected
+            if (walletManager.isConnected()) {
+                // This branch shouldn't really be reached if address is null/empty but
+                // isConnected is true
+                // unless getWalletAddress behaves inconsistently.
                 updateUI(true);
-                binding.tvWalletAddress.setText(address);
-                fetchBalance();
-            } else if (walletManager.isConnected()) {
                 fetchBalance();
             }
         }

@@ -26,10 +26,21 @@ public class WalletManager {
     }
 
     public String getWalletAddress() {
-        // Accessing Kotlin object from Java requires INSTANCE
-        return com.walletconnect.web3.modal.client.Web3Modal.INSTANCE.getAccount() != null
-                ? com.walletconnect.web3.modal.client.Web3Modal.INSTANCE.getAccount().getAddress()
-                : null;
+        // Try getting from Web3Modal first
+        String address = null;
+        try {
+            if (com.walletconnect.web3.modal.client.Web3Modal.INSTANCE.getAccount() != null) {
+                address = com.walletconnect.web3.modal.client.Web3Modal.INSTANCE.getAccount().getAddress();
+            }
+        } catch (Exception e) {
+            android.util.Log.e("WalletManager", "Error getting account from Web3Modal", e);
+        }
+
+        // Fallback to local storage if Web3Modal is not ready or returns null
+        if (address == null) {
+            address = prefs.getString(Constants.PREF_WALLET_ADDRESS, null);
+        }
+        return address;
     }
 
     public boolean isConnected() {

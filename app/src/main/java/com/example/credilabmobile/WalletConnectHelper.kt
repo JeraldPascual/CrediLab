@@ -5,7 +5,7 @@ import com.walletconnect.web3.modal.client.Modal
 import com.walletconnect.web3.modal.client.Web3Modal
 import com.walletconnect.web3.modal.ui.Web3ModalSheet
 
-class WalletConnectHelper {
+class WalletConnectHelper(private val context: android.content.Context) {
 
     private var onConnectionStateChange: ((Boolean) -> Unit)? = null
 
@@ -24,8 +24,21 @@ class WalletConnectHelper {
                 // Let's print the object to debug if we can't find property.
                 // Or try approvedSession.topic if available (it should be).
                 // "Unresolved reference: topic" suggests it might be named differently or inside a nested object.
-                // Trying approvedSession.sessionTopic just in case, or just logging the object.
                 android.util.Log.d("WalletConnectHelper", "Session Approved: $approvedSession")
+                
+                // Try to get account from Web3Modal immediately and save it
+                try {
+                    val account = Web3Modal.getAccount()
+                    if (account != null) {
+                        android.util.Log.d("WalletConnectHelper", "Saved Address from Callback: ${account.address}")
+                        WalletManager.getInstance(context).setWalletAddress(account.address)
+                    } else {
+                        android.util.Log.d("WalletConnectHelper", "Web3Modal.getAccount() is null in onSessionApproved")
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.e("WalletConnectHelper", "Error saving address in callback", e)
+                }
+
                 onConnectionStateChange?.invoke(true)
             }
 
