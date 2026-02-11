@@ -23,7 +23,7 @@ public class ReceiveActivity extends AppCompatActivity {
         binding = ActivityReceiveBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        WalletManager walletManager = new WalletManager(this);
+        WalletManager walletManager = WalletManager.getInstance(this);
         String address = walletManager.getWalletAddress();
 
         binding.btnBack.setOnClickListener(v -> finish());

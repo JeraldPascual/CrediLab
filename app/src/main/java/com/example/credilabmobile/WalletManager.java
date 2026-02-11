@@ -6,16 +6,30 @@ import android.content.SharedPreferences;
 public class WalletManager {
     private final SharedPreferences prefs;
 
-    public WalletManager(Context context) {
+    private static WalletManager instance;
+
+    private WalletManager(Context context) {
         prefs = context.getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE);
     }
 
-    public void saveWalletAddress(String address) {
-        // WalletConnect manages the session address
+    public static synchronized WalletManager getInstance(Context context) {
+        if (instance == null) {
+            instance = new WalletManager(context);
+        }
+        return instance;
+    }
+
+    public void setWalletAddress(String address) {
+        // WalletConnect manages the session, but we can store it locally if needed
+        // for UI consistency before the session is fully validated
+        prefs.edit().putString(Constants.PREF_WALLET_ADDRESS, address).apply();
     }
 
     public String getWalletAddress() {
-        return WalletConnectHelper.INSTANCE.getSessionAddress();
+        // Accessing Kotlin object from Java requires INSTANCE
+        return com.walletconnect.web3.modal.client.Web3Modal.INSTANCE.getAccount() != null
+                ? com.walletconnect.web3.modal.client.Web3Modal.INSTANCE.getAccount().getAddress()
+                : null;
     }
 
     public boolean isConnected() {
@@ -24,7 +38,15 @@ public class WalletManager {
     }
 
     public void disconnect() {
-        WalletConnectHelper.INSTANCE.disconnect();
+        com.walletconnect.web3.modal.client.Web3Modal.INSTANCE.disconnect(
+                () -> {
+                    android.util.Log.d("WalletManager", "Disconnected");
+                    return kotlin.Unit.INSTANCE;
+                },
+                (error) -> {
+                    android.util.Log.e("WalletManager", "Disconnect error", error);
+                    return kotlin.Unit.INSTANCE;
+                });
     }
 
     public static boolean isValidAddress(String address) {

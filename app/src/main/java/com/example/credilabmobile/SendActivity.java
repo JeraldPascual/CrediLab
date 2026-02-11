@@ -36,7 +36,7 @@ public class SendActivity extends AppCompatActivity {
         binding = ActivitySendBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        walletManager = new WalletManager(this);
+        walletManager = WalletManager.getInstance(this);
         web3Helper = new Web3Helper();
 
         binding.btnBack.setOnClickListener(v -> finish());

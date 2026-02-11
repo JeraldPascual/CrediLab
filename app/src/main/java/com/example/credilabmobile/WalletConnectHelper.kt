@@ -5,7 +5,7 @@ import com.walletconnect.web3.modal.client.Modal
 import com.walletconnect.web3.modal.client.Web3Modal
 import com.walletconnect.web3.modal.ui.Web3ModalSheet
 
-object WalletConnectHelper {
+class WalletConnectHelper {
 
     private var onConnectionStateChange: ((Boolean) -> Unit)? = null
 

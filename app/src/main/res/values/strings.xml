@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">CrediLab</string>
+    <string name="connect_wallet">Connect Wallet</string>
+    <string name="disconnect_wallet">Disconnect</string>
 </resources>
