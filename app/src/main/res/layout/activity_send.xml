@@ -44,6 +44,7 @@
 
         <!-- Recipient Address -->
         <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilRecipient"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="32dp"
@@ -51,6 +52,10 @@
             app:hintTextColor="@color/text_secondary"
             app:boxStrokeColor="@color/primary"
             app:boxBackgroundColor="@color/surface_dark"
+            app:endIconMode="custom"
+            app:endIconDrawable="@android:drawable/ic_menu_camera"
+            app:endIconContentDescription="Scan QR"
+            app:endIconTint="@color/primary"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
             <com.google.android.material.textfield.TextInputEditText

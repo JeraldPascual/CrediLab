@@ -43,9 +43,10 @@ dependencies {
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.constraintlayout)
-    implementation(libs.web3j.core)
-    implementation(libs.zxing.core)
+    implementation(libs.web3j)
+    implementation(libs.zxing)
     implementation(libs.gson)
+    implementation(libs.zxing.android.embedded)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)

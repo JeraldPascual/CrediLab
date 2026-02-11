@@ -10,12 +10,25 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.credilabmobile.databinding.ActivitySendBinding;
 
+import androidx.activity.result.ActivityResultLauncher;
+import com.journeyapps.barcodescanner.ScanContract;
+import com.journeyapps.barcodescanner.ScanOptions;
+
 import java.math.BigDecimal;
 
 public class SendActivity extends AppCompatActivity {
     private ActivitySendBinding binding;
     private WalletManager walletManager;
     private Web3Helper web3Helper;
+
+    private final ActivityResultLauncher<ScanOptions> barcodeLauncher = registerForActivityResult(new ScanContract(),
+            result -> {
+                if (result.getContents() == null) {
+                    Toast.makeText(this, "Cancelled", Toast.LENGTH_LONG).show();
+                } else {
+                    binding.etRecipient.setText(result.getContents());
+                }
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,10 +40,19 @@ public class SendActivity extends AppCompatActivity {
         web3Helper = new Web3Helper();
 
         binding.btnBack.setOnClickListener(v -> finish());
+        binding.tilRecipient.setEndIconOnClickListener(v -> scanQrCode());
 
         binding.btnSendToken.setOnClickListener(v -> sendToken());
 
         fetchBalance();
+    }
+
+    private void scanQrCode() {
+        ScanOptions options = new ScanOptions();
+        options.setPrompt("Scan a wallet address");
+        options.setBeepEnabled(false);
+        options.setOrientationLocked(false);
+        barcodeLauncher.launch(options);
     }
 
     private void fetchBalance() {
