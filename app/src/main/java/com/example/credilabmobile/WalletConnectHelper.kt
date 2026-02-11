@@ -129,4 +129,16 @@ class WalletConnectHelper(private val context: android.content.Context) {
         // For now, prompt user that signing via WalletConnect is pending.
         onError(Exception("WalletConnect signing not yet fully implemented."))
     }
+    
+    companion object {
+        @JvmStatic
+        fun disconnect(onSuccess: () -> Unit, onError: (Throwable) -> Unit) {
+            Web3Modal.disconnect(onSuccess, onError)
+        }
+
+        @JvmStatic
+        fun getAddress(): String? {
+            return Web3Modal.getAccount()?.address
+        }
+    }
 }

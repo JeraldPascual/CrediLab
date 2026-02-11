@@ -2,7 +2,6 @@ package com.example.credilabmobile;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import com.walletconnect.web3.modal.client.Web3Modal;
 
 public class WalletManager {
     private final SharedPreferences prefs;
@@ -27,15 +26,8 @@ public class WalletManager {
     }
 
     public String getWalletAddress() {
-        // Try getting from Web3Modal first
-        String address = null;
-        try {
-            if (Web3Modal.INSTANCE.getAccount() != null) {
-                address = Web3Modal.INSTANCE.getAccount().getAddress();
-            }
-        } catch (Exception e) {
-            android.util.Log.e("WalletManager", "Error getting account from Web3Modal", e);
-        }
+        // Try getting from WalletConnectHelper first
+        String address = WalletConnectHelper.getAddress();
 
         // Fallback to local storage if Web3Modal is not ready or returns null
         if (address == null) {
@@ -50,7 +42,7 @@ public class WalletManager {
     }
 
     public void disconnect() {
-        Web3Modal.INSTANCE.disconnect(
+        WalletConnectHelper.disconnect(
                 () -> {
                     android.util.Log.d("WalletManager", "Disconnected");
                     return kotlin.Unit.INSTANCE;
