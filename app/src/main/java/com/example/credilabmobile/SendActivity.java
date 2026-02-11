@@ -96,7 +96,7 @@ public class SendActivity extends AppCompatActivity {
 
         String transferData = web3Helper.buildTransferData(recipient, amount);
 
-        String metamaskUrl = "https://metamask.app.link/send/"
+        String metamaskUrl = "metamask://send/"
                 + Constants.CLB_CONTRACT_ADDRESS
                 + "@" + Constants.CHAIN_ID
                 + "?value=0"

@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
 }
 
 android {
@@ -29,6 +30,9 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+    kotlinOptions {
+        jvmTarget = "17"
+    }
     buildFeatures {
         viewBinding = true
     }
@@ -47,6 +51,9 @@ dependencies {
     implementation(libs.zxing)
     implementation(libs.gson)
     implementation(libs.zxing.android.embedded)
+    implementation(libs.web3modal)
+    implementation("com.walletconnect:android-core:1.31.0")
+    implementation(libs.timber)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)

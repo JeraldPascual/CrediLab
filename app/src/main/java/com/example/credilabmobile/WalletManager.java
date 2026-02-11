@@ -11,11 +11,11 @@ public class WalletManager {
     }
 
     public void saveWalletAddress(String address) {
-        prefs.edit().putString(Constants.PREF_WALLET_ADDRESS, address).apply();
+        // WalletConnect manages the session address
     }
 
     public String getWalletAddress() {
-        return prefs.getString(Constants.PREF_WALLET_ADDRESS, null);
+        return WalletConnectHelper.INSTANCE.getSessionAddress();
     }
 
     public boolean isConnected() {
@@ -24,7 +24,7 @@ public class WalletManager {
     }
 
     public void disconnect() {
-        prefs.edit().remove(Constants.PREF_WALLET_ADDRESS).apply();
+        WalletConnectHelper.INSTANCE.disconnect();
     }
 
     public static boolean isValidAddress(String address) {

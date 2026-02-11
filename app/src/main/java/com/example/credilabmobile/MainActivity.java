@@ -31,7 +31,7 @@ public class MainActivity extends AppCompatActivity {
             if (walletManager.isConnected()) {
                 disconnect();
             } else {
-                showConnectDialog();
+                openWalletConnect();
             }
         });
 
@@ -56,33 +56,8 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void showConnectDialog() {
-        View dialogView = getLayoutInflater().inflate(
-                android.R.layout.simple_list_item_1, null);
-
-        TextInputEditText input = new TextInputEditText(this);
-        input.setHint("0x...");
-        input.setTextSize(14);
-        int padding = (int) (20 * getResources().getDisplayMetrics().density);
-        input.setPadding(padding, padding, padding, padding);
-
-        new AlertDialog.Builder(this)
-                .setTitle("Connect Wallet")
-                .setMessage("Paste your MetaMask wallet address:")
-                .setView(input)
-                .setPositiveButton("Connect", (dialog, which) -> {
-                    String address = input.getText() != null ? input.getText().toString().trim() : "";
-                    if (WalletManager.isValidAddress(address)) {
-                        walletManager.saveWalletAddress(address);
-                        updateUI();
-                        fetchBalance();
-                    } else {
-                        Toast.makeText(this, "Invalid Ethereum address",
-                                Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
+    private void openWalletConnect() {
+        WalletConnectHelper.INSTANCE.connect(getSupportFragmentManager());
     }
 
     private void disconnect() {
@@ -91,7 +66,7 @@ public class MainActivity extends AppCompatActivity {
                 .setMessage("Are you sure you want to disconnect?")
                 .setPositiveButton("Disconnect", (dialog, which) -> {
                     walletManager.disconnect();
-                    updateUI();
+                    updateUI(); // Immediate UI update, though session callback is better
                 })
                 .setNegativeButton("Cancel", null)
                 .show();

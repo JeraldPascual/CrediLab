@@ -1,5 +1,6 @@
 [versions]
 agp = "8.5.0"
+kotlin = "1.9.22"
 junit = "4.13.2"
 junitVersion = "1.1.5"
 espressoCore = "3.5.1"
@@ -11,6 +12,8 @@ web3j = "4.12.3"
 zxing = "3.5.3"
 zxingEmbedded = "4.3.0"
 gson = "2.10.1"
+web3modal = "1.5.0"
+timber = "5.0.1"
 
 [libraries]
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -24,6 +27,9 @@ web3j = { group = "org.web3j", name = "core", version.ref = "web3j" }
 zxing = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
 zxing-android-embedded = { group = "com.journeyapps", name = "zxing-android-embedded", version.ref = "zxingEmbedded" }
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+web3modal = { group = "com.walletconnect", name = "web3modal", version.ref = "web3modal" }
+timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
