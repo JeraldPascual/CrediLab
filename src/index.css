@@ -1,1 +1,71 @@
 @import "tailwindcss";
+
+/* ── CrediLab Design Tokens ── */
+@theme {
+  --color-green-primary: #00e89f;
+  --color-green-dark: #00c987;
+  --color-green-light: #33edaf;
+  --color-dark-bg: #000009;
+  --color-dark-surface: #0a0a13;
+  --color-dark-card: #12121f;
+  --color-dark-border: #1e1e2e;
+  --color-dark-text: #e4e4ed;
+  --color-dark-muted: #8888a0;
+  --font-family-figtree: "Figtree", sans-serif;
+}
+
+/* ── Base ── */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-family-figtree);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Light mode (default) ── */
+body {
+  background-color: #ffffff;
+  color: #1a1a2e;
+}
+
+/* ── Dark mode ── */
+body.dark {
+  background-color: var(--color-dark-bg);
+  color: var(--color-dark-text);
+}
+
+/* ── Scrollbar (dark mode) ── */
+body.dark ::-webkit-scrollbar {
+  width: 6px;
+}
+body.dark ::-webkit-scrollbar-track {
+  background: var(--color-dark-surface);
+}
+body.dark ::-webkit-scrollbar-thumb {
+  background: var(--color-dark-border);
+  border-radius: 3px;
+}
+
+/* ── Selection highlight ── */
+::selection {
+  background-color: #00e89f33;
+  color: inherit;
+}
+
+/* ── Focus ring utility ── */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-green-primary focus:ring-offset-2;
+}
+
+body.dark .focus-ring {
+  @apply focus:ring-offset-dark-bg;
+}
+
+/* ── Animations (disabled in Lite mode) ── */
+body.lite-mode * {
+  animation-duration: 0s !important;
+  transition-duration: 0s !important;
+}
