@@ -5,8 +5,10 @@ import {
   WalletIcon,
   ClipboardDocumentIcon,
   CheckIcon,
+  EyeIcon,
+  EyeSlashIcon,
 } from "@heroicons/react/24/outline";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, getDocs, collection, query, where } from "firebase/firestore";
 import { updateProfile } from "firebase/auth";
 import { useAuth } from "../context/AuthContext";
 import { db } from "../lib/firebase";
@@ -24,6 +26,8 @@ export default function ProfilePage() {
   );
   const [connectingWallet, setConnectingWallet] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [showWallet, setShowWallet] = useState(false);
+  const [walletError, setWalletError] = useState("");
 
   // Save profile
   async function handleSave(e) {
@@ -49,16 +53,41 @@ export default function ProfilePage() {
   // Connect MetaMask
   async function handleConnectWallet() {
     setConnectingWallet(true);
+    setWalletError("");
     try {
       const address = await connectMetaMask();
-      if (address) {
-        setWalletAddress(address);
-        // Save to Firestore (merge: creates doc if it doesn't exist)
-        const docRef = doc(db, "users", user.uid);
-        await setDoc(docRef, { walletAddress: address, uid: user.uid, email: user.email }, { merge: true });
+      if (!address) return;
+
+      // Check if this wallet is already linked to another account
+      const q = query(
+        collection(db, "users"),
+        where("walletAddress", "==", address)
+      );
+      const snap = await getDocs(q);
+      const alreadyLinked = snap.docs.find((d) => d.id !== user.uid);
+      if (alreadyLinked) {
+        setWalletError(
+          "This wallet address is already linked to another account. Switch to a different MetaMask account and try again."
+        );
+        return;
       }
+
+      setWalletAddress(address);
+      const docRef = doc(db, "users", user.uid);
+      await setDoc(
+        docRef,
+        { walletAddress: address, uid: user.uid, email: user.email },
+        { merge: true }
+      );
     } catch (err) {
-      console.error("Wallet connection failed:", err);
+      if (err.code === 4001 || err.message?.includes("rejected")) {
+        setWalletError("Connection cancelled. You can try again anytime.");
+      } else if (err.message?.includes("MetaMask is not installed")) {
+        setWalletError("MetaMask is not installed. Please install it from metamask.io first.");
+      } else {
+        setWalletError("Wallet connection failed. Please try again.");
+        console.error("Wallet connection failed:", err);
+      }
     } finally {
       setConnectingWallet(false);
     }
@@ -71,31 +100,50 @@ export default function ProfilePage() {
     setTimeout(() => setCopied(false), 2000);
   }
 
-  // Profile picture upload placeholder
-  // NOTE: Using Firestore document to store base64 photo (small images only)
-  // because Firebase Storage requires Blaze plan
+  // Profile picture upload — compress to 128x128 JPEG, store in Firestore only
+  // Firebase Auth updateProfile has a strict URL length limit, so we skip it
   async function handlePhotoUpload(e) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate size — max 200KB for Firestore doc field
-    if (file.size > 200 * 1024) {
-      alert("Image must be under 200KB. Please compress it first.");
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Image must be under 5MB.");
       return;
     }
 
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      const base64 = reader.result;
+    // Compress and resize to 128x128 JPEG using canvas
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = async () => {
+      URL.revokeObjectURL(objectUrl);
+      const canvas = document.createElement("canvas");
+      const size = 128;
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d");
+
+      // Center-crop: use the smaller dimension as the crop square
+      const min = Math.min(img.width, img.height);
+      const sx = (img.width - min) / 2;
+      const sy = (img.height - min) / 2;
+      ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size);
+
+      const compressed = canvas.toDataURL("image/jpeg", 0.7);
       try {
-        await updateProfile(user, { photoURL: base64 });
         const docRef = doc(db, "users", user.uid);
-        await setDoc(docRef, { photoURL: base64 }, { merge: true });
+        await setDoc(docRef, { photoURL: compressed }, { merge: true });
+        // Force refresh to show new photo
+        window.location.reload();
       } catch (err) {
         console.error("Photo upload failed:", err);
+        alert("Failed to save photo. Please try again.");
       }
     };
-    reader.readAsDataURL(file);
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      alert("Could not read image file.");
+    };
+    img.src = objectUrl;
   }
 
   return (
@@ -112,9 +160,9 @@ export default function ProfilePage() {
       {/* ── Profile Photo ── */}
       <div className="flex items-center gap-6">
         <div className="relative">
-          {user?.photoURL ? (
+          {(userData?.photoURL || user?.photoURL) ? (
             <img
-              src={user.photoURL}
+              src={userData?.photoURL || user.photoURL}
               alt="Profile"
               className="w-20 h-20 rounded-full object-cover border-4 border-green-primary/20"
             />
@@ -136,7 +184,7 @@ export default function ProfilePage() {
             {user?.displayName || "Student"}
           </p>
           <p className="text-sm text-gray-500 dark:text-dark-muted">
-            Upload a photo (max 200KB)
+            Upload a photo (auto-compressed to 128×128)
           </p>
         </div>
       </div>
@@ -200,21 +248,42 @@ export default function ProfilePage() {
         </h2>
 
         {walletAddress ? (
-          <div className="flex items-center gap-3 p-4 rounded-xl bg-green-primary/5 border border-green-primary/20">
-            <span className="text-sm font-mono text-gray-700 dark:text-dark-text flex-1 truncate">
-              {walletAddress}
-            </span>
-            <button
-              onClick={handleCopy}
-              className="p-2 rounded-lg hover:bg-green-primary/10 transition-colors"
-              title="Copy address"
-            >
-              {copied ? (
-                <CheckIcon className="w-4 h-4 text-green-primary" />
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 p-4 rounded-xl bg-green-primary/5 border border-green-primary/20">
+              {showWallet ? (
+                <span className="text-sm font-mono text-gray-700 dark:text-dark-text flex-1 truncate">
+                  {walletAddress}
+                </span>
               ) : (
-                <ClipboardDocumentIcon className="w-4 h-4 text-gray-400" />
+                <span className="text-sm font-mono text-gray-500 dark:text-dark-muted flex-1">
+                  {walletAddress.slice(0, 6)}••••••••{walletAddress.slice(-4)}
+                </span>
               )}
-            </button>
+              <button
+                onClick={() => setShowWallet(!showWallet)}
+                className="p-2 rounded-lg hover:bg-green-primary/10 transition-colors"
+                title={showWallet ? "Hide address" : "Reveal address"}
+              >
+                {showWallet ? (
+                  <EyeSlashIcon className="w-4 h-4 text-green-primary" />
+                ) : (
+                  <EyeIcon className="w-4 h-4 text-gray-400" />
+                )}
+              </button>
+              {showWallet && (
+                <button
+                  onClick={handleCopy}
+                  className="p-2 rounded-lg hover:bg-green-primary/10 transition-colors"
+                  title="Copy address"
+                >
+                  {copied ? (
+                    <CheckIcon className="w-4 h-4 text-green-primary" />
+                  ) : (
+                    <ClipboardDocumentIcon className="w-4 h-4 text-gray-400" />
+                  )}
+                </button>
+              )}
+            </div>
           </div>
         ) : (
           <div className="space-y-3">
@@ -222,6 +291,11 @@ export default function ProfilePage() {
               Connect your MetaMask wallet to receive CLB tokens when you
               complete challenges.
             </p>
+            {walletError && (
+              <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 text-sm text-red-600 dark:text-red-400">
+                {walletError}
+              </div>
+            )}
             <button
               onClick={handleConnectWallet}
               disabled={connectingWallet}

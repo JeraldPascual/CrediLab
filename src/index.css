@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* ── Enable class-based dark mode (Tailwind v4) ── */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ── CrediLab Design Tokens ── */
 @theme {
   --color-green-primary: #00e89f;
@@ -53,6 +56,17 @@ body.dark ::-webkit-scrollbar-thumb {
 ::selection {
   background-color: #00e89f33;
   color: inherit;
+}
+
+/* ── CodeMirror: fill entire panel height ── */
+.cm-editor {
+  height: 100%;
+}
+.cm-editor .cm-scroller {
+  overflow: auto;
+}
+.cm-editor .cm-content {
+  min-height: 100%;
 }
 
 /* ── Focus ring utility ── */

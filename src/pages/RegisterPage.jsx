@@ -3,26 +3,33 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function RegisterPage() {
-  const { registerWithEmail, loginWithGoogle } = useAuth();
-
+  const { registerWithEmail, registerWithGoogle, authError, clearAuthError } = useAuth();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
+  const [localError, setLocalError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Combine context-level auth errors with local errors
+  const error = authError || localError;
+
+  function clearError() {
+    setLocalError("");
+    clearAuthError();
+  }
 
   async function handleRegister(e) {
     e.preventDefault();
-    setError("");
+    clearError();
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match.");
+      setLocalError("Passwords do not match.");
       return;
     }
     if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
+      setLocalError("Password must be at least 6 characters.");
       return;
     }
 
@@ -31,24 +38,16 @@ export default function RegisterPage() {
       await registerWithEmail(email, password, firstName, lastName);
       // Navigation handled by onAuthStateChanged -> PublicRoute redirect
     } catch (err) {
-      setError(friendlyError(err.code));
+      setLocalError(friendlyError(err.code) || err.message);
       setLoading(false);
     }
   }
 
   async function handleGoogleRegister() {
-    setError("");
+    clearError();
     setLoading(true);
-    try {
-      await loginWithGoogle();
-      // Navigation handled by onAuthStateChanged -> PublicRoute redirect
-    } catch (err) {
-      if (err.code !== "auth/popup-closed-by-user" && err.code !== "auth/cancelled-popup-request") {
-        setError(friendlyError(err.code));
-      }
-    } finally {
-      setLoading(false);
-    }
+    await registerWithGoogle();
+    setLoading(false);
   }
 
   return (
@@ -89,6 +88,13 @@ export default function RegisterPage() {
             </p>
           </div>
 
+          {/* Error Alert */}
+          {error && (
+            <div className="p-3 text-sm rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800">
+              {error}
+            </div>
+          )}
+
           {/* Google Sign-Up */}
           <button
             type="button"
@@ -111,12 +117,6 @@ export default function RegisterPage() {
 
           {/* Registration Form */}
           <form onSubmit={handleRegister} className="space-y-4">
-            {error && (
-              <div className="p-3 text-sm rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800">
-                {error}
-              </div>
-            )}
-
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-1">
@@ -225,6 +225,11 @@ function GoogleIcon() {
 }
 
 function friendlyError(code) {
+  // Normalize raw Firebase error messages like "Firebase: Error (auth/invalid-credential)."
+  if (code && code.includes("Firebase:")) {
+    const match = code.match(/\(([^)]+)\)/);
+    if (match) code = match[1];
+  }
   switch (code) {
     case "auth/email-already-in-use":
       return "An account with this email already exists.";
@@ -234,17 +239,17 @@ function friendlyError(code) {
       return "Please enter a valid email address.";
     case "auth/popup-closed-by-user":
     case "auth/cancelled-popup-request":
-      return "Google sign-in was cancelled.";
+      return "";
     case "auth/network-request-failed":
       return "Network error. Check your internet connection.";
     case "auth/operation-not-allowed":
     case "auth/admin-restricted-operation":
-      return "Email/password registration is not enabled. Please ask the admin to enable it in Firebase Console → Authentication → Sign-in method.";
+      return "Email/password registration is not enabled. Please contact the admin.";
     case "auth/too-many-requests":
       return "Too many attempts. Please try again later.";
     default:
       return code
-        ? `Registration error (${code}). Please try again.`
+        ? `Something went wrong. Please try again.`
         : "Something went wrong. Please try again.";
   }
 }

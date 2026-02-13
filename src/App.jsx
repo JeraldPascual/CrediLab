@@ -12,6 +12,8 @@ import ActivitiesView from "./pages/ActivitiesView";
 import LeaderboardView from "./pages/LeaderboardView";
 import ProfilePage from "./pages/ProfilePage";
 import ProblemPage from "./pages/ProblemPage";
+import CodingPortal from "./pages/CodingPortal";
+import WalletGuidePage from "./pages/WalletGuidePage";
 
 export default function App() {
   return (
@@ -37,9 +39,10 @@ export default function App() {
               <Route index element={<ActivitiesView />} />
               <Route path="leaderboard" element={<LeaderboardView />} />
               <Route path="information" element={<ProfilePage />} />
+              <Route path="wallet-guide" element={<WalletGuidePage />} />
             </Route>
 
-            {/* Challenge pages (also protected, rendered inside dashboard shell) */}
+            {/* Challenge list (inside dashboard shell) */}
             <Route
               path="/problem"
               element={
@@ -49,8 +52,17 @@ export default function App() {
               }
             >
               <Route index element={<ProblemPage />} />
-              <Route path=":challengeId" element={<ProblemPage />} />
             </Route>
+
+            {/* Coding portal — full-screen, NOT inside dashboard shell */}
+            <Route
+              path="/problem/:challengeId"
+              element={
+                <ProtectedRoute>
+                  <CodingPortal />
+                </ProtectedRoute>
+              }
+            />
           </Routes>
         </BrowserRouter>
       </AuthProvider>

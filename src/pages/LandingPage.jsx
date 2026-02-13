@@ -4,9 +4,14 @@ import {
   CodeBracketIcon,
   CurrencyDollarIcon,
   ChartBarIcon,
+  SunIcon,
+  MoonIcon,
 } from "@heroicons/react/24/outline";
+import { useTheme } from "../context/ThemeContext";
 
 export default function LandingPage() {
+  const { dark, toggleDark } = useTheme();
+
   return (
     <div className="min-h-screen flex flex-col bg-white dark:bg-dark-bg">
       {/* ── Header ── */}
@@ -17,12 +22,25 @@ export default function LandingPage() {
             Learn to earn.
           </span>
         </div>
-        <Link
-          to="/login"
-          className="px-5 py-2 text-sm font-semibold rounded-lg bg-green-primary text-dark-bg hover:bg-green-dark transition-colors"
-        >
-          Get Started
-        </Link>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={toggleDark}
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-card transition-colors"
+            aria-label="Toggle dark mode"
+          >
+            {dark ? (
+              <SunIcon className="w-5 h-5 text-yellow-400" />
+            ) : (
+              <MoonIcon className="w-5 h-5 text-gray-600" />
+            )}
+          </button>
+          <Link
+            to="/login"
+            className="px-5 py-2 text-sm font-semibold rounded-lg bg-green-primary text-dark-bg hover:bg-green-dark transition-colors"
+          >
+            Get Started
+          </Link>
+        </div>
       </header>
 
       {/* ── Hero Section ── */}

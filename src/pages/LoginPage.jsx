@@ -3,38 +3,39 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function LoginPage() {
-  const { loginWithGoogle, loginWithEmail } = useAuth();
+  const { loginWithGoogle, loginWithEmail, authError, clearAuthError } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [localError, setLocalError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Combine context-level auth errors with local errors
+  const error = authError || localError;
+
+  function clearError() {
+    setLocalError("");
+    clearAuthError();
+  }
 
   async function handleEmailLogin(e) {
     e.preventDefault();
-    setError("");
+    clearError();
     setLoading(true);
     try {
       await loginWithEmail(email, password);
       // Navigation handled by onAuthStateChanged -> PublicRoute redirect
     } catch (err) {
-      setError(friendlyError(err.code));
+      setLocalError(friendlyError(err.code) || err.message);
       setLoading(false);
     }
   }
 
   async function handleGoogleLogin() {
-    setError("");
+    clearError();
     setLoading(true);
-    try {
-      await loginWithGoogle();
-      // Navigation handled by onAuthStateChanged -> PublicRoute redirect
-    } catch (err) {
-      if (err.code !== "auth/popup-closed-by-user" && err.code !== "auth/cancelled-popup-request") {
-        setError(friendlyError(err.code));
-      }
-      setLoading(false);
-    }
+    await loginWithGoogle();
+    setLoading(false);
   }
 
   return (
@@ -75,6 +76,13 @@ export default function LoginPage() {
             </p>
           </div>
 
+          {/* Error Alert */}
+          {error && (
+            <div className="p-3 text-sm rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800">
+              {error}
+            </div>
+          )}
+
           {/* Google Sign-In */}
           <button
             type="button"
@@ -97,12 +105,6 @@ export default function LoginPage() {
 
           {/* Email/Password Form */}
           <form onSubmit={handleEmailLogin} className="space-y-4">
-            {error && (
-              <div className="p-3 text-sm rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800">
-                {error}
-              </div>
-            )}
-
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-1">
                 Email
@@ -180,6 +182,11 @@ function GoogleIcon() {
 }
 
 function friendlyError(code) {
+  // Normalize raw Firebase error messages like "Firebase: Error (auth/invalid-credential)."
+  if (code && code.includes("Firebase:")) {
+    const match = code.match(/\(([^)]+)\)/);
+    if (match) code = match[1];
+  }
   switch (code) {
     case "auth/invalid-credential":
     case "auth/wrong-password":
@@ -191,17 +198,21 @@ function friendlyError(code) {
       return "Too many attempts. Please try again later.";
     case "auth/popup-closed-by-user":
     case "auth/cancelled-popup-request":
-      return "Google sign-in was cancelled.";
+      return "";
     case "auth/network-request-failed":
       return "Network error. Check your internet connection.";
     case "auth/operation-not-allowed":
     case "auth/admin-restricted-operation":
-      return "Email/password sign-in is not enabled. Please ask the admin to enable it in Firebase Console → Authentication → Sign-in method.";
+      return "Email/password sign-in is not enabled. Please contact the admin.";
     case "auth/user-disabled":
       return "This account has been disabled.";
+    case "auth/email-already-in-use":
+      return "An account with this email already exists.";
+    case "auth/weak-password":
+      return "Password must be at least 6 characters.";
     default:
       return code
-        ? `Authentication error (${code}). Please try again.`
+        ? `Something went wrong. Please try again.`
         : "Something went wrong. Please try again.";
   }
 }

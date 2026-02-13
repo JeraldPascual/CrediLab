@@ -22,10 +22,13 @@ export function ThemeProvider({ children }) {
   });
 
   useEffect(() => {
+    const root = document.documentElement;
     const body = document.body;
     if (dark) {
+      root.classList.add("dark");
       body.classList.add("dark");
     } else {
+      root.classList.remove("dark");
       body.classList.remove("dark");
     }
     localStorage.setItem("credilab-theme", dark ? "dark" : "light");

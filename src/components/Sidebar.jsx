@@ -2,6 +2,7 @@ import {
   ClipboardDocumentListIcon,
   TrophyIcon,
   CodeBracketIcon,
+  WalletIcon,
 } from "@heroicons/react/24/outline";
 
 const NAV_ITEMS = [
@@ -19,6 +20,11 @@ const NAV_ITEMS = [
     label: "Leaderboard",
     path: "/student/leaderboard",
     icon: TrophyIcon,
+  },
+  {
+    label: "Wallet Guide",
+    path: "/student/wallet-guide",
+    icon: WalletIcon,
   },
 ];
 

@@ -22,6 +22,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState("");
 
   // Fetch Firestore user data (best-effort — ad blockers may block Firestore)
   const fetchUserData = useCallback(async (firebaseUser) => {
@@ -64,47 +65,89 @@ export function AuthProvider({ children }) {
     return unsub;
   }, [fetchUserData]);
 
-  // Google Sign-In
+  // Google Sign-In (Login only - requires existing account)
   async function loginWithGoogle() {
-    console.log("[AuthContext] Attempting Google sign-in");
+    console.log("[AuthContext] Attempting Google login");
+    setLoading(true);
 
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const u = result.user;
       console.log("[AuthContext] Google sign-in successful. UID:", u.uid);
 
-      // Firestore write is best-effort — ad blockers may block it
+      // Check if user exists in Firestore
       try {
         const docRef = doc(db, "users", u.uid);
         const snap = await getDoc(docRef);
+
         if (!snap.exists()) {
-          await setDoc(docRef, {
-            uid: u.uid,
-            displayName: u.displayName || "",
-            email: u.email,
-            photoURL: u.photoURL || "",
-            walletAddress: null,
-            credits: 0,
-            completedChallenges: [],
-            createdAt: serverTimestamp(),
-          });
-          console.log("[AuthContext] Firestore user doc created for Google user");
-        } else {
-          setUserData(snap.data());
-          console.log("[AuthContext] Existing Firestore data loaded for Google user");
+          // Set error BEFORE signOut so it survives re-renders
+          setAuthError("No account found. Please register first.");
+          await auth.signOut();
+          return;
         }
+
+        setUserData(snap.data());
+        console.log("[AuthContext] Existing Firestore data loaded for Google user");
+        setLoading(false);
+        return u;
       } catch (firestoreErr) {
-        console.warn("[AuthContext] Firestore write failed (ad blocker?). Auth still succeeded.", firestoreErr.message);
+        setAuthError(firestoreErr.message || "Something went wrong. Please try again.");
+        await auth.signOut();
+        return;
       }
-
-      return u;
     } catch (authErr) {
-      console.error("[AuthContext] Google sign-in failed:", authErr.code, authErr.message);
-      throw authErr;
+      if (authErr.code !== "auth/popup-closed-by-user" && authErr.code !== "auth/cancelled-popup-request") {
+        console.error("[AuthContext] Google login failed:", authErr.code, authErr.message);
+      }
     }
-  }
+  }  // Google Sign-In (Registration - creates new account)
+  async function registerWithGoogle() {
+    console.log("[AuthContext] Attempting Google registration");
+    setLoading(true); // Keep loading true to prevent dashboard glimpse
 
-  // Email/Password Registration
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const u = result.user;
+      console.log("[AuthContext] Google sign-in successful. UID:", u.uid);
+
+      // Check if user already exists
+      try {
+        const docRef = doc(db, "users", u.uid);
+        const snap = await getDoc(docRef);
+
+        if (snap.exists()) {
+          // Set error BEFORE signOut so it survives re-renders
+          setAuthError("Account already exists. Please use the login page.");
+          await auth.signOut();
+          return;
+        }
+
+        // Create new user document
+        await setDoc(docRef, {
+          uid: u.uid,
+          displayName: u.displayName || "",
+          email: u.email,
+          photoURL: u.photoURL || "",
+          walletAddress: null,
+          credits: 0,
+          completedChallenges: [],
+          createdAt: serverTimestamp(),
+        });
+        console.log("[AuthContext] Firestore user doc created for new Google user");
+        setLoading(false);
+        return u;
+      } catch (firestoreErr) {
+        setAuthError(firestoreErr.message || "Something went wrong. Please try again.");
+        await auth.signOut();
+        return;
+      }
+    } catch (authErr) {
+      if (authErr.code !== "auth/popup-closed-by-user" && authErr.code !== "auth/cancelled-popup-request") {
+        console.error("[AuthContext] Google registration failed:", authErr.code, authErr.message);
+      }
+    }
+  }  // Email/Password Registration
   async function registerWithEmail(email, password, firstName, lastName) {
     console.log("[AuthContext] Attempting registration with email:", email);
 
@@ -215,7 +258,10 @@ export function AuthProvider({ children }) {
     user,
     userData,
     loading,
+    authError,
+    clearAuthError: () => setAuthError(""),
     loginWithGoogle,
+    registerWithGoogle,
     loginWithEmail,
     registerWithEmail,
     logout,

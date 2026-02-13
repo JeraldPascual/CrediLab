@@ -9,4 +9,12 @@ export default defineConfig({
     tailwindcss(),
     nodePolyfills() // Required for ethers.js / web3 Buffer support
   ],
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      }
+    }
+  }
 })

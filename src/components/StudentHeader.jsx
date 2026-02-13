@@ -5,6 +5,7 @@ import {
   MoonIcon,
   UserCircleIcon,
   ChevronDownIcon,
+  CircleStackIcon,
 } from "@heroicons/react/24/outline";
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -61,15 +62,15 @@ export default function StudentHeader({ onMenuToggle, sidebarExpanded }) {
         </span>
       </div>
 
-      {/* ── Center: User CLB Balance ── */}
+      {/* ── Center: Global CLB Pool ── */}
       <div className="hidden md:flex flex-1 justify-center">
         <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-green-primary/10 border border-green-primary/20">
-          <span className="text-sm font-semibold text-green-primary">🪙</span>
+          <span className="text-sm font-semibold text-green-primary"><CircleStackIcon className="w-4 h-4 inline -mt-0.5" /></span>
           <span className="text-sm font-semibold text-green-primary">
-            My CLB:
+            CLB Pool:
           </span>
           <span className="text-sm font-bold text-green-primary">
-            {userData?.credits ?? 0}
+            10,000
           </span>
         </div>
       </div>
@@ -100,9 +101,9 @@ export default function StudentHeader({ onMenuToggle, sidebarExpanded }) {
             onClick={() => setDropdownOpen((prev) => !prev)}
             className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-card transition-colors"
           >
-            {user?.photoURL ? (
+            {(userData?.photoURL || user?.photoURL) ? (
               <img
-                src={user.photoURL}
+                src={userData?.photoURL || user.photoURL}
                 alt={displayName}
                 className="w-8 h-8 rounded-full object-cover border-2 border-green-primary/30"
               />
