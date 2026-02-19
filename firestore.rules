@@ -1,0 +1,49 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Users collection - all authenticated users can read (for leaderboard), write own only
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Challenge sessions - read/write own sessions
+    match /challengeSessions/{sessionId} {
+      allow read, write: if request.auth != null &&
+                           sessionId.matches('^' + request.auth.uid + '_.*');
+    }
+
+    // Events collection - read all, write via backend only
+    match /events/{eventId} {
+      allow read: if request.auth != null;
+      allow write: if false; // Backend only via Admin SDK
+    }
+
+    // Pending rewards - read own, write via backend only
+    match /pending_rewards/{rewardId} {
+      allow read: if request.auth != null;
+      allow write: if false; // Backend only
+    }
+
+    // System collection - read only
+    match /system/{doc} {
+      allow read: if request.auth != null;
+      allow write: if false; // Admin only
+    }
+
+    // Partners collection - read only
+    match /partners/{partnerId} {
+      allow read: if request.auth != null;
+      allow write: if false; // Admin only
+    }
+
+    // Certificates — public read for verification links, authenticated write (owner only)
+    match /certificates/{hash} {
+      allow read: if true; // Public — anyone with the link can verify
+      allow create: if request.auth != null &&
+                       request.resource.data.uid == request.auth.uid;
+      allow update, delete: if false; // Immutable once issued
+    }
+  }
+}

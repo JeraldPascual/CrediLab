@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   UserCircleIcon,
   PlusCircleIcon,
@@ -7,12 +7,16 @@ import {
   CheckIcon,
   EyeIcon,
   EyeSlashIcon,
+  TrophyIcon,
+  StarIcon,
 } from "@heroicons/react/24/outline";
 import { doc, setDoc, getDocs, collection, query, where } from "firebase/firestore";
 import { updateProfile } from "firebase/auth";
 import { useAuth } from "../context/AuthContext";
 import { db } from "../lib/firebase";
 import { connectMetaMask } from "../../web3/wallet/metamask";
+import { getCLBBalance } from "../../web3/contracts/clbToken";
+
 
 export default function ProfilePage() {
   const { user, userData } = useAuth();
@@ -28,6 +32,36 @@ export default function ProfilePage() {
   const [copied, setCopied] = useState(false);
   const [showWallet, setShowWallet] = useState(false);
   const [walletError, setWalletError] = useState("");
+
+  // Blockchain balance state
+  const [blockchainBalance, setBlockchainBalance] = useState(null);
+  const [loadingBalance, setLoadingBalance] = useState(false);
+  const [balanceError, setBalanceError] = useState("");
+
+  // Load blockchain balance when wallet address changes
+  useEffect(() => {
+    async function loadBlockchainBalance() {
+      if (!walletAddress) {
+        setBlockchainBalance(null);
+        return;
+      }
+
+      setLoadingBalance(true);
+      setBalanceError("");
+
+      try {
+        const balance = await getCLBBalance(walletAddress);
+        setBlockchainBalance(balance);
+      } catch (error) {
+        console.error("Failed to load blockchain balance:", error);
+        setBalanceError(error.message || "Failed to load blockchain balance");
+      } finally {
+        setLoadingBalance(false);
+      }
+    }
+
+    loadBlockchainBalance();
+  }, [walletAddress]);
 
   // Save profile
   async function handleSave(e) {
@@ -249,6 +283,7 @@ export default function ProfilePage() {
 
         {walletAddress ? (
           <div className="space-y-3">
+            {/* Wallet Address Display */}
             <div className="flex items-center gap-3 p-4 rounded-xl bg-green-primary/5 border border-green-primary/20">
               {showWallet ? (
                 <span className="text-sm font-mono text-gray-700 dark:text-dark-text flex-1 truncate">
@@ -282,6 +317,54 @@ export default function ProfilePage() {
                     <ClipboardDocumentIcon className="w-4 h-4 text-gray-400" />
                   )}
                 </button>
+              )}
+            </div>
+
+            {/* CLB Balance Display */}
+            <div className="p-4 rounded-xl bg-gradient-to-br from-green-primary/10 to-green-primary/5 border border-green-primary/20">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-600 dark:text-dark-muted">
+                  CLB Token Balance
+                </span>
+                <span className="text-xs text-gray-400 dark:text-dark-muted">
+                  Sepolia Testnet
+                </span>
+              </div>
+
+              {loadingBalance ? (
+                <div className="text-2xl font-bold text-gray-400 dark:text-dark-muted animate-pulse">
+                  Loading...
+                </div>
+              ) : balanceError ? (
+                <div className="space-y-2">
+                  <div className="text-2xl font-bold text-red-500">
+                    Error
+                  </div>
+                  <p className="text-xs text-red-600 dark:text-red-400">
+                    {balanceError}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-dark-muted">
+                    Make sure contract is deployed and RPC URL is configured.
+                  </p>
+                </div>
+              ) : blockchainBalance !== null ? (
+                <div className="space-y-1">
+                  <div className="text-3xl font-bold text-green-primary">
+                    {parseFloat(blockchainBalance).toFixed(2)} CLB
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-dark-muted">
+                    <span>Firestore Credits: {userData?.credits || 0}</span>
+                    {Math.abs(parseFloat(blockchainBalance) - (userData?.credits || 0)) > 0.01 && (
+                      <span className="px-2 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400">
+                        ⚠️ Mismatch
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-2xl font-bold text-gray-400 dark:text-dark-muted">
+                  0.00 CLB
+                </div>
               )}
             </div>
           </div>

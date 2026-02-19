@@ -4,7 +4,7 @@ import StudentHeader from "../components/StudentHeader";
 import Sidebar from "../components/Sidebar";
 
 export default function StudentDashboard() {
-  const [sidebarExpanded, setSidebarExpanded] = useState(true);
+  const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 

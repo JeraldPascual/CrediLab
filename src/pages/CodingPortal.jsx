@@ -11,8 +11,9 @@ import {
   ChevronLeftIcon,
   SunIcon,
   MoonIcon,
+  ArrowsPointingOutIcon,
 } from "@heroicons/react/24/outline";
-import { doc, setDoc, arrayUnion, increment } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { db } from "../lib/firebase";
@@ -37,7 +38,25 @@ export default function CodingPortal() {
   const { dark, toggleDark } = useTheme();
 
   const challenge = getChallengeById(challengeId);
-  const isCompleted = userData?.completedChallenges?.includes(challengeId);
+  // Check both Firestore and localStorage so completed state shows immediately even if API sync is delayed
+  const isCompletedFirestore = userData?.completedChallenges?.includes(challengeId);
+  const isCompletedLocal = (() => {
+    if (!user) return false;
+    try {
+      const raw = localStorage.getItem(`challenge-session-${user.uid}-${challengeId}`);
+      if (raw) return JSON.parse(raw).status === 'completed';
+    } catch { /* ignore invalid localStorage data */ }
+    return false;
+  })();
+  const isCompleted = isCompletedFirestore || isCompletedLocal;
+
+  // Challenge session tracking (time limit enforcement)
+  const [challengeSession, setChallengeSession] = useState(null);
+  const [timeRemaining, setTimeRemaining] = useState(null);
+  const [sessionExpired, setSessionExpired] = useState(false);
+  const [sessionLoading, setSessionLoading] = useState(true);
+  const [earnedBadge, setEarnedBadge] = useState(null); // { timeBadge, solveTimeSec }
+  const [retryKey, setRetryKey] = useState(0); // increment to force session re-init
 
   // Editor state
   const editorRef = useRef(null);
@@ -52,6 +71,7 @@ export default function CodingPortal() {
   const [wordWrap, setWordWrap] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [exitTarget, setExitTarget] = useState("/problem");
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Execution state
   const [running, setRunning] = useState(false);
@@ -68,6 +88,178 @@ export default function CodingPortal() {
     }
   }, [code, challengeId]);
 
+  // Initialize challenge session (time limit enforcement)
+  useEffect(() => {
+    if (!challenge || !user || isCompleted) {
+      setSessionLoading(false);
+      return;
+    }
+
+    async function initSession() {
+      const localStorageKey = `challenge-session-${user.uid}-${challengeId}`;
+      const sessionRef = doc(db, 'challengeSessions', `${user.uid}_${challengeId}`);
+
+      try {
+        // Try to load from Firestore first
+        const sessionSnap = await getDoc(sessionRef);
+
+        let session;
+        if (sessionSnap.exists()) {
+          // Load existing session from Firestore
+          session = sessionSnap.data();
+        } else {
+          // Check localStorage for existing session
+          const localSession = localStorage.getItem(localStorageKey);
+
+          if (localSession) {
+            session = JSON.parse(localSession);
+            console.log('📦 Loaded session from localStorage');
+          } else {
+            // Create new session on first access
+            const now = Date.now();
+            const timeLimit = challenge.difficulty === 'Easy' ? 30 * 60 * 1000 : // 30 min
+                             challenge.difficulty === 'Medium' ? 60 * 60 * 1000 : // 60 min
+                             90 * 60 * 1000; // 90 min for Hard
+
+            session = {
+              uid: user.uid,
+              challengeId,
+              startedAt: now,
+              expiresAt: now + timeLimit,
+              timeLimit,
+              status: 'active' // active | expired | completed | terminated
+            };
+
+            console.log(`🕐 Challenge session started: ${timeLimit / 60000} minutes`);
+          }
+
+          // Try to save to Firestore (optional, silent fail)
+          try {
+            await setDoc(sessionRef, session);
+          } catch {
+            // Silently fall back to localStorage only
+          }
+
+          // Always save to localStorage as backup
+          localStorage.setItem(localStorageKey, JSON.stringify(session));
+        }
+
+        // Check if already completed (locally before Firestore synced)
+        if (session.status === 'completed') {
+          // Treat same as isCompleted — let parent component show completed UI
+          setChallengeSession(session);
+          if (session.timeBadge) {
+            setEarnedBadge({ timeBadge: session.timeBadge, solveTimeSec: session.solveTimeSec });
+          }
+          setSessionLoading(false);
+          return;
+        }
+
+        // Check if terminated
+        if (session.status === 'terminated') {
+          setSessionExpired(true);
+          setChallengeSession(session);
+          localStorage.setItem(localStorageKey, JSON.stringify(session));
+          setSessionLoading(false);
+          return;
+        }
+
+        // Check if expired
+        if (Date.now() > session.expiresAt) {
+          setSessionExpired(true);
+          session.status = 'expired';
+
+          // Update Firestore if possible (silent)
+          try {
+            await setDoc(sessionRef, { status: 'expired' }, { merge: true });
+          } catch {
+            // Silent fail
+          }
+
+          localStorage.setItem(localStorageKey, JSON.stringify(session));
+          setChallengeSession(session);
+          setSessionLoading(false);
+        } else {
+          setChallengeSession(session);
+          startTimeRef.current = session.startedAt; // Use session start time
+          setSessionLoading(false);
+        }
+      } catch {
+        // Fallback: create session in localStorage only
+        const localSession = localStorage.getItem(localStorageKey);
+        if (localSession) {
+          const session = JSON.parse(localSession);
+          if (Date.now() > session.expiresAt) {
+            setSessionExpired(true);
+          } else {
+            setChallengeSession(session);
+            startTimeRef.current = session.startedAt;
+          }
+        } else {
+          // Create minimal session
+          const now = Date.now();
+          const timeLimit = challenge.difficulty === 'Easy' ? 30 * 60 * 1000 :
+                           challenge.difficulty === 'Medium' ? 60 * 60 * 1000 :
+                           90 * 60 * 1000;
+
+          const session = {
+            uid: user.uid,
+            challengeId,
+            startedAt: now,
+            expiresAt: now + timeLimit,
+            timeLimit,
+            status: 'active'
+          };
+
+          localStorage.setItem(localStorageKey, JSON.stringify(session));
+          setChallengeSession(session);
+          startTimeRef.current = now;
+          console.log('📦 Challenge session created in localStorage only');
+        }
+        setSessionLoading(false);
+      }
+    }
+
+    initSession();
+  }, [challenge, user, challengeId, isCompleted, retryKey]);
+
+  // Exit fullscreen when leaving the portal (back button, navigation, etc.)
+  useEffect(() => {
+    return () => {
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+      }
+    };
+  }, []);
+
+  // Countdown timer
+  useEffect(() => {
+    if (!challengeSession || sessionExpired) return;
+
+    const interval = setInterval(() => {
+      const remaining = challengeSession.expiresAt - Date.now();
+
+      if (remaining <= 0) {
+        setSessionExpired(true);
+        setTimeRemaining(0);
+        clearInterval(interval);
+
+        // Persist the expired status so the session screen shows correctly
+        const localStorageKey = `challenge-session-${user.uid}-${challengeId}`;
+        const expiredSession = { ...challengeSession, status: 'expired' };
+        localStorage.setItem(localStorageKey, JSON.stringify(expiredSession));
+
+        // Update Firestore silently
+        const sessionRef = doc(db, 'challengeSessions', `${user.uid}_${challengeId}`);
+        setDoc(sessionRef, { status: 'expired', expiredAt: Date.now() }, { merge: true }).catch(() => {});
+      } else {
+        setTimeRemaining(remaining);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [challengeSession, sessionExpired, user, challengeId]);
+
   // Reset state when challenge changes
   useEffect(() => {
     const saved = localStorage.getItem(`credilab-code-${challengeId}`);
@@ -76,15 +268,94 @@ export default function CodingPortal() {
     setRunOutput(null);
     setActiveTab("testcases");
     setCustomInput("");
-  }, [challengeId, challenge?.starterCode]);
+    startTimeRef.current = Date.now(); // Reset timer
+
+    // Load earned badge if challenge was already completed
+    if (user) {
+      const sessionKey = `challenge-session-${user.uid}-${challengeId}`;
+      try {
+        const raw = localStorage.getItem(sessionKey);
+        if (raw) {
+          const session = JSON.parse(raw);
+          if (session.timeBadge) {
+            setEarnedBadge({ timeBadge: session.timeBadge, solveTimeSec: session.solveTimeSec });
+          }
+        }
+      } catch { /* ignore invalid localStorage data */ }
+    }
+  }, [challengeId, challenge?.starterCode, user]);
 
   // Panel resize
   const [leftWidth, setLeftWidth] = useState(30);
   const [rightWidth, setRightWidth] = useState(25);
   const resizingRef = useRef(null);
 
-  // Anti-cheat
-  const antiCheat = useAntiCheat({ enabled: true, maxViolations: 3 });
+  // Anti-cheat (persisted per challenge per user)
+  const antiCheat = useAntiCheat({
+    enabled: !isCompleted && !sessionExpired,
+    maxViolations: 3,
+    challengeId,
+    userId: user?.uid,
+  });
+
+  // Terminate session when anti-cheat violations reach max
+  useEffect(() => {
+    if (antiCheat.terminated && challengeSession && user) {
+      const localStorageKey = `challenge-session-${user.uid}-${challengeId}`;
+      const sessionRef = doc(db, 'challengeSessions', `${user.uid}_${challengeId}`);
+
+      const terminatedSession = {
+        ...challengeSession,
+        status: 'terminated',
+        terminatedAt: Date.now(),
+        reason: 'Anti-cheat violations exceeded'
+      };
+
+      // Update Firestore
+      setDoc(sessionRef, terminatedSession).catch(() => {});
+
+      // Update localStorage
+      localStorage.setItem(localStorageKey, JSON.stringify(terminatedSession));
+
+      // Set expired to block UI
+      setSessionExpired(true);
+    }
+  }, [antiCheat.terminated, challengeSession, user, challengeId]);
+
+  // Time tracking for anti-cheat
+  const startTimeRef = useRef(Date.now());
+
+  // Fullscreen mode (Focus Mode)
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch((err) => {
+        console.warn("Fullscreen request failed:", err);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, []);
+
+  // Auto-enter fullscreen when the portal loads (challenge card click is the user gesture)
+  useEffect(() => {
+    if (sessionLoading) return; // Wait until session is ready
+    if (isCompleted) return;    // Don't force fullscreen for already-completed challenges
+    if (document.fullscreenElement) return; // Already fullscreen
+
+    document.documentElement.requestFullscreen().catch(() => {
+      // Browser may block if gesture is too old — silently ignore
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionLoading]);
 
   // Challenge navigation
   const currentIndex = CHALLENGES.findIndex((c) => c.id === challengeId);
@@ -134,10 +405,15 @@ export default function CodingPortal() {
       }));
     }
 
-    // Block paste (anti-cheat)
+    // Block paste and copy (anti-cheat)
     extensions.push(EditorView.domEventHandlers({
       paste(event) {
         antiCheat.addViolation("Paste attempted in code editor");
+        event.preventDefault();
+        return true;
+      },
+      copy(event) {
+        antiCheat.addViolation("Copy attempted in code editor");
         event.preventDefault();
         return true;
       },
@@ -195,6 +471,32 @@ export default function CodingPortal() {
     window.addEventListener("mouseup", handleUp);
   }, [leftWidth, rightWidth]);
 
+  // Mark reward as pending (system admin will send CLB tokens in batch later)
+  async function markRewardPending(challengeId, rewardAmount) {
+    try {
+      console.log(`🎁 Marking ${rewardAmount} CLB reward as pending...`);
+
+      // Log pending reward to Firestore
+      const token = await user.getIdToken();
+      await fetch('/api/log-pending-reward', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          challengeId,
+          amount: rewardAmount
+        })
+      });
+
+      console.log(`✅ Reward marked as pending! System admin will send CLB tokens soon.`);
+
+    } catch (error) {
+      console.error('❌ Failed to mark reward as pending:', error);
+    }
+  }
+
   // Run code (single custom input)
   async function handleRun() {
     if (running || antiCheat.terminated) return;
@@ -250,22 +552,107 @@ export default function CodingPortal() {
 
       setResults(testResults);
 
-      // If all passed, mark as completed
+      // If all passed, mark as completed AND award CLB tokens
       const allPassed = testResults.every((r) => r.passed);
       if (allPassed && !isCompleted) {
+        // Calculate time spent (anti-cheat)
+        const timeSpentSeconds = Math.floor((Date.now() - startTimeRef.current) / 1000);
+        const minExpectedTime = challenge.difficulty === "Easy" ? 120 : challenge.difficulty === "Medium" ? 300 : 600;
+
+        if (timeSpentSeconds < minExpectedTime) {
+          console.warn(`⚠️ Suspiciously fast completion: ${timeSpentSeconds}s (expected >${minExpectedTime}s)`);
+        } else {
+          console.log(`✅ Completion time: ${timeSpentSeconds}s (within expected range)`);
+        }
+
+        // ── Step 1: Mark session as completed locally FIRST (always, unconditionally) ──
+        const localStorageKey = `challenge-session-${user.uid}-${challengeId}`;
+        const now = Date.now();
+        const sessionBase = challengeSession || { startedAt: startTimeRef.current, timeLimit: 30 * 60 * 1000 };
+        const solveTimeMs = now - sessionBase.startedAt;
+        const solveTimeSec = Math.floor(solveTimeMs / 1000);
+        const timeLimitSec = Math.floor((sessionBase.timeLimit || 30 * 60 * 1000) / 1000);
+
+        const pctUsed = solveTimeSec / timeLimitSec;
+        let timeBadge = 'Completed';
+        if (pctUsed <= 0.25)      timeBadge = '⚡ Speed Demon';
+        else if (pctUsed <= 0.50) timeBadge = '🔥 Fast Solver';
+        else if (pctUsed <= 0.75) timeBadge = '✅ Steady Solver';
+        else                      timeBadge = '🏁 Last Minute';
+
+        const updatedSession = {
+          ...(challengeSession || {}),
+          uid: user.uid,
+          challengeId,
+          status: 'completed',
+          completedAt: now,
+          solveTimeSec,
+          timeBadge,
+        };
+
+        // Write to localStorage immediately — this is the source of truth
+        localStorage.setItem(localStorageKey, JSON.stringify(updatedSession));
+
+        // Update React state for immediate UI display
+        setChallengeSession(updatedSession);
+        setEarnedBadge({ timeBadge, solveTimeSec });
+
+        // Try to update Firestore session (silent fail — localStorage is the fallback)
         try {
-          const docRef = doc(db, "users", user.uid);
-          await setDoc(
-            docRef,
-            {
-              completedChallenges: arrayUnion(challengeId),
-              credits: increment(challenge.reward),
+          const sessionRef = doc(db, 'challengeSessions', `${user.uid}_${challengeId}`);
+          await setDoc(sessionRef, {
+            status: 'completed',
+            completedAt: now,
+            solveTimeSec,
+            timeBadge,
+          }, { merge: true });
+        } catch {
+          // Silent fail — localStorage already updated
+        }
+
+        // ── Step 2: Notify backend to mark challenge complete in user's Firestore doc ──
+        try {
+          const token = await user.getIdToken();
+          const response = await fetch('/api/reward-student', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
             },
-            { merge: true }
-          );
+            body: JSON.stringify({
+              challengeId,
+              rewardAmount: challenge.reward
+            })
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            // Mark reward as pending if wallet is connected
+            if (result.needsClaim && userData?.walletAddress) {
+              await markRewardPending(challengeId, challenge.reward);
+            } else if (!userData?.walletAddress) {
+              console.log('💡 Connect MetaMask in Profile to receive CLB rewards!');
+            }
+          } else {
+            const errorData = await response.json().catch(() => ({}));
+            if (errorData.alreadyCompleted) {
+              console.warn("Challenge already completed on server");
+            } else if (errorData.needsWallet) {
+              console.warn("No wallet connected — challenge marked complete locally, connect MetaMask for CLB reward");
+            } else {
+              console.error("reward-student API error:", errorData.error || response.status);
+            }
+          }
+        } catch (apiErr) {
+          console.error("Failed to reach reward API:", apiErr.message);
+          // Challenge is already marked complete in localStorage — user won't lose progress
+        }
+
+        // ── Step 3: Refresh userData so completedChallenges updates in UI ──
+        try {
           await refreshUserData();
-        } catch (err) {
-          console.warn("Failed to save completion (ad blocker?):", err.message);
+        } catch {
+          // Silent fail
         }
       }
     } catch (err) {
@@ -288,10 +675,85 @@ export default function CodingPortal() {
     );
   }
 
+  // Block access if session expired or terminated
+  if (sessionExpired) {
+    const isTerminated = challengeSession?.status === 'terminated';
+    const timeLimitLabel = challenge.difficulty === 'Easy' ? '30 minutes' :
+                           challenge.difficulty === 'Medium' ? '60 minutes' : '90 minutes';
+    return (
+      <div className="h-screen flex items-center justify-center bg-white dark:bg-dark-bg">
+        <div className="text-center max-w-md px-6">
+          {isTerminated ? (
+            <>
+              <div className="w-20 h-20 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-5">
+                <ExclamationTriangleIcon className="w-10 h-10 text-red-500" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Challenge Terminated</h2>
+              <p className="text-gray-500 dark:text-dark-muted mb-6">
+                This challenge has been permanently blocked due to excessive anti-cheat violations. You cannot access this challenge again.
+              </p>
+            </>
+          ) : (
+            <>
+              <div className="w-20 h-20 bg-orange-100 dark:bg-orange-900/20 rounded-full flex items-center justify-center mx-auto mb-5">
+                <span className="text-4xl">⏰</span>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Time's Up!</h2>
+              <p className="text-gray-500 dark:text-dark-muted mb-2">
+                Your <span className="font-semibold text-gray-700 dark:text-dark-text">{timeLimitLabel}</span> session for this <span className="font-semibold text-gray-700 dark:text-dark-text">{challenge.difficulty}</span> challenge has expired.
+              </p>
+              <p className="text-sm text-gray-400 dark:text-dark-muted mb-6">
+                You'll need to start a new session to attempt this challenge again.
+              </p>
+            </>
+          )}
+          <div className="flex gap-3 justify-center">
+            <button
+              onClick={() => navigate("/problem")}
+              className="px-6 py-2.5 bg-green-primary text-white rounded-lg hover:bg-green-600 transition-colors font-semibold"
+            >
+              Back to Challenges
+            </button>
+            {!isTerminated && (
+              <button
+                onClick={() => {
+                  const localStorageKey = `challenge-session-${user.uid}-${challengeId}`;
+                  localStorage.removeItem(localStorageKey);
+                  // Reset all session state
+                  setSessionExpired(false);
+                  setChallengeSession(null);
+                  setTimeRemaining(null);
+                  setResults(null);
+                  setRunOutput(null);
+                  setSessionLoading(true);
+                  // Increment retryKey to trigger initSession effect
+                  setRetryKey((k) => k + 1);
+                }}
+                className="px-6 py-2.5 border border-gray-300 dark:border-dark-border text-gray-700 dark:text-dark-text rounded-lg hover:bg-gray-100 dark:hover:bg-dark-surface transition-colors font-medium"
+              >
+                Retry Challenge
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const allPassed = results && results.length > 0 && results.every((r) => r.passed);
 
   return (
     <div className="h-screen flex flex-col bg-white dark:bg-dark-bg select-none">
+      {/* ── Session Loading Overlay ── */}
+      {sessionLoading && !isCompleted && (
+        <div className="absolute inset-0 z-[200] bg-white/80 dark:bg-dark-bg/80 flex items-center justify-center backdrop-blur-sm">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-primary mx-auto mb-4" />
+            <p className="text-gray-500 dark:text-dark-muted">Starting challenge session...</p>
+          </div>
+        </div>
+      )}
+
       {/* ── Top Bar ── */}
       <header className="h-12 flex items-center px-4 bg-gray-50 dark:bg-dark-surface border-b border-gray-200 dark:border-dark-border gap-3 flex-shrink-0">
         <button
@@ -323,10 +785,35 @@ export default function CodingPortal() {
           }`}>
             {challenge.difficulty}
           </span>
+          {/* Difficulty-based time limit badge */}
+          <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-dark-surface text-gray-500 dark:text-dark-muted font-medium" title="Time limit for this challenge">
+            🕐 {challenge.difficulty === "Easy" ? "30m" : challenge.difficulty === "Medium" ? "60m" : "90m"}
+          </span>
           <span className="text-xs font-bold text-green-primary">+{challenge.reward} CLB</span>
+
+          {/* Countdown Timer */}
+          {timeRemaining !== null && !isCompleted && (
+            <span className={`text-xs px-2 py-0.5 rounded-full font-mono font-medium ${
+              timeRemaining < 5 * 60 * 1000 // Less than 5 minutes
+                ? 'bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400'
+                : timeRemaining < 10 * 60 * 1000 // Less than 10 minutes
+                ? 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400'
+                : 'bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+            }`}>
+              ⏱️ {Math.floor(timeRemaining / 60000)}:{String(Math.floor((timeRemaining % 60000) / 1000)).padStart(2, '0')}
+            </span>
+          )}
         </div>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-2">{/* Focus Mode */}
+          <button
+            onClick={toggleFullscreen}
+            className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-dark-card transition-colors"
+            title={isFullscreen ? "Exit Focus Mode (Esc)" : "Enter Focus Mode (F11)"}
+          >
+            <ArrowsPointingOutIcon className={`w-4 h-4 ${isFullscreen ? 'text-green-primary' : 'text-gray-500 dark:text-dark-muted'}`} />
+          </button>
+
           {/* Challenge navigation */}
           {prevChallenge && (
             <button
@@ -400,6 +887,12 @@ export default function CodingPortal() {
           {isCompleted && (
             <span className="text-xs text-green-primary font-semibold flex items-center gap-1">
               <CheckIcon className="w-3.5 h-3.5" /> Completed
+              {earnedBadge?.timeBadge && (
+                <span className="ml-1 px-1.5 py-0.5 bg-purple-100 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 rounded-full text-[10px] font-medium"
+                  title={earnedBadge.solveTimeSec ? `Solved in ${Math.floor(earnedBadge.solveTimeSec / 60)}m ${earnedBadge.solveTimeSec % 60}s` : undefined}>
+                  {earnedBadge.timeBadge}
+                </span>
+              )}
             </span>
           )}
         </div>
@@ -498,12 +991,17 @@ export default function CodingPortal() {
               </div>
             </div>
             {antiCheat.terminated ? (
-              <button
-                onClick={() => navigate("/problem")}
-                className="w-full py-2.5 rounded-lg bg-red-500 text-white font-semibold hover:bg-red-600 transition-colors"
-              >
-                Return to Challenges
-              </button>
+              <div className="space-y-3">
+                <p className="text-xs text-red-600 dark:text-red-400 font-medium">
+                  This challenge has been permanently blocked and cannot be accessed again.
+                </p>
+                <button
+                  onClick={() => navigate("/problem")}
+                  className="w-full py-2.5 rounded-lg bg-red-500 text-white font-semibold hover:bg-red-600 transition-colors"
+                >
+                  Return to Challenges
+                </button>
+              </div>
             ) : (
               <button
                 onClick={antiCheat.dismissWarning}
@@ -531,6 +1029,20 @@ export default function CodingPortal() {
               <p className="text-xs text-gray-400 dark:text-dark-muted">
                 by {challenge.author || "CrediLab"} · {challenge.category}
               </p>
+              {/* Difficulty info row */}
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                  challenge.difficulty === "Easy"
+                    ? "bg-green-primary/10 text-green-primary"
+                    : challenge.difficulty === "Medium"
+                    ? "bg-yellow-100 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400"
+                    : "bg-red-100 dark:bg-red-900/20 text-red-500"
+                }`}>{challenge.difficulty}</span>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-dark-surface text-gray-500 dark:text-dark-muted font-medium">
+                  🕐 {challenge.difficulty === "Easy" ? "30 min" : challenge.difficulty === "Medium" ? "60 min" : "90 min"}
+                </span>
+                <span className="text-xs font-bold text-green-primary">+{challenge.reward} CLB</span>
+              </div>
             </div>
 
             <div>
@@ -679,6 +1191,9 @@ export default function CodingPortal() {
         <div className="absolute bottom-20 left-1/2 -translate-x-1/2 bg-green-primary text-dark-bg px-6 py-3 rounded-xl shadow-lg flex items-center gap-3 z-50 animate-bounce">
           <CheckIcon className="w-5 h-5" />
           <span className="font-semibold">All test cases passed! +{challenge.reward} CLB earned</span>
+          {earnedBadge?.timeBadge && (
+            <span className="bg-white/20 px-2 py-0.5 rounded-full text-sm font-bold">{earnedBadge.timeBadge}</span>
+          )}
         </div>
       )}
     </div>

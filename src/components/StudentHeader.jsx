@@ -11,6 +11,7 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
+import { getSkillTier } from "../data/achievements";
 
 export default function StudentHeader({ onMenuToggle, sidebarExpanded }) {
   const { user, userData, logout } = useAuth();
@@ -38,6 +39,8 @@ export default function StudentHeader({ onMenuToggle, sidebarExpanded }) {
 
   const displayName =
     userData?.displayName || user?.displayName || user?.email || "Student";
+
+  const tier = getSkillTier(userData?.credits || 0);
 
   return (
     <header className="sticky top-0 z-40 w-full h-16 bg-white dark:bg-dark-surface border-b border-gray-200 dark:border-dark-border flex items-center px-4 md:px-6 gap-4">
@@ -80,6 +83,11 @@ export default function StudentHeader({ onMenuToggle, sidebarExpanded }) {
         {/* Student Badge */}
         <span className="hidden sm:inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-green-primary/10 text-green-primary border border-green-primary/20">
           Student
+        </span>
+
+        {/* Skill Tier Badge */}
+        <span className={`hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-semibold rounded-full border ${tier.bg} ${tier.color} ${tier.border}`}>
+          {tier.icon} {tier.shortTitle}
         </span>
 
         {/* Dark Mode Toggle */}

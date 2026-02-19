@@ -3,6 +3,7 @@ import { TrophyIcon, UserCircleIcon } from "@heroicons/react/24/outline";
 import { collection, query, orderBy, limit, getDocs } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
+import { getSkillTier } from "../data/achievements";
 
 export default function LeaderboardView() {
   const { user } = useAuth();
@@ -25,6 +26,7 @@ export default function LeaderboardView() {
           credits: doc.data().credits || 0,
           challenges: doc.data().completedChallenges?.length || 0,
           photoURL: doc.data().photoURL || null,
+          tier: getSkillTier(doc.data().credits || 0),
         }));
         setLeaderboard(entries);
       } catch (err) {
@@ -95,12 +97,17 @@ export default function LeaderboardView() {
                         <UserCircleIcon className="w-8 h-8 text-gray-300 dark:text-dark-muted" />
                       )}
                       <div>
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">
-                          {entry.name}
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm font-medium text-gray-900 dark:text-white">
+                            {entry.name}
+                          </span>
+                          {entry.uid === user?.uid && (
+                            <span className="text-xs text-green-primary font-semibold">(You)</span>
+                          )}
+                        </div>
+                        <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-1.5 py-0.5 rounded-full mt-0.5 ${entry.tier.bg} ${entry.tier.color}`}>
+                          {entry.tier.icon} {entry.tier.shortTitle}
                         </span>
-                        {entry.uid === user?.uid && (
-                          <span className="ml-2 text-xs text-green-primary font-semibold">(You)</span>
-                        )}
                       </div>
                     </div>
                   </td>

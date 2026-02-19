@@ -10,11 +10,15 @@
 
 // In-memory rate limit map (resets on cold start — good enough for hackathon)
 const rateLimitMap = new Map();
-const COOLDOWN_MS = 10_000;
+const COOLDOWN_MS = 10000;
 
 export default async function handler(req, res) {
-  // CORS headers
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  // CORS headers — restrict to app domain in production
+  const allowedOrigins = ['https://credilab.vercel.app', 'http://localhost:5173', 'http://localhost:3000'];
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
@@ -52,7 +56,7 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: "Invalid Firebase token" });
     }
     uid = verifyData.users[0].localId;
-  } catch (err) {
+  } catch {
     return res.status(401).json({ error: "Token verification failed" });
   }
 
@@ -71,6 +75,14 @@ export default async function handler(req, res) {
   const { code, languageId, stdin } = req.body || {};
   if (!code || !languageId) {
     return res.status(400).json({ error: "Missing code or languageId" });
+  }
+
+  // Input size limits (prevent abuse)
+  if (code.length > 50000) {
+    return res.status(400).json({ error: "Code exceeds maximum length (50KB)" });
+  }
+  if (stdin && stdin.length > 10000) {
+    return res.status(400).json({ error: "Input exceeds maximum length (10KB)" });
   }
 
   // 4. Submit to Judge0 CE API (free public endpoint — no API key required)

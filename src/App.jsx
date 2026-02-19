@@ -14,6 +14,8 @@ import ProfilePage from "./pages/ProfilePage";
 import ProblemPage from "./pages/ProblemPage";
 import CodingPortal from "./pages/CodingPortal";
 import WalletGuidePage from "./pages/WalletGuidePage";
+import AchievementsPage from "./pages/AchievementsPage";
+import VerifyCertPage from "./pages/VerifyCertPage";
 
 export default function App() {
   return (
@@ -25,6 +27,7 @@ export default function App() {
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
             <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
+            <Route path="/verify/:hash" element={<VerifyCertPage />} />
 
             {/* Protected dashboard (SPA shell with sidebar) */}
             <Route
@@ -40,6 +43,7 @@ export default function App() {
               <Route path="leaderboard" element={<LeaderboardView />} />
               <Route path="information" element={<ProfilePage />} />
               <Route path="wallet-guide" element={<WalletGuidePage />} />
+              <Route path="achievements" element={<AchievementsPage />} />
             </Route>
 
             {/* Challenge list (inside dashboard shell) */}

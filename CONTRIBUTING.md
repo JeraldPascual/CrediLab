@@ -28,15 +28,15 @@ This installs:
 
 ### 3. Set Up Environment Variables
 ```bash
-cp .env.example .env.local
+cp .env.example .env
 ```
 
-Edit `.env.local` and fill in your credentials:
+Edit `.env` and fill in your credentials: 
 - **Judge0 API Key** (get from RapidAPI or Student A)
 - **Firebase Config** (get from Firebase Console or Student A)
 - **WalletConnect Project ID** (Student B — get from cloud.walletconnect.com)
 
-** NEVER commit `.env.local` to Git** (it's already in `.gitignore`).
+** NEVER commit `.env` to Git** (it's already in `.gitignore`).
 
 ### 4. Start the Dev Server
 ```bash
@@ -156,7 +156,7 @@ npm run dev -- --port 3000
 ```
 
 ### Firebase/Ethereum Errors
-- Check `.env.local` is properly configured
+- Check `.env` is properly configured
 - Verify API keys are correct
 - Make sure you ran `npm install`
 
