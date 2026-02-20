@@ -1,20 +1,23 @@
 /**
- * Vercel Serverless Function: Verify Challenge Completion
+ * Vercel Serverless Function: Verify Challenge Completion + Auto-Transfer CLB
  *
- * Purpose: Verify student completed challenge and mark as complete in Firestore.
- * Note: CLB tokens are transferred via MetaMask (frontend), not server-side.
+ * Purpose: Mark challenge complete in Firestore and auto-transfer CLB tokens
+ *          from the system wallet to the student's connected wallet on-chain.
  *
  * Route: POST /api/reward-student
  *
  * Flow:
  * 1. Verify Firebase Auth token
- * 2. Check if challenge already completed
+ * 2. Check if challenge already completed (idempotent)
  * 3. Mark challenge as complete in Firestore
- * 4. Return success (student will claim reward via MetaMask separately)
+ * 4a. If wallet connected → transfer CLB on-chain via system wallet
+ * 4b. If no wallet → log to pending_rewards for later batch send
+ * 5. Log transaction to events collection
  */
 
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
+import { ethers } from 'ethers';
 
 // Initialize Firebase Admin (server-side)
 if (getApps().length === 0) {
@@ -33,6 +36,38 @@ if (getApps().length === 0) {
 }
 
 const db = getFirestore();
+
+// Minimal ABI — only the ERC20 transfer function needed server-side
+const CLB_ABI = [
+  "function transfer(address to, uint256 amount) returns (bool)",
+  "function balanceOf(address account) view returns (uint256)"
+];
+
+/**
+ * Transfer CLB from system wallet to student wallet on-chain.
+ * Requires SYSTEM_WALLET_PRIVATE_KEY in Vercel env vars.
+ */
+async function sendCLBOnChain(toAddress, amountCLB) {
+  const rpcUrl = process.env.VITE_SEPOLIA_RPC_URL || 'https://ethereum-sepolia-rpc.publicnode.com';
+  const contractAddress = process.env.VITE_CLB_CONTRACT_ADDRESS;
+  const privateKey = process.env.SYSTEM_WALLET_PRIVATE_KEY;
+
+  if (!contractAddress) throw new Error('VITE_CLB_CONTRACT_ADDRESS not set in Vercel env');
+  if (!privateKey) throw new Error('SYSTEM_WALLET_PRIVATE_KEY not set in Vercel env');
+
+  const provider = new ethers.JsonRpcProvider(rpcUrl);
+  const wallet = new ethers.Wallet(privateKey, provider);
+  const contract = new ethers.Contract(contractAddress, CLB_ABI, wallet);
+
+  const amountWei = ethers.parseEther(amountCLB.toString());
+  console.log(`[CLB] Transferring ${amountCLB} CLB to ${toAddress}...`);
+
+  const tx = await contract.transfer(toAddress, amountWei);
+  const receipt = await tx.wait();
+
+  console.log(`[CLB] Confirmed in block ${receipt.blockNumber} — txHash: ${tx.hash}`);
+  return { txHash: tx.hash, blockNumber: receipt.blockNumber };
+}
 
 export default async function handler(req, res) {
   // CORS headers — restrict to app domain in production
@@ -108,17 +143,9 @@ export default async function handler(req, res) {
     }
 
     const userData = userDoc.data();
+    const walletAddress = userData.walletAddress || null;
 
-    // 4. Validate wallet address
-    const walletAddress = userData.walletAddress;
-    if (!walletAddress) {
-      return res.status(400).json({
-        error: "No wallet connected. Please connect MetaMask first.",
-        needsWallet: true
-      });
-    }
-
-    // 5. Check if challenge already completed
+    // 4. Check if challenge already completed (idempotent guard)
     const completedChallenges = userData.completedChallenges || [];
     if (completedChallenges.includes(challengeId)) {
       return res.status(409).json({
@@ -127,22 +154,130 @@ export default async function handler(req, res) {
       });
     }
 
-    // 6. Mark challenge as complete in Firestore
+    // 5. Mark challenge as complete in Firestore UNCONDITIONALLY
+    //    (completion is always recorded regardless of wallet status)
     const timestamp = new Date().toISOString();
-
     await userRef.update({
       completedChallenges: [...completedChallenges, challengeId],
       lastCompletionAt: timestamp
     });
 
-    // 7. Return success (student will claim reward via MetaMask)
-    return res.status(200).json({
-      success: true,
-      message: "Challenge completed! Claim your CLB reward via MetaMask.",
-      needsClaim: true,
-      rewardAmount,
-      challengeId
-    });
+    // 6. Transfer CLB on-chain if wallet is connected, otherwise queue as pending
+    if (walletAddress) {
+      try {
+        const { txHash, blockNumber } = await sendCLBOnChain(walletAddress, rewardAmount);
+
+        // Log successful on-chain transaction
+        await db.collection('events').doc(`issuance-${uid}-${challengeId}-${Date.now()}`).set({
+          type: 'issuance',
+          uid,
+          challengeId,
+          amountCLB: rewardAmount,
+          walletAddress,
+          txHash,
+          blockNumber,
+          timestamp,
+          status: 'success',
+          method: 'system_wallet'
+        });
+
+        // Update Firestore credits to match on-chain reality
+        await userRef.update({
+          credits: (userData.credits || 0) + rewardAmount,
+          totalCLBEarned: (userData.totalCLBEarned ?? userData.credits ?? 0) + rewardAmount,
+          lastRewardAt: timestamp
+        });
+
+        // Update system pool stats
+        const poolRef = db.collection('system').doc('credit_pool');
+        const poolDoc = await poolRef.get();
+        if (poolDoc.exists) {
+          await poolRef.update({
+            distributed: (poolDoc.data().distributed || 0) + rewardAmount,
+            remaining: (poolDoc.data().remaining || 10000) - rewardAmount,
+            lastIssuanceAt: timestamp
+          });
+        } else {
+          await poolRef.set({ total: 10000, distributed: rewardAmount, remaining: 10000 - rewardAmount, lastIssuanceAt: timestamp });
+        }
+
+        return res.status(200).json({
+          success: true,
+          transferred: true,
+          message: `${rewardAmount} CLB sent to your wallet!`,
+          txHash,
+          blockNumber,
+          rewardAmount,
+          challengeId
+        });
+
+      } catch (chainError) {
+        // On-chain transfer failed — fall back to pending queue so student doesn't lose reward
+        console.error('[CLB] On-chain transfer failed, queuing as pending:', chainError.message);
+
+        // Still credit the student's Firestore balance immediately
+        await userRef.update({
+          credits: (userData.credits || 0) + rewardAmount,
+          totalCLBEarned: (userData.totalCLBEarned ?? userData.credits ?? 0) + rewardAmount,
+          lastRewardAt: timestamp
+        });
+
+        const pendingId = `pending-${uid}-${challengeId}-${Date.now()}`;
+        await db.collection('pending_rewards').doc(pendingId).set({
+          uid,
+          email: userData.email,
+          displayName: userData.displayName,
+          walletAddress,
+          challengeId,
+          amountCLB: rewardAmount,
+          status: 'pending',
+          createdAt: timestamp,
+          error: chainError.message,
+          sentAt: null,
+          txHash: null
+        });
+
+        return res.status(200).json({
+          success: true,
+          transferred: false,
+          pending: true,
+          message: "Challenge complete! CLB reward queued — will be sent shortly.",
+          pendingId,
+          rewardAmount,
+          challengeId
+        });
+      }
+    } else {
+      // No wallet connected — credit Firestore balance and queue on-chain transfer for later
+      await userRef.update({
+        credits: (userData.credits || 0) + rewardAmount,
+        totalCLBEarned: (userData.totalCLBEarned ?? userData.credits ?? 0) + rewardAmount,
+        lastRewardAt: timestamp
+      });
+
+      const pendingId = `pending-${uid}-${challengeId}-${Date.now()}`;
+      await db.collection('pending_rewards').doc(pendingId).set({
+        uid,
+        email: userData.email,
+        displayName: userData.displayName || '',
+        walletAddress: null,
+        challengeId,
+        amountCLB: rewardAmount,
+        status: 'no_wallet',
+        createdAt: timestamp,
+        sentAt: null,
+        txHash: null
+      });
+
+      return res.status(200).json({
+        success: true,
+        transferred: false,
+        needsWallet: true,
+        message: "Challenge complete! Connect MetaMask in your Profile to receive CLB rewards.",
+        rewardAmount,
+        challengeId
+      });
+    }
 
   } catch (error) {
     console.error('[Reward] Error:', error);

@@ -21,7 +21,9 @@ export default function ActivitiesView() {
 
   const completedIds = userData?.completedChallenges || [];
   const completed = CHALLENGES.filter((c) => completedIds.includes(c.id));
-  const creditsEarned = completed.reduce((sum, c) => sum + c.reward, 0);
+  // Use authoritative Firestore fields; fall back to computing from challenges list for legacy accounts
+  const totalCLBEarned = userData?.totalCLBEarned ?? completed.reduce((sum, c) => sum + c.reward, 0);
+  const spendableCredits = userData?.credits ?? totalCLBEarned;
   const totalChallenges = CHALLENGES.length;
   const progress =
     totalChallenges > 0
@@ -117,16 +119,21 @@ export default function ActivitiesView() {
           <div className="space-y-2">
             <div className="flex items-baseline gap-2">
               <span className="text-4xl font-bold text-gray-900 dark:text-white">
-                {creditsEarned}
+                {totalCLBEarned}
               </span>
               <span className="text-sm font-semibold text-green-primary">
                 CLB
               </span>
             </div>
             <p className="text-xs text-gray-400 dark:text-dark-muted">
-              Earned from {completed.length} completed challenge
-              {completed.length !== 1 ? "s" : ""}.
+              Lifetime earned — used for rank &amp; certification.
             </p>
+            {spendableCredits !== totalCLBEarned && (
+              <p className="text-xs text-gray-500 dark:text-dark-muted">
+                Spendable balance:{" "}
+                <span className="font-semibold text-green-primary">{spendableCredits} CLB</span>
+              </p>
+            )}
           </div>
         </WindowPane>
 

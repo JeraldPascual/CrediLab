@@ -1,36 +1,64 @@
 /**
- * CLB Token Contract Interaction Layer
+ * CrediLabSystem Contract Interaction Layer
  *
- * Purpose: Interface with the CLB ERC-20 token deployed on Sepolia testnet.
- * Owner: Student A (Web App) - integrates with Student B's deployed contract
+ * Purpose: Interface with the CrediLabSystem hybrid ERC20+ERC1155 contract
+ *          deployed on Sepolia testnet by Student B.
+ *
+ * Contract: 0xBFDB5f0C96aA9E2eECA9303E71a2b28b7C09Aee4
+ * Deployer (System Wallet): 0xb83f5fc9be45d053c34f284460a28e395ef3e57d
+ * Network: Sepolia Testnet
+ *
+ * Architecture:
+ * - ERC20 (CLB): fungible currency awarded for completing challenges
+ * - ERC1155 (Badges/Frames): soulbound badges (ID 1-99), transferable frames (ID 100+)
  *
  * Security Notes:
- * - getCLBBalance() is frontend-safe (read-only, no private key needed)
- * - transferCLB() MUST only run on backend (requires system wallet private key)
+ * - getCLBBalance(), getERC1155Balance() are frontend-safe (read-only)
+ * - transferCLB(), awardBadge() MUST only run on backend (owner-only on-chain)
  * - NEVER expose VITE_SYSTEM_WALLET_PRIVATE_KEY to frontend code
  */
 
 import { ethers } from 'ethers';
 
-// Standard ERC-20 ABI (only the functions we need)
+// CrediLabSystem ABI — hybrid ERC20 (CLB currency) + ERC1155 (badges/frames)
 const CLB_ABI = [
-  // Read functions (frontend-safe)
+  // ── ERC20: CLB Currency ──
   "function balanceOf(address account) view returns (uint256)",
   "function decimals() view returns (uint8)",
   "function totalSupply() view returns (uint256)",
   "function symbol() view returns (string)",
   "function name() view returns (string)",
-
-  // Write functions (backend-only, requires private key)
   "function transfer(address to, uint256 amount) returns (bool)",
+  "function allowance(address owner, address spender) view returns (uint256)",
+  "function approve(address spender, uint256 amount) returns (bool)",
 
-  // Events (for monitoring)
-  "event Transfer(address indexed from, address indexed to, uint256 value)"
+  // ── ERC20: Owner-only ──
+  "function mintCurrency(address to, uint256 amount) external",
+
+  // ── ERC1155: Badge/Frame balances ──
+  "function balanceOf(address account, uint256 id) view returns (uint256)",
+  "function balanceOfBatch(address[] accounts, uint256[] ids) view returns (uint256[])",
+  "function isApprovedForAll(address account, address operator) view returns (bool)",
+  "function setApprovalForAll(address operator, bool approved) external",
+  "function safeTransferFrom(address from, address to, uint256 id, uint256 amount, bytes data) external",
+  "function safeBatchTransferFrom(address from, address to, uint256[] ids, uint256[] amounts, bytes data) external",
+
+  // ── ERC1155: Gamification — Owner-only ──
+  "function isSoulbound(uint256 id) view returns (bool)",
+  "function createBadgeType(uint256 id, bool soulbound) external",
+  "function awardBadge(address to, uint256 id, uint256 amount) external",
+
+  // ── Events ──
+  "event Transfer(address indexed from, address indexed to, uint256 value)",
+  "event TransferSingle(address indexed operator, address indexed from, address indexed to, uint256 id, uint256 value)",
+  "event TransferBatch(address indexed operator, address indexed from, address indexed to, uint256[] ids, uint256[] values)",
+  "event ApprovalForAll(address indexed account, address indexed operator, bool approved)"
 ];
 
 // Environment variables (from .env)
-const CONTRACT_ADDRESS = import.meta.env.VITE_CLB_CONTRACT_ADDRESS;
+const CONTRACT_ADDRESS = import.meta.env.VITE_CLB_CONTRACT_ADDRESS;         // 0xBFDB5f0C96aA9E2eECA9303E71a2b28b7C09Aee4
 const SEPOLIA_RPC = import.meta.env.VITE_SEPOLIA_RPC_URL;
+const SYSTEM_WALLET_ADDRESS = import.meta.env.VITE_SYSTEM_WALLET_ADDRESS;   // 0xb83f5fc9be45d053c34f284460a28e395ef3e57d
 const SYSTEM_WALLET_PRIVATE_KEY = import.meta.env.VITE_SYSTEM_WALLET_PRIVATE_KEY; // Backend only!
 
 /**
@@ -143,13 +171,54 @@ export async function transferCLBWithMetaMask(toAddress, amount) {
  * @returns {Promise<string>} System wallet balance in CLB
  */
 export async function getSystemPoolBalance() {
-  const systemWalletAddress = import.meta.env.VITE_SYSTEM_WALLET_ADDRESS;
-
-  if (!systemWalletAddress) {
+  if (!SYSTEM_WALLET_ADDRESS) {
     throw new Error('System wallet address not configured');
   }
+  return getCLBBalance(SYSTEM_WALLET_ADDRESS);
+}
 
-  return getCLBBalance(systemWalletAddress);
+/**
+ * Get ERC1155 badge/frame balance for a wallet (FRONTEND SAFE - READ ONLY)
+ * @param {string} walletAddress - The Ethereum address to check
+ * @param {number} tokenId - Badge ID (1-99 = soulbound badges, 100+ = transferable frames)
+ * @returns {Promise<number>} Token balance (0 = not owned, 1+ = owned)
+ */
+export async function getERC1155Balance(walletAddress, tokenId) {
+  try {
+    if (!CONTRACT_ADDRESS || !SEPOLIA_RPC) {
+      throw new Error('Contract not configured. Check .env');
+    }
+    if (!walletAddress || !ethers.isAddress(walletAddress)) {
+      throw new Error('Invalid wallet address');
+    }
+
+    const provider = new ethers.JsonRpcProvider(SEPOLIA_RPC);
+    const contract = new ethers.Contract(CONTRACT_ADDRESS, CLB_ABI, provider);
+
+    // ERC1155 balanceOf takes (address, id) — use the overloaded 2-arg form
+    const balance = await contract['balanceOf(address,uint256)'](walletAddress, tokenId);
+    return Number(balance);
+  } catch (error) {
+    console.error('Error fetching ERC1155 balance:', error);
+    throw new Error(`Failed to fetch badge balance: ${error.message}`);
+  }
+}
+
+/**
+ * Check if a badge ID is soulbound (FRONTEND SAFE - READ ONLY)
+ * @param {number} tokenId - Badge/frame ID
+ * @returns {Promise<boolean>}
+ */
+export async function isBadgeSoulbound(tokenId) {
+  try {
+    if (!CONTRACT_ADDRESS || !SEPOLIA_RPC) return false;
+    const provider = new ethers.JsonRpcProvider(SEPOLIA_RPC);
+    const contract = new ethers.Contract(CONTRACT_ADDRESS, CLB_ABI, provider);
+    return await contract.isSoulbound(tokenId);
+  } catch (error) {
+    console.error('Error checking soulbound status:', error);
+    return false;
+  }
 }
 
 /**

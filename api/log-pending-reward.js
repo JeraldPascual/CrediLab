@@ -122,6 +122,7 @@ export default async function handler(req, res) {
     // 5. Update Firestore credits immediately (optimistic UI)
     await userRef.update({
       credits: (userData.credits || 0) + amount,
+      totalCLBEarned: (userData.totalCLBEarned ?? userData.credits ?? 0) + amount,
       pendingRewards: (userData.pendingRewards || 0) + amount
     });
 

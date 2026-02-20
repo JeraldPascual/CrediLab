@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { TrophyIcon, UserCircleIcon } from "@heroicons/react/24/outline";
-import { collection, query, orderBy, limit, getDocs } from "firebase/firestore";
+import { collection, query, getDocs } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import { getSkillTier } from "../data/achievements";
@@ -13,21 +13,25 @@ export default function LeaderboardView() {
   useEffect(() => {
     async function fetchLeaderboard() {
       try {
-        const q = query(
-          collection(db, "users"),
-          orderBy("credits", "desc"),
-          limit(20)
-        );
+        const q = query(collection(db, "users"));
         const snap = await getDocs(q);
-        const entries = snap.docs.map((doc, i) => ({
-          rank: i + 1,
-          uid: doc.id,
-          name: doc.data().displayName || doc.data().email || "Anonymous",
-          credits: doc.data().credits || 0,
-          challenges: doc.data().completedChallenges?.length || 0,
-          photoURL: doc.data().photoURL || null,
-          tier: getSkillTier(doc.data().credits || 0),
-        }));
+        const entries = snap.docs
+          .map((doc) => {
+            const d = doc.data();
+            const earned = d.totalCLBEarned ?? d.credits ?? 0;
+            return {
+              uid: doc.id,
+              name: d.displayName || d.email || "Anonymous",
+              credits: earned,
+              challenges: d.completedChallenges?.length || 0,
+              photoURL: d.photoURL || null,
+              tier: getSkillTier(earned),
+            };
+          })
+          .filter((e) => e.challenges > 0 || e.credits > 0)
+          .sort((a, b) => b.credits - a.credits)
+          .slice(0, 20)
+          .map((e, i) => ({ ...e, rank: i + 1 }));
         setLeaderboard(entries);
       } catch (err) {
         console.warn("Leaderboard fetch failed (ad blocker?):", err.message);

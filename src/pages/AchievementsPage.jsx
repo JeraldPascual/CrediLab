@@ -7,31 +7,27 @@ import {
   getSkillTier,
   getNextSkillTier,
   getTierProgress,
-  getHighestCafeteriaTier,
-  getNextCafeteriaTier,
   SKILL_TIERS,
-  CAFETERIA_TIERS,
 } from "../data/achievements";
 import { generateCertificate } from "../utils/generateCertificate";
 
 export default function AchievementsPage() {
   const { userData, user } = useAuth();
-  const credits = userData?.credits || 0;
+  // Rank uses totalCLBEarned (lifetime) — never affected by cafeteria spending
+  const totalEarned = userData?.totalCLBEarned ?? userData?.credits ?? 0;
+  const spendableBalance = userData?.credits ?? 0;
   const completedCount = userData?.completedChallenges?.length || 0;
   const displayName = userData?.displayName || user?.displayName || "Student";
 
-  const tier = getSkillTier(credits);
-  const nextTier = getNextSkillTier(credits);
-  const progress = getTierProgress(credits);
-  const highestCafe = getHighestCafeteriaTier(credits);
-  const nextCafe = getNextCafeteriaTier(credits);
+  const tier = getSkillTier(totalEarned);
+  const nextTier = getNextSkillTier(totalEarned);
+  const progress = getTierProgress(totalEarned);
 
   const [generating, setGenerating] = useState(false);
   const [certHash, setCertHash] = useState(null);
   const [copied, setCopied] = useState(false);
-  const canDownload = credits >= 50; // Apprentice or above
+  const canDownload = totalEarned >= 50;
 
-  // Build verify URL from existing hash if present in userData
   const existingHash = userData?.certHash || null;
   const baseUrl = window.location.origin;
   const verifyUrl = (certHash || existingHash)
@@ -52,12 +48,11 @@ export default function AchievementsPage() {
         year: "numeric", month: "long", day: "numeric",
       });
 
-      // Generate deterministic hash from student data + issue timestamp (per-download unique)
       const hash = await generateHash({
         uid: user.uid,
         studentName: displayName,
         tierTitle: tier.title,
-        credits,
+        totalEarned,
         completedCount,
         issuedAt: Date.now(),
       });
@@ -65,7 +60,7 @@ export default function AchievementsPage() {
       const certData = {
         studentName: displayName,
         tierTitle: tier.title,
-        credits,
+        credits: totalEarned,
         completedCount,
         issueDate,
         issuedAt: Date.now(),
@@ -84,7 +79,7 @@ export default function AchievementsPage() {
       await generateCertificate({
         studentName: displayName,
         tierTitle: tier.title,
-        credits,
+        credits: totalEarned,
         completedCount,
         issueDate,
         verifyUrl: url,
@@ -110,7 +105,7 @@ export default function AchievementsPage() {
           Achievements &amp; Credentials
         </h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-dark-muted">
-          Your skill rank, employer credentials, and cafeteria rewards in one place.
+          Your skill rank and employer credentials based on total CLB earned.
         </p>
       </div>
 
@@ -128,11 +123,16 @@ export default function AchievementsPage() {
             </div>
           </div>
           <div className="text-right">
-            <p className="text-3xl font-bold text-green-primary">{credits}</p>
-            <p className="text-xs text-gray-400 dark:text-dark-muted">CLB earned</p>
+            <p className="text-3xl font-bold text-green-primary">{totalEarned}</p>
+            <p className="text-xs text-gray-400 dark:text-dark-muted">CLB earned (lifetime)</p>
             <p className="text-sm font-semibold text-gray-600 dark:text-dark-text mt-1">
               {completedCount} challenge{completedCount !== 1 ? "s" : ""} solved
             </p>
+            {spendableBalance !== totalEarned && (
+              <p className="text-xs text-gray-400 dark:text-dark-muted mt-0.5">
+                {spendableBalance} CLB spendable
+              </p>
+            )}
           </div>
         </div>
 
@@ -143,7 +143,7 @@ export default function AchievementsPage() {
               <span className="text-gray-500 dark:text-dark-muted">
                 Progress to <span className={`font-semibold ${nextTier.color}`}>{nextTier.icon} {nextTier.shortTitle}</span>
               </span>
-              <span className="font-semibold text-gray-700 dark:text-dark-text">{credits} / {nextTier.minCredits} CLB</span>
+              <span className="font-semibold text-gray-700 dark:text-dark-text">{totalEarned} / {nextTier.minCredits} CLB</span>
             </div>
             <div className="h-3 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
               <div
@@ -158,7 +158,7 @@ export default function AchievementsPage() {
               />
             </div>
             <p className="text-xs text-gray-400 dark:text-dark-muted">
-              {nextTier.minCredits - credits} CLB needed to reach <strong>{nextTier.title}</strong>
+              {nextTier.minCredits - totalEarned} CLB to reach <strong>{nextTier.title}</strong>
             </p>
           </div>
         ) : (
@@ -184,7 +184,7 @@ export default function AchievementsPage() {
         <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-3">Skill Tier Roadmap</h2>
         <div className="space-y-2">
           {SKILL_TIERS.map((t) => {
-            const unlocked = credits >= t.minCredits;
+            const unlocked = totalEarned >= t.minCredits;
             const isCurrent = t.id === tier.id;
             return (
               <div
@@ -223,81 +223,18 @@ export default function AchievementsPage() {
         </div>
       </div>
 
-      {/* ── Cafeteria Claim ── */}
-      <div>
-        <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-1 flex items-center gap-2">
-          🍽️ Cafeteria Redemption
+      {/* ── CLB Spending Note ── */}
+      <div className="rounded-xl border border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-dark-surface p-5">
+        <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+          💳 Spending CLB
         </h2>
-        <p className="text-sm text-gray-500 dark:text-dark-muted mb-4">
-          Redeem your CLB tokens for real meals at the school cafeteria. Show this page to the cashier.
+        <p className="text-sm text-gray-500 dark:text-dark-muted">
+          Send CLB tokens directly to the cafeteria wallet via MetaMask.
+          Your <span className="font-semibold text-gray-700 dark:text-dark-text">rank is never affected</span> —
+          it is based on your lifetime earned total, not your current balance.
         </p>
-
-        <div className="grid sm:grid-cols-2 gap-3 mb-4">
-          {CAFETERIA_TIERS.map((ct) => {
-            const unlocked = credits >= ct.minCredits;
-            const isHighest = highestCafe?.id === ct.id;
-            return (
-              <div
-                key={ct.id}
-                className={`rounded-xl border p-4 transition-all ${
-                  unlocked
-                    ? `${ct.bg} ${ct.border} ${isHighest ? "ring-2 ring-offset-1 " + ct.border : ""}`
-                    : "bg-gray-50 dark:bg-dark-surface border-gray-200 dark:border-dark-border opacity-40"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-3xl">{ct.icon}</span>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className={`text-sm font-bold ${unlocked ? ct.color : "text-gray-400"}`}>{ct.label}</p>
-                      {isHighest && (
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-white/60 dark:bg-black/20 text-gray-600 dark:text-gray-300">
-                          Active
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-dark-muted">{ct.description}</p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className={`text-xs font-bold ${unlocked ? ct.color : "text-gray-400"}`}>{ct.minCredits} CLB</p>
-                    {unlocked
-                      ? <CheckCircleIcon className={`w-4 h-4 ml-auto mt-1 ${ct.color}`} />
-                      : <span className="text-xs text-gray-400">{ct.minCredits - credits} away</span>
-                    }
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Active claim banner */}
-        {highestCafe ? (
-          <div className={`flex items-center gap-4 rounded-xl border p-4 ${highestCafe.bg} ${highestCafe.border}`}>
-            <span className="text-3xl">{highestCafe.icon}</span>
-            <div className="flex-1">
-              <p className={`font-bold ${highestCafe.color}`}>You can claim: {highestCafe.label}</p>
-              <p className="text-sm text-gray-500 dark:text-dark-muted">{highestCafe.description}</p>
-            </div>
-            <div className="text-right shrink-0">
-              <p className="text-lg font-bold text-green-primary">{credits} CLB</p>
-              <p className="text-xs text-gray-400">Your balance</p>
-            </div>
-          </div>
-        ) : (
-          <div className="rounded-xl border border-dashed border-gray-300 dark:border-dark-border p-5 text-center text-sm text-gray-400 dark:text-dark-muted">
-            Earn <span className="font-semibold text-gray-600 dark:text-dark-text">50 CLB</span> to unlock your first cafeteria reward.
-          </div>
-        )}
-
-        {nextCafe && (
-          <p className="mt-3 text-xs text-gray-400 dark:text-dark-muted">
-            🎯 Next: <span className="font-semibold text-gray-600 dark:text-dark-text">{nextCafe.icon} {nextCafe.label}</span> — {nextCafe.minCredits - credits} CLB away
-          </p>
-        )}
-
-        <p className="mt-4 text-xs text-gray-400 dark:text-dark-muted border-t border-gray-100 dark:border-dark-border pt-4">
-          🏫 Present this page to the cafeteria cashier to redeem your reward. One claim per term per tier.
+        <p className="mt-2 text-xs text-gray-400 dark:text-dark-muted">
+          Current spendable balance: <span className="font-semibold text-green-primary">{spendableBalance} CLB</span>
         </p>
       </div>
 
@@ -325,8 +262,8 @@ export default function AchievementsPage() {
             </button>
           ) : (
             <div className="text-right shrink-0">
-              <p className="text-xs text-gray-400 dark:text-dark-muted">Requires 50 CLB to unlock</p>
-              <p className="text-xs font-semibold text-gray-500 dark:text-dark-text mt-0.5">{50 - credits} CLB away</p>
+            <p className="text-xs text-gray-400 dark:text-dark-muted">Requires 50 CLB earned to unlock</p>
+            <p className="text-xs font-semibold text-gray-500 dark:text-dark-text mt-0.5">{50 - totalEarned} CLB away</p>
             </div>
           )}
         </div>
@@ -342,7 +279,7 @@ export default function AchievementsPage() {
             <p className="text-lg font-bold text-gray-900 dark:text-white">{displayName}</p>
             <p className={`text-sm font-semibold ${tier.color}`}>{tier.title}</p>
             <div className="flex items-center gap-4 mt-1 text-xs text-gray-400 dark:text-dark-muted">
-              <span>{credits} CLB Earned</span>
+              <span>{totalEarned} CLB Earned (Lifetime)</span>
               <span>·</span>
               <span>{completedCount} Challenge{completedCount !== 1 ? "s" : ""} Solved</span>
             </div>

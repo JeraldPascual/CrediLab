@@ -13,7 +13,7 @@ import {
   MoonIcon,
   ArrowsPointingOutIcon,
 } from "@heroicons/react/24/outline";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, arrayUnion } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { db } from "../lib/firebase";
@@ -62,8 +62,8 @@ export default function CodingPortal() {
   const editorRef = useRef(null);
   const viewRef = useRef(null);
   const [code, setCode] = useState(() => {
-    // Load saved code from localStorage, or fall back to starter code
-    const saved = localStorage.getItem(`credilab-code-${challengeId}`);
+    // Load saved code from localStorage (UID-scoped so accounts don't share drafts)
+    const saved = user?.uid ? localStorage.getItem(`credilab-code-${user.uid}-${challengeId}`) : null;
     return saved || challenge?.starterCode || "";
   });
   const [showSettings, setShowSettings] = useState(false);
@@ -81,12 +81,12 @@ export default function CodingPortal() {
   const [customInput, setCustomInput] = useState("");
   const [runOutput, setRunOutput] = useState(null);
 
-  // Auto-save code to localStorage
+  // Auto-save code to localStorage (UID-scoped)
   useEffect(() => {
-    if (code && challengeId) {
-      localStorage.setItem(`credilab-code-${challengeId}`, code);
+    if (code && challengeId && user?.uid) {
+      localStorage.setItem(`credilab-code-${user.uid}-${challengeId}`, code);
     }
-  }, [code, challengeId]);
+  }, [code, challengeId, user?.uid]);
 
   // Initialize challenge session (time limit enforcement)
   useEffect(() => {
@@ -262,7 +262,7 @@ export default function CodingPortal() {
 
   // Reset state when challenge changes
   useEffect(() => {
-    const saved = localStorage.getItem(`credilab-code-${challengeId}`);
+    const saved = user?.uid ? localStorage.getItem(`credilab-code-${user.uid}-${challengeId}`) : null;
     setCode(saved || challenge?.starterCode || "");
     setResults(null);
     setRunOutput(null);
@@ -471,32 +471,6 @@ export default function CodingPortal() {
     window.addEventListener("mouseup", handleUp);
   }, [leftWidth, rightWidth]);
 
-  // Mark reward as pending (system admin will send CLB tokens in batch later)
-  async function markRewardPending(challengeId, rewardAmount) {
-    try {
-      console.log(`🎁 Marking ${rewardAmount} CLB reward as pending...`);
-
-      // Log pending reward to Firestore
-      const token = await user.getIdToken();
-      await fetch('/api/log-pending-reward', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          challengeId,
-          amount: rewardAmount
-        })
-      });
-
-      console.log(`✅ Reward marked as pending! System admin will send CLB tokens soon.`);
-
-    } catch (error) {
-      console.error('❌ Failed to mark reward as pending:', error);
-    }
-  }
-
   // Run code (single custom input)
   async function handleRun() {
     if (running || antiCheat.terminated) return;
@@ -610,45 +584,44 @@ export default function CodingPortal() {
           // Silent fail — localStorage already updated
         }
 
-        // ── Step 2: Notify backend to mark challenge complete in user's Firestore doc ──
+        // ── Step 2: Write completion + CLB reward directly to Firestore (works in dev & prod) ──
         try {
-          const token = await user.getIdToken();
-          const response = await fetch('/api/reward-student', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-              challengeId,
-              rewardAmount: challenge.reward
-            })
-          });
+          const userRef = doc(db, 'users', user.uid);
+          const userSnap = await getDoc(userRef);
+          const current = userSnap.exists() ? userSnap.data() : {};
+          const alreadyDone = (current.completedChallenges || []).includes(challengeId);
 
-          if (response.ok) {
-            const result = await response.json();
-            // Mark reward as pending if wallet is connected
-            if (result.needsClaim && userData?.walletAddress) {
-              await markRewardPending(challengeId, challenge.reward);
-            } else if (!userData?.walletAddress) {
-              console.log('💡 Connect MetaMask in Profile to receive CLB rewards!');
-            }
-          } else {
-            const errorData = await response.json().catch(() => ({}));
-            if (errorData.alreadyCompleted) {
-              console.warn("Challenge already completed on server");
-            } else if (errorData.needsWallet) {
-              console.warn("No wallet connected — challenge marked complete locally, connect MetaMask for CLB reward");
-            } else {
-              console.error("reward-student API error:", errorData.error || response.status);
-            }
+          if (!alreadyDone) {
+            const reward = challenge.reward || 0;
+            await updateDoc(userRef, {
+              completedChallenges: arrayUnion(challengeId),
+              credits: (current.credits || 0) + reward,
+              totalCLBEarned: (current.totalCLBEarned ?? current.credits ?? 0) + reward,
+              lastCompletionAt: new Date().toISOString(),
+              lastRewardAt: new Date().toISOString(),
+            });
+            console.log(`✅ Firestore updated — +${reward} CLB, challenge ${challengeId} marked complete`);
           }
-        } catch (apiErr) {
-          console.error("Failed to reach reward API:", apiErr.message);
-          // Challenge is already marked complete in localStorage — user won't lose progress
+        } catch (fsErr) {
+          console.error('Firestore write failed:', fsErr.message);
         }
 
-        // ── Step 3: Refresh userData so completedChallenges updates in UI ──
+        // ── Step 3: Call backend API in background for on-chain CLB transfer (production only) ──
+        //    This is fire-and-forget — Firestore is already updated above.
+        user.getIdToken().then((token) =>
+          fetch('/api/reward-student', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ challengeId, rewardAmount: challenge.reward }),
+          })
+          .then((r) => r.ok ? r.json() : null)
+          .then((result) => {
+            if (result?.transferred) console.log(`⛓️ On-chain TX: ${result.txHash}`);
+          })
+          .catch(() => { /* API unavailable in dev — Firestore already updated */ })
+        ).catch(() => {});
+
+        // ── Step 4: Refresh userData so all UI reflects the new Firestore state ──
         try {
           await refreshUserData();
         } catch {

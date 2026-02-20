@@ -7,7 +7,7 @@ import {
   signInWithEmailAndPassword,
   updateProfile,
 } from "firebase/auth";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, onSnapshot, serverTimestamp } from "firebase/firestore";
 import { auth, db, googleProvider } from "../lib/firebase";
 
 const AuthContext = createContext(null);
@@ -25,46 +25,109 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState("");
 
-  // Fetch Firestore user data (best-effort — ad blockers may block Firestore)
-  const fetchUserData = useCallback(async (firebaseUser) => {
+  // Real-time Firestore listener unsubscribe ref
+  const [, setUserDocUnsub] = useState(null);
+
+  /**
+   * Wipe all localStorage keys that belong to this UID.
+   * Called when Firestore shows a clean/reset account (0 completed challenges)
+   * so ghost session data from a deleted-then-re-registered account can't bleed through.
+   */
+  function clearStaleLocalStorage(uid) {
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (
+        key.startsWith(`challenge-session-${uid}-`) ||
+        key.startsWith(`credilab-violations-${uid}-`) ||
+        key.startsWith(`credilab-code-${uid}-`)
+      ) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach((k) => localStorage.removeItem(k));
+    if (keysToRemove.length > 0) {
+      console.log(`[Auth] Cleared ${keysToRemove.length} stale localStorage entries for UID ${uid}`);
+    }
+  }
+
+  // Start real-time listener on the user's Firestore document.
+  // Any write (from CodingPortal, API, etc.) triggers an automatic re-read.
+  const startUserDocListener = useCallback((firebaseUser) => {
     if (!firebaseUser) {
       setUserData(null);
-      return;
+      return null;
     }
-    // Always set a minimal local userData from the Auth object
+    // Always set minimal auth data immediately so ProtectedRoute works
     setUserData((prev) => prev || {
       uid: firebaseUser.uid,
       displayName: firebaseUser.displayName || "",
       email: firebaseUser.email || "",
       photoURL: firebaseUser.photoURL || "",
     });
-    // Timeout Firestore read to prevent indefinite loading
-    const firestoreTimeout = new Promise((resolve) => setTimeout(resolve, 1000));
-    const firestoreRead = (async () => {
-      try {
-        const docRef = doc(db, "users", firebaseUser.uid);
-        const snap = await getDoc(docRef);
+    // Start real-time listener
+    const docRef = doc(db, "users", firebaseUser.uid);
+    const unsub = onSnapshot(
+      docRef,
+      (snap) => {
         if (snap.exists()) {
-          setUserData(snap.data());
+          const data = snap.data();
+          // If Firestore shows no completed challenges, wipe any stale localStorage
+          // sessions — protects against ghost state after account deletion + re-register
+          if (!data.completedChallenges || data.completedChallenges.length === 0) {
+            clearStaleLocalStorage(firebaseUser.uid);
+          }
+          setUserData(data);
         }
-      } catch (err) {
-        console.warn("Firestore read failed (ad blocker?). Using Auth profile data.", err.message);
+      },
+      (err) => {
+        console.warn("Firestore onSnapshot failed (ad blocker?).", err.message);
       }
-    })();
+    );
+    return unsub;
+  }, []);
 
-    // Race: either Firestore succeeds or timeout after 1s
-    await Promise.race([firestoreRead, firestoreTimeout]);
+  // Manual refresh fallback (for cases where onSnapshot might be blocked)
+  const refreshUserData = useCallback(async () => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
+    try {
+      const docRef = doc(db, "users", currentUser.uid);
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        setUserData(snap.data());
+      }
+    } catch (err) {
+      console.warn("refreshUserData: Firestore read failed.", err.message);
+    }
   }, []);
 
   // Listen to Firebase Auth state
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
+    const unsub = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
-      await fetchUserData(firebaseUser);
+      // Clean up previous Firestore listener
+      setUserDocUnsub((prev) => {
+        if (prev) prev();
+        return null;
+      });
+      if (firebaseUser) {
+        const docUnsub = startUserDocListener(firebaseUser);
+        setUserDocUnsub(() => docUnsub);
+      } else {
+        setUserData(null);
+      }
       setLoading(false);
     });
-    return unsub;
-  }, [fetchUserData]);
+    return () => {
+      unsub();
+      // Also clean up Firestore listener on unmount
+      setUserDocUnsub((prev) => {
+        if (prev) prev();
+        return null;
+      });
+    };
+  }, [startUserDocListener]);
 
   // Google Sign-In (Login only - requires existing account)
   async function loginWithGoogle() {
@@ -132,6 +195,7 @@ export function AuthProvider({ children }) {
           photoURL: u.photoURL || "",
           walletAddress: null,
           credits: 0,
+          totalCLBEarned: 0,
           completedChallenges: [],
           createdAt: serverTimestamp(),
         });
@@ -179,6 +243,7 @@ export function AuthProvider({ children }) {
         photoURL: "",
         walletAddress: null,
         credits: 0,
+        totalCLBEarned: 0,
         completedChallenges: [],
       });
 
@@ -194,6 +259,7 @@ export function AuthProvider({ children }) {
           photoURL: "",
           walletAddress: null,
           credits: 0,
+          totalCLBEarned: 0,
           completedChallenges: [],
           createdAt: serverTimestamp(),
         });
@@ -266,7 +332,7 @@ export function AuthProvider({ children }) {
     loginWithEmail,
     registerWithEmail,
     logout,
-    refreshUserData: () => fetchUserData(user),
+    refreshUserData,
   };
 
   return (

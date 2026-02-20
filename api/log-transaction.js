@@ -116,6 +116,7 @@ export default async function handler(req, res) {
     // 5. Update user's Firestore credits (for UI caching)
     await userRef.update({
       credits: (userData.credits || 0) + amount,
+      totalCLBEarned: (userData.totalCLBEarned ?? userData.credits ?? 0) + amount,
       lastRewardAt: timestamp
     });
 

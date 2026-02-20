@@ -15,6 +15,7 @@ import ProblemPage from "./pages/ProblemPage";
 import CodingPortal from "./pages/CodingPortal";
 import WalletGuidePage from "./pages/WalletGuidePage";
 import AchievementsPage from "./pages/AchievementsPage";
+import TransactionsPage from "./pages/TransactionsPage";
 import VerifyCertPage from "./pages/VerifyCertPage";
 
 export default function App() {
@@ -44,6 +45,7 @@ export default function App() {
               <Route path="information" element={<ProfilePage />} />
               <Route path="wallet-guide" element={<WalletGuidePage />} />
               <Route path="achievements" element={<AchievementsPage />} />
+              <Route path="transactions" element={<TransactionsPage />} />
             </Route>
 
             {/* Challenge list (inside dashboard shell) */}
