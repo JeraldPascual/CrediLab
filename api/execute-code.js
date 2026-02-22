@@ -16,7 +16,7 @@ export default async function handler(req, res) {
   // CORS headers — allow Vercel deployments + localhost dev
   const origin = req.headers.origin || '';
   const isAllowed =
-    origin.endsWith('credi-lab.vercel.app') ||
+    origin.endsWith('.vercel.app') ||
     origin === 'http://localhost:5173' ||
     origin === 'http://localhost:3000';
   if (isAllowed) {
