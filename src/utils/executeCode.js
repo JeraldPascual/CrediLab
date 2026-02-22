@@ -8,7 +8,7 @@
 const IS_DEV = import.meta.env.DEV;
 const JUDGE0_URL = "https://ce.judge0.com";
 
-export async function executeCode({ code, languageId, stdin, firebaseToken }) {
+export async function executeCode({ code, languageId, stdin, firebaseToken, batchId }) {
   // In production, use the serverless proxy (has auth + rate limiting)
   if (!IS_DEV) {
     const res = await fetch("/api/execute-code", {
@@ -17,7 +17,7 @@ export async function executeCode({ code, languageId, stdin, firebaseToken }) {
         "Content-Type": "application/json",
         Authorization: `Bearer ${firebaseToken}`,
       },
-      body: JSON.stringify({ code, languageId, stdin }),
+      body: JSON.stringify({ code, languageId, stdin, batchId }),
     });
 
     if (!res.ok) {

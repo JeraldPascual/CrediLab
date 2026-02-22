@@ -63,16 +63,39 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: "Token verification failed" });
   }
 
-  // 2. Rate limit check (10s cooldown per user)
+  // 2. Rate limit check (10s cooldown per user per submission batch)
+  // Each submission sends one request per test case — use a batchId to group them
+  const { batchId } = req.body || {};
+  const rateLimitKey = batchId ? `${uid}:${batchId}` : uid;
   const now = Date.now();
-  const lastCall = rateLimitMap.get(uid);
-  if (lastCall && now - lastCall < COOLDOWN_MS) {
-    const waitSec = Math.ceil((COOLDOWN_MS - (now - lastCall)) / 1000);
-    return res.status(429).json({
-      error: `Rate limited. Please wait ${waitSec} seconds before submitting again.`,
-    });
+
+  if (!batchId) {
+    // Single run (no batch) — apply cooldown on the uid directly
+    const lastCall = rateLimitMap.get(uid);
+    if (lastCall && now - lastCall < COOLDOWN_MS) {
+      const waitSec = Math.ceil((COOLDOWN_MS - (now - lastCall)) / 1000);
+      return res.status(429).json({
+        error: `Rate limited. Please wait ${waitSec} seconds before submitting again.`,
+      });
+    }
+    rateLimitMap.set(uid, now);
+  } else {
+    // Batched run — only rate-limit between different batches, not within one
+    const batchFirstCall = rateLimitMap.get(rateLimitKey);
+    if (!batchFirstCall) {
+      // First call in this batch — check if previous batch was too recent
+      const lastBatch = rateLimitMap.get(uid);
+      if (lastBatch && now - lastBatch < COOLDOWN_MS) {
+        const waitSec = Math.ceil((COOLDOWN_MS - (now - lastBatch)) / 1000);
+        return res.status(429).json({
+          error: `Rate limited. Please wait ${waitSec} seconds before submitting again.`,
+        });
+      }
+      rateLimitMap.set(uid, now);
+      rateLimitMap.set(rateLimitKey, now);
+    }
+    // Subsequent calls in same batch — allowed through without rate limit
   }
-  rateLimitMap.set(uid, now);
 
   // 3. Parse request body
   const { code, languageId, stdin } = req.body || {};
@@ -88,20 +111,24 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Input exceeds maximum length (10KB)" });
   }
 
-  // 4. Submit to Judge0 CE API (free public endpoint — no API key required)
-  // Using ce.judge0.com public instance for hackathon/testing
-  // For production, self-host Judge0 or use RapidAPI paid tier
-  const JUDGE0_URL = process.env.JUDGE0_URL || "https://ce.judge0.com";
+  // 4. Submit to Judge0 CE API
+  const JUDGE0_URL = process.env.JUDGE0_URL || "https://judge0-ce.p.rapidapi.com";
+  const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY || "";
+
+  // Build headers — RapidAPI key if available, otherwise plain
+  const judge0Headers = { "Content-Type": "application/json" };
+  if (RAPIDAPI_KEY) {
+    judge0Headers["X-RapidAPI-Key"] = RAPIDAPI_KEY;
+    judge0Headers["X-RapidAPI-Host"] = "judge0-ce.p.rapidapi.com";
+  }
 
   try {
-    // Submit code — use synchronous endpoint (wait=true) for simplicity
+    // Step 1: Submit (async — don't use wait=true, it times out on free tier)
     const submitRes = await fetch(
-      `${JUDGE0_URL}/submissions?base64_encoded=true&wait=true&fields=stdout,stderr,status,time,memory,compile_output`,
+      `${JUDGE0_URL}/submissions?base64_encoded=true`,
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: judge0Headers,
         body: JSON.stringify({
           source_code: Buffer.from(code).toString("base64"),
           language_id: languageId,
@@ -114,14 +141,40 @@ export default async function handler(req, res) {
 
     if (!submitRes.ok) {
       const errText = await submitRes.text();
-      console.error("Judge0 API error:", submitRes.status, errText);
-      return res.status(502).json({ error: "Judge0 API error: " + submitRes.status });
+      console.error("Judge0 submit error:", submitRes.status, errText);
+      return res.status(502).json({ error: "Code execution unavailable (Judge0 " + submitRes.status + ")" });
     }
 
-    const result = await submitRes.json();
+    const { token } = await submitRes.json();
+    if (!token) {
+      return res.status(502).json({ error: "No submission token returned from Judge0" });
+    }
 
-    // Decode base64 fields
+    // Step 2: Poll for result (max 10 attempts × 1.5s = 15s)
     const decode = (s) => (s ? Buffer.from(s, "base64").toString("utf-8") : null);
+    let result = null;
+
+    for (let i = 0; i < 10; i++) {
+      await new Promise((r) => setTimeout(r, 1500));
+
+      const pollRes = await fetch(
+        `${JUDGE0_URL}/submissions/${token}?base64_encoded=true&fields=stdout,stderr,status,time,memory,compile_output`,
+        { headers: judge0Headers }
+      );
+
+      if (!pollRes.ok) continue;
+
+      const data = await pollRes.json();
+      // Status id 1 = In Queue, 2 = Processing
+      if (data.status?.id <= 2) continue;
+
+      result = data;
+      break;
+    }
+
+    if (!result) {
+      return res.status(504).json({ error: "Code execution timed out. Try again." });
+    }
 
     return res.status(200).json({
       stdout: decode(result.stdout),

@@ -504,6 +504,7 @@ export default function CodingPortal() {
     try {
       const token = await user.getIdToken();
       const testResults = [];
+      const batchId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
       for (const tc of challenge.testCases) {
         const data = await executeCode({
@@ -511,6 +512,7 @@ export default function CodingPortal() {
           languageId: challenge.languageId,
           stdin: tc.input,
           firebaseToken: token,
+          batchId,
         });
         const actualOutput = (data.stdout || "").trim();
         const passed = actualOutput === tc.expectedOutput.trim();
