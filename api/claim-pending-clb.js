@@ -14,13 +14,23 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { ethers } from 'ethers';
 
 if (getApps().length === 0) {
-  const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
-    ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
-    : {
-        projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
-      };
+  let serviceAccount;
+  try {
+    serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
+      ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+      : {
+          projectId: process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID,
+          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+          privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+        };
+  } catch (e) {
+    console.error('[claim-pending-clb] Failed to parse FIREBASE_SERVICE_ACCOUNT:', e.message);
+    serviceAccount = {
+      projectId: process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+    };
+  }
   initializeApp({ credential: cert(serviceAccount) });
 }
 
@@ -51,7 +61,7 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: "Missing Authorization header" });
     }
     const idToken = authHeader.split("Bearer ")[1];
-    const firebaseKey = process.env.VITE_FIREBASE_API_KEY;
+    const firebaseKey = process.env.FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY;
     const verifyRes = await fetch(
       `https://www.googleapis.com/identitytoolkit/v3/relyingparty/getAccountInfo?key=${firebaseKey}`,
       { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ idToken }) }

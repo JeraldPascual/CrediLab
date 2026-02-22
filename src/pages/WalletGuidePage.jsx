@@ -179,17 +179,63 @@ export default function WalletGuidePage() {
           </p>
           <p>
             <strong className="text-gray-900 dark:text-white">3.</strong>{" "}
-            Once blockchain integration goes live, CLB tokens will be minted to
-            your connected MetaMask wallet address.
+            If your MetaMask wallet is connected, CLB tokens are automatically
+            transferred on-chain via the Sepolia testnet when you complete a
+            challenge.
           </p>
           <p>
             <strong className="text-gray-900 dark:text-white">4.</strong>{" "}
-            You'll be able to view your token balance in MetaMask under the
-            "Tokens" tab after adding the CLB contract address (provided later).
+            If CLB is still showing as "Pending on-chain" in your profile, click
+            the <strong className="text-green-primary">Claim CLB</strong> button
+            to trigger the on-chain transfer.
           </p>
+          <p>
+            <strong className="text-gray-900 dark:text-white">5.</strong>{" "}
+            To see your CLB balance in MetaMask, add it as a custom token:
+          </p>
+          <div className="ml-6 space-y-1 text-xs">
+            <p>• Open MetaMask → <strong>Import tokens</strong></p>
+            <p>• Network: <strong>Sepolia Testnet</strong></p>
+            <p>
+              • Contract address:{" "}
+              <code className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-dark-surface text-green-primary font-mono text-[11px] break-all select-all">
+                0xBFDB5f0C96aA9E2eECA9303E71a2b28b7C09Aee4
+              </code>
+            </p>
+            <p>• Symbol: <strong>CLB</strong> &nbsp;|&nbsp; Decimals: <strong>18</strong></p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Add Sepolia Testnet ── */}
+      <div className="rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card overflow-hidden">
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 dark:bg-dark-surface border-b border-gray-200 dark:border-dark-border">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-red-400" />
+            <span className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
+            <span className="w-2.5 h-2.5 rounded-full bg-green-400" />
+          </div>
+          <div className="flex items-center gap-1.5 ml-2">
+            <LinkIcon className="w-4 h-4 text-green-primary" />
+            <span className="text-xs font-semibold text-gray-600 dark:text-dark-muted uppercase tracking-wide">
+              Add Sepolia Testnet to MetaMask
+            </span>
+          </div>
+        </div>
+        <div className="p-5 space-y-3 text-sm text-gray-600 dark:text-dark-muted">
+          <p>
+            CLB tokens live on the <strong className="text-gray-900 dark:text-white">Sepolia</strong> test
+            network. To view them in MetaMask:
+          </p>
+          <ol className="list-decimal list-inside space-y-1 text-xs ml-2">
+            <li>Open MetaMask and click the network dropdown (top-center).</li>
+            <li>Click <strong>Show test networks</strong> (toggle it on if needed).</li>
+            <li>Select <strong>Sepolia</strong> from the list.</li>
+            <li>Your CLB balance will appear after importing the token (see above).</li>
+          </ol>
           <p className="text-xs text-gray-400 dark:text-dark-muted pt-2 border-t border-gray-100 dark:border-dark-border">
-            Blockchain features are under development by Student B. Connect your
-            wallet now so you're ready when it launches.
+            Sepolia ETH (for gas fees) is free — search "Sepolia faucet" to get
+            test ETH. You don't need gas to <em>receive</em> CLB, only to send it.
           </p>
         </div>
       </div>

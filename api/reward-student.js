@@ -21,18 +21,24 @@ import { ethers } from 'ethers';
 
 // Initialize Firebase Admin (server-side)
 if (getApps().length === 0) {
-  // For Vercel deployment, use service account from environment variable
-  const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
-    ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
-    : {
-        projectId: process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
-      };
-
-  initializeApp({
-    credential: cert(serviceAccount)
-  });
+  let serviceAccount;
+  try {
+    serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
+      ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+      : {
+          projectId: process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID,
+          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+          privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+        };
+  } catch (e) {
+    console.error('[reward-student] Failed to parse FIREBASE_SERVICE_ACCOUNT:', e.message);
+    serviceAccount = {
+      projectId: process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+    };
+  }
+  initializeApp({ credential: cert(serviceAccount) });
 }
 
 const db = getFirestore();

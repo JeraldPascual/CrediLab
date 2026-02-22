@@ -17,26 +17,36 @@ import { getFirestore } from 'firebase-admin/firestore';
 
 // Initialize Firebase Admin
 if (getApps().length === 0) {
-  const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
-    ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
-    : {
-        projectId: process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
-      };
-
-  initializeApp({
-    credential: cert(serviceAccount)
-  });
+  let serviceAccount;
+  try {
+    serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
+      ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+      : {
+          projectId: process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID,
+          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+          privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+        };
+  } catch (e) {
+    console.error('[log-transaction] Failed to parse FIREBASE_SERVICE_ACCOUNT:', e.message);
+    serviceAccount = {
+      projectId: process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+    };
+  }
+  initializeApp({ credential: cert(serviceAccount) });
 }
 
 const db = getFirestore();
 
 export default async function handler(req, res) {
-  // CORS headers — restrict to app domain in production
-  const allowedOrigins = ['https://credilab.vercel.app', 'http://localhost:5173', 'http://localhost:3000'];
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
+  // CORS headers — allow Vercel deployments + localhost dev
+  const origin = req.headers.origin || '';
+  const isAllowed =
+    origin.endsWith('.vercel.app') ||
+    origin === 'http://localhost:5173' ||
+    origin === 'http://localhost:3000';
+  if (isAllowed) {
     res.setHeader("Access-Control-Allow-Origin", origin);
   }
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
