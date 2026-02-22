@@ -15,29 +15,29 @@
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
-// Initialize Firebase Admin
-if (getApps().length === 0) {
-  let serviceAccount;
-  try {
-    serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
-      ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
-      : {
-          projectId: process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID,
-          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-          privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
-        };
-  } catch (e) {
-    console.error('[log-transaction] Failed to parse FIREBASE_SERVICE_ACCOUNT:', e.message);
-    serviceAccount = {
-      projectId: process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
-    };
+function getDB() {
+  if (getApps().length === 0) {
+    let serviceAccount;
+    try {
+      serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
+        ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+        : {
+            projectId: process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID,
+            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+            privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+          };
+    } catch (e) {
+      console.error('[log-transaction] JSON.parse failed:', e.message);
+      serviceAccount = {
+        projectId: process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+      };
+    }
+    initializeApp({ credential: cert(serviceAccount) });
   }
-  initializeApp({ credential: cert(serviceAccount) });
+  return getFirestore();
 }
-
-const db = getFirestore();
 
 export default async function handler(req, res) {
   // CORS headers — allow Vercel deployments + localhost dev
@@ -61,6 +61,8 @@ export default async function handler(req, res) {
   }
 
   try {
+    const db = getDB();
+
     // 1. Verify Firebase Auth token
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith("Bearer ")) {

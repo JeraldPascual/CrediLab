@@ -19,29 +19,29 @@ import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { ethers } from 'ethers';
 
-// Initialize Firebase Admin (server-side)
-if (getApps().length === 0) {
-  let serviceAccount;
-  try {
-    serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
-      ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
-      : {
-          projectId: process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID,
-          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-          privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
-        };
-  } catch (e) {
-    console.error('[reward-student] Failed to parse FIREBASE_SERVICE_ACCOUNT:', e.message);
-    serviceAccount = {
-      projectId: process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
-    };
+function getDB() {
+  if (getApps().length === 0) {
+    let serviceAccount;
+    try {
+      serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
+        ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+        : {
+            projectId: process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID,
+            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+            privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+          };
+    } catch (e) {
+      console.error('[reward-student] JSON.parse failed:', e.message);
+      serviceAccount = {
+        projectId: process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+      };
+    }
+    initializeApp({ credential: cert(serviceAccount) });
   }
-  initializeApp({ credential: cert(serviceAccount) });
+  return getFirestore();
 }
-
-const db = getFirestore();
 
 // Minimal ABI — only the ERC20 transfer function needed server-side
 const CLB_ABI = [
@@ -97,6 +97,8 @@ export default async function handler(req, res) {
   }
 
   try {
+    const db = getDB();
+
     // 1. Verify Firebase Auth token
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith("Bearer ")) {

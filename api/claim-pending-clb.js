@@ -13,28 +13,29 @@ import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { ethers } from 'ethers';
 
-if (getApps().length === 0) {
-  let serviceAccount;
-  try {
-    serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
-      ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
-      : {
-          projectId: process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID,
-          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-          privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
-        };
-  } catch (e) {
-    console.error('[claim-pending-clb] Failed to parse FIREBASE_SERVICE_ACCOUNT:', e.message);
-    serviceAccount = {
-      projectId: process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
-    };
+function getDB() {
+  if (getApps().length === 0) {
+    let serviceAccount;
+    try {
+      serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
+        ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+        : {
+            projectId: process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID,
+            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+            privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+          };
+    } catch (e) {
+      console.error('[claim-pending-clb] JSON.parse failed:', e.message);
+      serviceAccount = {
+        projectId: process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+      };
+    }
+    initializeApp({ credential: cert(serviceAccount) });
   }
-  initializeApp({ credential: cert(serviceAccount) });
+  return getFirestore();
 }
-
-const db = getFirestore();
 
 const CLB_ABI = [
   "function transfer(address to, uint256 amount) returns (bool)",
@@ -55,7 +56,7 @@ export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
   try {
-    // 1. Verify Firebase token
+    const db = getDB();
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith("Bearer ")) {
       return res.status(401).json({ error: "Missing Authorization header" });
