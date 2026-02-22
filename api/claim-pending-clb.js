@@ -37,8 +37,8 @@ function getDB() {
   return getFirestore();
 }
 
+// System wallet transfers CLB from its 10,000 pool — no minting
 const CLB_ABI = [
-  "function mintCurrency(address to, uint256 amount) external",
   "function transfer(address to, uint256 amount) returns (bool)",
   "function balanceOf(address account) view returns (uint256)"
 ];
@@ -93,10 +93,10 @@ export default async function handler(req, res) {
     // 3. Check on-chain balance to avoid double-send
     const rpcUrl = process.env.VITE_SEPOLIA_RPC_URL || 'https://ethereum-sepolia-rpc.publicnode.com';
     const contractAddress = process.env.VITE_CLB_CONTRACT_ADDRESS;
-    const privateKey = process.env.DEPLOYER_WALLET_PRIVATE_KEY || process.env.SYSTEM_WALLET_PRIVATE_KEY;
+    const privateKey = process.env.SYSTEM_WALLET_PRIVATE_KEY;
 
     if (!contractAddress || !privateKey) {
-      return res.status(500).json({ error: "Server wallet not configured. Set DEPLOYER_WALLET_PRIVATE_KEY on Vercel." });
+      return res.status(500).json({ error: "Server wallet not configured. Set SYSTEM_WALLET_PRIVATE_KEY on Vercel." });
     }
 
     const provider = new ethers.JsonRpcProvider(rpcUrl);
@@ -118,14 +118,9 @@ export default async function handler(req, res) {
       });
     }
 
-    // 4. Mint/send the pending amount
+    // 4. Transfer from system wallet pool → student wallet
     const amountWei = ethers.parseEther(toSend.toString());
-    let tx;
-    try {
-      tx = await contract.mintCurrency(walletAddress, amountWei);
-    } catch {
-      tx = await contract.transfer(walletAddress, amountWei);
-    }
+    const tx = await contract.transfer(walletAddress, amountWei);
     const receipt = await tx.wait();
 
     // 5. Log to events
@@ -141,13 +136,21 @@ export default async function handler(req, res) {
       status: 'success',
     });
 
-    // 6. Update pool
+    // 6. Update pool (create doc if it doesn't exist yet)
     const poolRef = db.collection('system').doc('credit_pool');
     const poolDoc = await poolRef.get();
     if (poolDoc.exists) {
       await poolRef.update({
         distributed: (poolDoc.data().distributed || 0) + toSend,
         remaining: (poolDoc.data().remaining || 10000) - toSend,
+        lastIssuanceAt: timestamp,
+      });
+    } else {
+      // First ever reward — create the pool doc so the header shows correct value
+      await poolRef.set({
+        total: 10000,
+        distributed: toSend,
+        remaining: 10000 - toSend,
         lastIssuanceAt: timestamp,
       });
     }

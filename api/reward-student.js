@@ -43,26 +43,24 @@ function getDB() {
   return getFirestore();
 }
 
-// Minimal ABI — mintCurrency (owner-only) + balanceOf
+// Minimal ABI — only what the system wallet needs
 const CLB_ABI = [
-  "function mintCurrency(address to, uint256 amount) external",
   "function transfer(address to, uint256 amount) returns (bool)",
   "function balanceOf(address account) view returns (uint256)"
 ];
 
 /**
- * Mint or transfer CLB to student wallet on-chain.
- * Uses DEPLOYER_WALLET_PRIVATE_KEY (owner) for mintCurrency,
- * or falls back to SYSTEM_WALLET_PRIVATE_KEY + transfer if system wallet has balance.
+ * Transfer CLB from system wallet (0x87b8...) to student wallet.
+ * System wallet holds the 10,000 CLB pool.
+ * Each reward decrements the pool — pure transfer(), no minting.
  */
 async function sendCLBOnChain(toAddress, amountCLB) {
   const rpcUrl = process.env.VITE_SEPOLIA_RPC_URL || 'https://ethereum-sepolia-rpc.publicnode.com';
   const contractAddress = process.env.VITE_CLB_CONTRACT_ADDRESS;
-  // Prefer deployer key (can mint), fall back to system wallet (needs pre-funded CLB)
-  const privateKey = process.env.DEPLOYER_WALLET_PRIVATE_KEY || process.env.SYSTEM_WALLET_PRIVATE_KEY;
+  const privateKey = process.env.SYSTEM_WALLET_PRIVATE_KEY;
 
   if (!contractAddress) throw new Error('VITE_CLB_CONTRACT_ADDRESS not set in Vercel env');
-  if (!privateKey) throw new Error('DEPLOYER_WALLET_PRIVATE_KEY or SYSTEM_WALLET_PRIVATE_KEY not set');
+  if (!privateKey) throw new Error('SYSTEM_WALLET_PRIVATE_KEY not set in Vercel env');
 
   const provider = new ethers.JsonRpcProvider(rpcUrl);
   const wallet = new ethers.Wallet(privateKey, provider);
@@ -70,22 +68,11 @@ async function sendCLBOnChain(toAddress, amountCLB) {
 
   const amountWei = ethers.parseEther(amountCLB.toString());
 
-  // Try mintCurrency first (works if wallet is contract owner)
-  try {
-    console.log(`[CLB] Minting ${amountCLB} CLB to ${toAddress}...`);
-    const tx = await contract.mintCurrency(toAddress, amountWei);
-    const receipt = await tx.wait();
-    console.log(`[CLB] Minted in block ${receipt.blockNumber} — txHash: ${tx.hash}`);
-    return { txHash: tx.hash, blockNumber: receipt.blockNumber };
-  } catch (mintErr) {
-    console.warn('[CLB] mintCurrency failed, trying transfer:', mintErr.message);
-    // Fall back to transfer (wallet must hold CLB balance)
-    const tx = await contract.transfer(toAddress, amountWei);
-    const receipt = await tx.wait();
-    console.log(`[CLB] Transferred in block ${receipt.blockNumber} — txHash: ${tx.hash}`);
-    return { txHash: tx.hash, blockNumber: receipt.blockNumber };
-  }
-}
+  console.log(`[CLB] Transferring ${amountCLB} CLB from system wallet to ${toAddress}...`);
+  const tx = await contract.transfer(toAddress, amountWei);
+  const receipt = await tx.wait();
+  console.log(`[CLB] Transferred in block ${receipt.blockNumber} — txHash: ${tx.hash}`);
+  return { txHash: tx.hash, blockNumber: receipt.blockNumber };
 }
 
 export default async function handler(req, res) {
