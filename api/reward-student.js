@@ -70,10 +70,13 @@ async function sendCLBOnChain(toAddress, amountCLB) {
 }
 
 export default async function handler(req, res) {
-  // CORS headers — restrict to app domain in production
-  const allowedOrigins = ['https://credilab.vercel.app', 'http://localhost:5173', 'http://localhost:3000'];
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
+  // CORS headers — allow Vercel deployments + localhost dev
+  const origin = req.headers.origin || '';
+  const isAllowed =
+    origin.endsWith('.vercel.app') ||
+    origin === 'http://localhost:5173' ||
+    origin === 'http://localhost:3000';
+  if (isAllowed) {
     res.setHeader("Access-Control-Allow-Origin", origin);
   }
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");

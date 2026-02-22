@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   CodeBracketIcon,
@@ -7,7 +7,9 @@ import {
   ArrowRightIcon,
   NoSymbolIcon,
 } from "@heroicons/react/24/outline";
+import { collection, query, where, getDocs } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
+import { db } from "../lib/firebase";
 import CHALLENGES from "../data/challenges";
 
 const DIFF_COLORS = {
@@ -21,9 +23,13 @@ const TIME_LIMIT = { Easy: "30 min", Medium: "60 min", Hard: "90 min" };
 export default function ProblemPage() {
   const { userData, user } = useAuth();
 
-  const { terminatedIds, startedIds, localCompletedIds, sessionMeta } = useMemo(() => {
-    if (!user) return { terminatedIds: [], startedIds: [], localCompletedIds: [], sessionMeta: {} };
+  // Session data from localStorage (instant) + Firestore (persistent across devices)
+  const [sessionData, setSessionData] = useState({ terminatedIds: [], startedIds: [], localCompletedIds: [], sessionMeta: {} });
 
+  useEffect(() => {
+    if (!user) return;
+
+    // Step 1: Read localStorage (instant — gives local device state)
     const terminated = [];
     const started = [];
     const localCompleted = [];
@@ -42,21 +48,64 @@ export default function ProblemPage() {
           } else if (session.status === "active") {
             started.push(ch.id);
           }
-          // Always store status in meta
-          meta[ch.id] = {
-            ...(meta[ch.id] || {}),
-            status: session.status,
-            timeBadge: session.timeBadge,
-            solveTimeSec: session.solveTimeSec,
-          };
+          meta[ch.id] = { status: session.status, timeBadge: session.timeBadge, solveTimeSec: session.solveTimeSec };
         }
-      } catch {
-        // ignore
-      }
+      } catch { /* ignore */ }
     });
 
-    return { terminatedIds: terminated, startedIds: started, localCompletedIds: localCompleted, sessionMeta: meta };
+    // Step 2: Also read Firestore challengeSessions (persists across deploys/devices)
+    (async () => {
+      const fsTerminated = [...terminated];
+      const fsStarted = [...started];
+      const fsCompleted = [...localCompleted];
+      const fsMeta = { ...meta };
+
+      try {
+        const sessionsRef = collection(db, "challengeSessions");
+        const q = query(sessionsRef, where("uid", "==", user.uid));
+        const snap = await getDocs(q);
+
+        snap.forEach((d) => {
+          const data = d.data();
+          const cid = data.challengeId || d.id.replace(`${user.uid}_`, "");
+          // Skip if already tracked from localStorage
+          if (fsMeta[cid]) return;
+
+          if (data.status === "completed") {
+            fsCompleted.push(cid);
+          } else if (data.status === "terminated" || data.status === "expired") {
+            fsTerminated.push(cid);
+          } else if (data.status === "active") {
+            // Check if session time has expired
+            const startTime = data.startedAt ? new Date(data.startedAt).getTime() : 0;
+            const ch = CHALLENGES.find((c) => c.id === cid);
+            const timeLimitMs = (ch?.timeLimitMin || 30) * 60 * 1000;
+            if (Date.now() - startTime > timeLimitMs) {
+              fsTerminated.push(cid);
+              fsMeta[cid] = { status: "expired" };
+            } else {
+              fsStarted.push(cid);
+            }
+          }
+          if (!fsMeta[cid]) {
+            fsMeta[cid] = { status: data.status, timeBadge: data.timeBadge, solveTimeSec: data.solveTimeSec };
+          }
+        });
+      } catch (err) {
+        console.warn("Failed to load Firestore sessions:", err.message);
+        // localStorage data already in arrays — graceful fallback
+      }
+
+      setSessionData({
+        terminatedIds: [...new Set(fsTerminated)],
+        startedIds: [...new Set(fsStarted)],
+        localCompletedIds: [...new Set(fsCompleted)],
+        sessionMeta: fsMeta,
+      });
+    })();
   }, [user]);
+
+  const { terminatedIds, startedIds, localCompletedIds, sessionMeta } = sessionData;
 
   // Merge Firestore completedChallenges with localStorage status=completed (handles API failures)
   const firestoreCompletedIds = userData?.completedChallenges || [];
