@@ -112,10 +112,10 @@ export default async function handler(req, res) {
   }
 
   // 4. Submit to Judge0 CE API
-  const JUDGE0_URL = process.env.JUDGE0_URL || "https://judge0-ce.p.rapidapi.com";
+  const JUDGE0_URL = process.env.JUDGE0_URL || "https://ce.judge0.com";
   const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY || "";
 
-  // Build headers — RapidAPI key if available, otherwise plain
+  // Build headers — RapidAPI key if available, otherwise plain (ce.judge0.com needs no key)
   const judge0Headers = { "Content-Type": "application/json" };
   if (RAPIDAPI_KEY) {
     judge0Headers["X-RapidAPI-Key"] = RAPIDAPI_KEY;
