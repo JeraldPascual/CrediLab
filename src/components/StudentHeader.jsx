@@ -9,9 +9,11 @@ import {
 } from "@heroicons/react/24/outline";
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { doc, onSnapshot } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { getSkillTier } from "../data/achievements";
+import { db } from "../lib/firebase";
 
 export default function StudentHeader({ onMenuToggle, sidebarExpanded }) {
   const { user, userData, logout } = useAuth();
@@ -20,6 +22,33 @@ export default function StudentHeader({ onMenuToggle, sidebarExpanded }) {
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+
+  // Real-time CLB pool balance from Firestore system/credit_pool
+  const [poolRemaining, setPoolRemaining] = useState(null);
+  const [poolTotal, setPoolTotal] = useState(10000);
+
+  useEffect(() => {
+    const poolRef = doc(db, "system", "credit_pool");
+    const unsub = onSnapshot(
+      poolRef,
+      (snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          setPoolRemaining(data.remaining ?? data.total ?? 10000);
+          setPoolTotal(data.total ?? 10000);
+        } else {
+          // Doc doesn't exist yet — no rewards distributed yet
+          setPoolRemaining(10000);
+          setPoolTotal(10000);
+        }
+      },
+      () => {
+        // Firestore unavailable (ad blocker etc.) — show 10,000 as fallback
+        setPoolRemaining(10000);
+      }
+    );
+    return () => unsub();
+  }, []);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -40,7 +69,7 @@ export default function StudentHeader({ onMenuToggle, sidebarExpanded }) {
   const displayName =
     userData?.displayName || user?.displayName || user?.email || "Student";
 
-  const tier = getSkillTier(userData?.credits || 0);
+  const tier = getSkillTier(userData?.totalCLBEarned ?? userData?.credits ?? 0);
 
   return (
     <header className="sticky top-0 z-40 w-full h-16 bg-white dark:bg-dark-surface border-b border-gray-200 dark:border-dark-border flex items-center px-4 md:px-6 gap-4">
@@ -67,15 +96,32 @@ export default function StudentHeader({ onMenuToggle, sidebarExpanded }) {
 
       {/* ── Center: Global CLB Pool ── */}
       <div className="hidden md:flex flex-1 justify-center">
-        <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-green-primary/10 border border-green-primary/20">
-          <span className="text-sm font-semibold text-green-primary"><CircleStackIcon className="w-4 h-4 inline -mt-0.5" /></span>
-          <span className="text-sm font-semibold text-green-primary">
-            CLB Pool:
-          </span>
-          <span className="text-sm font-bold text-green-primary">
-            10,000
-          </span>
-        </div>
+        {(() => {
+          const pct = poolTotal > 0 ? (poolRemaining ?? poolTotal) / poolTotal : 1;
+          const isLow = pct <= 0.2;
+          const isEmpty = (poolRemaining ?? poolTotal) <= 0;
+          const colorClass = isEmpty
+            ? "text-red-500 bg-red-500/10 border-red-500/20"
+            : isLow
+            ? "text-yellow-500 bg-yellow-500/10 border-yellow-500/20"
+            : "text-green-primary bg-green-primary/10 border-green-primary/20";
+          return (
+            <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full border ${colorClass}`}>
+              <CircleStackIcon className="w-4 h-4" />
+              <span className="text-sm font-semibold">CLB Pool:</span>
+              <span className="text-sm font-bold tabular-nums">
+                {poolRemaining === null
+                  ? "…"
+                  : isEmpty
+                  ? "Exhausted"
+                  : poolRemaining.toLocaleString()}
+              </span>
+              {!isEmpty && poolRemaining !== null && (
+                <span className="text-xs opacity-60">/ {poolTotal.toLocaleString()}</span>
+              )}
+            </div>
+          );
+        })()}
       </div>
 
       {/* ── Right: Badge + Dark Mode + User ── */}

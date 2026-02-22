@@ -33,6 +33,18 @@ export default function ProfilePage() {
   const [showWallet, setShowWallet] = useState(false);
   const [walletError, setWalletError] = useState("");
 
+  // Sync local state when userData arrives / updates from Firestore onSnapshot
+  // (userData is null on first render; onSnapshot delivers it asynchronously)
+  useEffect(() => {
+    if (userData) {
+      if (userData.firstName && !firstName) setFirstName(userData.firstName);
+      if (userData.lastName && !lastName) setLastName(userData.lastName);
+      if (userData.walletAddress && userData.walletAddress !== walletAddress) {
+        setWalletAddress(userData.walletAddress);
+      }
+    }
+  }, [userData]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Blockchain balance state
   const [blockchainBalance, setBlockchainBalance] = useState(null);
   const [loadingBalance, setLoadingBalance] = useState(false);
@@ -353,12 +365,19 @@ export default function ProfilePage() {
                     {parseFloat(blockchainBalance).toFixed(2)} CLB
                   </div>
                   <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-dark-muted">
-                    <span>Firestore Credits: {userData?.credits || 0}</span>
-                    {Math.abs(parseFloat(blockchainBalance) - (userData?.credits || 0)) > 0.01 && (
-                      <span className="px-2 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400">
-                        ⚠️ Mismatch
-                      </span>
-                    )}
+                    <span>Firestore Credits: {userData?.totalCLBEarned ?? userData?.credits ?? 0}</span>
+                    {(() => {
+                      const onChain = parseFloat(blockchainBalance);
+                      const offChain = userData?.totalCLBEarned ?? userData?.credits ?? 0;
+                      if (Math.abs(onChain - offChain) <= 0.01) return null;
+                      // On-chain is 0 but Firestore has credits → pending on-chain transfer
+                      const label = onChain < offChain ? "Pending on-chain" : "Mismatch";
+                      return (
+                        <span className="px-2 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400">
+                          ⚠️ {label}
+                        </span>
+                      );
+                    })()}
                   </div>
                 </div>
               ) : (

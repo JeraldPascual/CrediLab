@@ -13,9 +13,10 @@
  * - ERC1155 (Badges/Frames): soulbound badges (ID 1-99), transferable frames (ID 100+)
  *
  * Security Notes:
- * - getCLBBalance(), getERC1155Balance() are frontend-safe (read-only)
- * - transferCLB(), awardBadge() MUST only run on backend (owner-only on-chain)
- * - NEVER expose VITE_SYSTEM_WALLET_PRIVATE_KEY to frontend code
+ * - getCLBBalance(), getERC1155Balance(), getContractInfo() are frontend-safe (read-only)
+ * - transferCLBWithMetaMask() is frontend-safe (user signs with their own wallet)
+ * - System wallet transfers run ONLY in api/reward-student.js (server-side)
+ * - Private key is NEVER loaded in this file or any frontend code
  */
 
 import { ethers } from 'ethers';
@@ -58,8 +59,11 @@ const CLB_ABI = [
 // Environment variables (from .env)
 const CONTRACT_ADDRESS = import.meta.env.VITE_CLB_CONTRACT_ADDRESS;         // 0xBFDB5f0C96aA9E2eECA9303E71a2b28b7C09Aee4
 const SEPOLIA_RPC = import.meta.env.VITE_SEPOLIA_RPC_URL;
-const SYSTEM_WALLET_ADDRESS = import.meta.env.VITE_SYSTEM_WALLET_ADDRESS;   // 0xb83f5fc9be45d053c34f284460a28e395ef3e57d
-const SYSTEM_WALLET_PRIVATE_KEY = import.meta.env.VITE_SYSTEM_WALLET_PRIVATE_KEY; // Backend only!
+const SYSTEM_WALLET_ADDRESS = import.meta.env.VITE_SYSTEM_WALLET_ADDRESS;   // 0x87b8D755754BF5297C8f8b12fbCC169e55671a76
+// ⚠️ Private key is NEVER loaded on the frontend — it lives only in:
+//    - Vercel env vars (production server-side)
+//    - Local .env (for `vercel dev`)
+//    - api/reward-student.js reads it via process.env.SYSTEM_WALLET_PRIVATE_KEY
 
 /**
  * Get CLB token balance for a wallet address (FRONTEND SAFE - READ ONLY)
@@ -221,78 +225,11 @@ export async function isBadgeSoulbound(tokenId) {
   }
 }
 
-/**
- * Transfer CLB tokens from system wallet to student wallet
- * ⚠️ BACKEND ONLY - This function requires private key access
- * ⚠️ NEVER call this from frontend code
- *
- * @param {string} toAddress - Recipient wallet address
- * @param {number} amount - Amount of CLB to transfer (e.g., 50)
- * @returns {Promise<Object>} Transaction details { hash, from, to, amount }
- */
-export async function transferCLB(toAddress, amount) {
-  try {
-    // Validate this is running in backend environment
-    if (typeof window !== 'undefined') {
-      throw new Error('SECURITY VIOLATION: transferCLB() called from frontend. This function must only run on backend.');
-    }
-
-    // Validate inputs
-    if (!CONTRACT_ADDRESS || !SEPOLIA_RPC || !SYSTEM_WALLET_PRIVATE_KEY) {
-      throw new Error('Blockchain configuration incomplete. Check environment variables.');
-    }
-    if (!toAddress || !ethers.isAddress(toAddress)) {
-      throw new Error('Invalid recipient address');
-    }
-    if (typeof amount !== 'number' || amount <= 0) {
-      throw new Error('Invalid amount. Must be positive number.');
-    }
-
-    // Create provider
-    const provider = new ethers.JsonRpcProvider(SEPOLIA_RPC);
-
-    // Create wallet (signs transactions)
-    const wallet = new ethers.Wallet(SYSTEM_WALLET_PRIVATE_KEY, provider);
-
-    // Create contract instance with signer
-    const contract = new ethers.Contract(CONTRACT_ADDRESS, CLB_ABI, wallet);
-
-    // Convert amount to wei (18 decimals)
-    const amountWei = ethers.parseEther(amount.toString());
-
-    // Send transaction
-    console.log(`[CLB Transfer] Sending ${amount} CLB to ${toAddress}...`);
-    const tx = await contract.transfer(toAddress, amountWei);
-
-    // Wait for confirmation
-    console.log(`[CLB Transfer] Transaction sent: ${tx.hash}. Waiting for confirmation...`);
-    const receipt = await tx.wait();
-
-    console.log(`[CLB Transfer] Confirmed in block ${receipt.blockNumber}`);
-
-    return {
-      hash: tx.hash,
-      from: wallet.address,
-      to: toAddress,
-      amount: amount,
-      blockNumber: receipt.blockNumber,
-      gasUsed: receipt.gasUsed.toString(),
-      status: receipt.status === 1 ? 'success' : 'failed'
-    };
-  } catch (error) {
-    console.error('Error transferring CLB:', error);
-
-    // Parse common errors
-    if (error.code === 'INSUFFICIENT_FUNDS') {
-      throw new Error('System wallet has insufficient ETH for gas fees');
-    }
-    if (error.message?.includes('insufficient balance')) {
-      throw new Error('System wallet has insufficient CLB tokens');
-    }
-
-    throw new Error(`CLB transfer failed: ${error.message}`);
-  }
-}
+// ──────────────────────────────────────────────────────────────────────────────
+// NOTE: transferCLB() (system-wallet → student) has been removed from this file.
+// It runs ONLY on the server in api/reward-student.js → sendCLBOnChain().
+// This prevents the private key from ever appearing in the browser bundle.
+// ──────────────────────────────────────────────────────────────────────────────
 
 /**
  * Get contract metadata (for debugging/verification)
