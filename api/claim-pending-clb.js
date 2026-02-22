@@ -38,6 +38,7 @@ function getDB() {
 }
 
 const CLB_ABI = [
+  "function mintCurrency(address to, uint256 amount) external",
   "function transfer(address to, uint256 amount) returns (bool)",
   "function balanceOf(address account) view returns (uint256)"
 ];
@@ -92,10 +93,10 @@ export default async function handler(req, res) {
     // 3. Check on-chain balance to avoid double-send
     const rpcUrl = process.env.VITE_SEPOLIA_RPC_URL || 'https://ethereum-sepolia-rpc.publicnode.com';
     const contractAddress = process.env.VITE_CLB_CONTRACT_ADDRESS;
-    const privateKey = process.env.SYSTEM_WALLET_PRIVATE_KEY;
+    const privateKey = process.env.DEPLOYER_WALLET_PRIVATE_KEY || process.env.SYSTEM_WALLET_PRIVATE_KEY;
 
     if (!contractAddress || !privateKey) {
-      return res.status(500).json({ error: "Server wallet not configured." });
+      return res.status(500).json({ error: "Server wallet not configured. Set DEPLOYER_WALLET_PRIVATE_KEY on Vercel." });
     }
 
     const provider = new ethers.JsonRpcProvider(rpcUrl);
@@ -117,9 +118,14 @@ export default async function handler(req, res) {
       });
     }
 
-    // 4. Send the pending amount
+    // 4. Mint/send the pending amount
     const amountWei = ethers.parseEther(toSend.toString());
-    const tx = await contract.transfer(walletAddress, amountWei);
+    let tx;
+    try {
+      tx = await contract.mintCurrency(walletAddress, amountWei);
+    } catch {
+      tx = await contract.transfer(walletAddress, amountWei);
+    }
     const receipt = await tx.wait();
 
     // 5. Log to events
