@@ -32,6 +32,8 @@ export default function ProfilePage() {
   const [copied, setCopied] = useState(false);
   const [showWallet, setShowWallet] = useState(false);
   const [walletError, setWalletError] = useState("");
+  const [claimingCLB, setClaimingCLB] = useState(false);
+  const [claimResult, setClaimResult] = useState(null);
 
   // Sync local state when userData arrives / updates from Firestore onSnapshot
   // (userData is null on first render; onSnapshot delivers it asynchronously)
@@ -190,6 +192,28 @@ export default function ProfilePage() {
       alert("Could not read image file.");
     };
     img.src = objectUrl;
+  }
+
+  async function handleClaimCLB() {
+    setClaimingCLB(true);
+    setClaimResult(null);
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch("/api/claim-pending-clb", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Claim failed");
+      setClaimResult({ ok: true, msg: data.message });
+      setTimeout(async () => {
+        try { const bal = await getCLBBalance(walletAddress); setBlockchainBalance(bal); } catch { /* ignore */ }
+      }, 5000);
+    } catch (err) {
+      setClaimResult({ ok: false, msg: err.message });
+    } finally {
+      setClaimingCLB(false);
+    }
   }
 
   return (
@@ -373,8 +397,24 @@ export default function ProfilePage() {
                       // On-chain is 0 but Firestore has credits → pending on-chain transfer
                       const label = onChain < offChain ? "Pending on-chain" : "Mismatch";
                       return (
-                        <span className="px-2 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400">
-                          ⚠️ {label}
+                        <span className="flex items-center gap-2 flex-wrap">
+                          <span className="px-2 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400">
+                            ⚠️ {label}
+                          </span>
+                          {onChain < offChain && (
+                            <button
+                              onClick={handleClaimCLB}
+                              disabled={claimingCLB}
+                              className="px-3 py-0.5 rounded-full bg-green-primary text-dark-bg text-xs font-semibold hover:bg-green-dark transition-colors disabled:opacity-50"
+                            >
+                              {claimingCLB ? "Sending…" : "Claim CLB"}
+                            </button>
+                          )}
+                          {claimResult && (
+                            <span className={claimResult.ok ? "text-green-500" : "text-red-400"}>
+                              {claimResult.msg}
+                            </span>
+                          )}
                         </span>
                       );
                     })()}
