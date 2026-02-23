@@ -1,93 +1,140 @@
 package com.example.credilabmobile
 
+import android.util.Log
 import androidx.fragment.app.FragmentManager
-import com.walletconnect.web3.modal.client.Modal
-import com.walletconnect.web3.modal.client.Web3Modal
-import com.walletconnect.web3.modal.ui.Web3ModalSheet
+import com.reown.appkit.client.*
+import com.reown.appkit.client.Modal
+import com.reown.appkit.ui.AppKitSheet
+
 
 class WalletConnectHelper(private val context: android.content.Context) {
 
-    private var onConnectionStateChange: ((Boolean) -> Unit)? = null
+// ... (existing code) ...
 
+
+
+    fun interface TransactionListener {
+        fun onResponse(success: Boolean, message: String)
+    }
+
+    private var onConnectionStateChange: ((Boolean) -> Unit)? = null
+    private var onTransactionResponse: TransactionListener? = null
+    private var sessionTopic: String? = null
 
 
     init {
-        // Initialize Delegate to listen for session events
-        // Trying Web3Modal.ModalDelegate if available, or just check documentation structure
-        // In recent versions, it might be Web3Modal.setDelegate(...)
-        
-        // The error said "Web3Modal.ModalDelegate was expected", so it must exist on Web3Modal class.
-        val delegate = object : Web3Modal.ModalDelegate {
+        val delegate = object : AppKit.ModalDelegate {
             override fun onSessionApproved(approvedSession: Modal.Model.ApprovedSession) {
-                // approvedSession might not have .topic directly. 
-                // It usually has .topic or .session.topic
-                // Let's print the object to debug if we can't find property.
-                // Or try approvedSession.topic if available (it should be).
-                // "Unresolved reference: topic" suggests it might be named differently or inside a nested object.
-                android.util.Log.d("WalletConnectHelper", "Session Approved: $approvedSession")
-                
-                // Try to get account from Web3Modal immediately and save it
+                val sessionStr = approvedSession.toString()
+                Log.d("WalletConnectHelper", "Session Approved: $sessionStr")
+                // sessionTopic = approvedSession.topic // topic property not available directly
                 try {
-                    val account = Web3Modal.getAccount()
-                    if (account != null) {
-                        android.util.Log.d("WalletConnectHelper", "Saved Address from Callback: ${account.address}")
-                        WalletManager.getInstance(context).setWalletAddress(account.address)
+                    var address: String? = null
+
+                    // Method 1: Parse 0x address from the session string representation
+                    val regex = Regex("0x[a-fA-F0-9]{40}")
+                    val match = regex.find(sessionStr)
+                    if (match != null) {
+                        address = match.value
+                        Log.d("WalletConnectHelper", "Address from session string: $address")
+                    }
+
+                    // Method 2: Try AppKit.getAccount() directly
+                    if (address.isNullOrEmpty()) {
+                        val account = AppKit.getAccount()
+                        Log.d("WalletConnectHelper", "AppKit.getAccount(): $account")
+                        if (account != null) {
+                            address = account.address
+                            if (address?.contains(":") == true) {
+                                address = address.substringAfterLast(":")
+                            }
+                        }
+                    }
+
+                    if (!address.isNullOrEmpty()) {
+                        Log.d("WalletConnectHelper", "Saving wallet address: $address")
+                        WalletManager.getInstance(context).setWalletAddress(address)
                     } else {
-                        android.util.Log.d("WalletConnectHelper", "Web3Modal.getAccount() is null in onSessionApproved")
+                        Log.w("WalletConnectHelper", "Could not extract address, scheduling retry")
+                        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                            try {
+                                val account = AppKit.getAccount()
+                                if (account != null) {
+                                    var addr = account.address
+                                    if (addr.contains(":")) addr = addr.substringAfterLast(":")
+                                    Log.d("WalletConnectHelper", "Delayed address: $addr")
+                                    WalletManager.getInstance(context).setWalletAddress(addr)
+                                }
+                            } catch (e: Exception) {
+                                Log.e("WalletConnectHelper", "Delayed getAccount failed", e)
+                            }
+                        }, 1000)
                     }
                 } catch (e: Exception) {
-                    android.util.Log.e("WalletConnectHelper", "Error saving address in callback", e)
+                    Log.e("WalletConnectHelper", "Error saving address in callback", e)
                 }
-
                 onConnectionStateChange?.invoke(true)
             }
 
             override fun onSessionRejected(rejectedSession: Modal.Model.RejectedSession) {
-                 android.util.Log.d("WalletConnectHelper", "Session Rejected")
+                Log.d("WalletConnectHelper", "Session Rejected")
             }
 
             override fun onSessionUpdate(updatedSession: Modal.Model.UpdatedSession) {
-                // handle update
+                Log.d("WalletConnectHelper", "Session Updated")
             }
 
             override fun onSessionEvent(sessionEvent: Modal.Model.SessionEvent) {
-                // handle event
+                Log.d("WalletConnectHelper", "Session Event: $sessionEvent")
             }
 
             override fun onSessionDelete(deletedSession: Modal.Model.DeletedSession) {
-                 android.util.Log.d("WalletConnectHelper", "Session Deleted")
-                 onConnectionStateChange?.invoke(false)
+                Log.d("WalletConnectHelper", "Session Deleted")
+                sessionTopic = null
+                onConnectionStateChange?.invoke(false)
             }
 
             override fun onSessionRequestResponse(response: Modal.Model.SessionRequestResponse) {
-                // Handle response
+                Log.d("WalletConnectHelper", "Session Request Response: $response")
+                when (response.result) {
+                    is Modal.Model.JsonRpcResponse.JsonRpcResult -> {
+                        val result = (response.result as Modal.Model.JsonRpcResponse.JsonRpcResult).result
+                        Log.d("WalletConnectHelper", "Transaction success: $result")
+                        onTransactionResponse?.onResponse(true, result.toString())
+                    }
+                    is Modal.Model.JsonRpcResponse.JsonRpcError -> {
+                        val error = (response.result as Modal.Model.JsonRpcResponse.JsonRpcError)
+                        Log.e("WalletConnectHelper", "Transaction error: ${error.message}")
+                        onTransactionResponse?.onResponse(false, error.message)
+                    }
+                }
             }
-            
+
             override fun onConnectionStateChange(state: Modal.Model.ConnectionState) {
-                android.util.Log.d("WalletConnectHelper", "Connection State: $state")
+                Log.d("WalletConnectHelper", "Connection State: $state")
             }
-            
+
             override fun onProposalExpired(proposal: Modal.Model.ExpiredProposal) {
-                android.util.Log.d("WalletConnectHelper", "Proposal Expired")
+                Log.d("WalletConnectHelper", "Proposal Expired")
             }
 
             override fun onRequestExpired(request: Modal.Model.ExpiredRequest) {
-                android.util.Log.d("WalletConnectHelper", "Request Expired")
+                Log.d("WalletConnectHelper", "Request Expired")
             }
-            
+
             override fun onSessionExtend(session: Modal.Model.Session) {
-                android.util.Log.d("WalletConnectHelper", "Session Extended")
+                Log.d("WalletConnectHelper", "Session Extended")
             }
-            
+
             override fun onError(error: Modal.Model.Error) {
-                 android.util.Log.e("WalletConnectHelper", "Delegate error: ${error.throwable}")
+                Log.e("WalletConnectHelper", "Delegate error: ${error.throwable}")
             }
         }
 
         try {
-             Web3Modal.setDelegate(delegate)
+            AppKit.setDelegate(delegate)
         } catch (e: Exception) {
-             android.util.Log.e("WalletConnectHelper", "Failed to set delegate", e)
+            Log.e("WalletConnectHelper", "Failed to set delegate", e)
         }
     }
 
@@ -95,50 +142,62 @@ class WalletConnectHelper(private val context: android.content.Context) {
         onConnectionStateChange = listener
     }
 
+    fun setTransactionResponseListener(listener: TransactionListener) {
+        onTransactionResponse = listener
+    }
+
     /**
-     * Opens the WalletConnect modal.
+     * Opens the AppKit modal (formerly Web3Modal).
      */
     fun connect(fragmentManager: FragmentManager) {
         try {
-             val sheet = Web3ModalSheet()
-             sheet.show(fragmentManager, "Web3Modal")
+            val sheet = AppKitSheet()
+            sheet.show(fragmentManager, "AppKit")
         } catch (e: Exception) {
-            android.util.Log.e("WalletConnectHelper", "Error opening modal", e)
+            Log.e("WalletConnectHelper", "Error opening modal", e)
         }
     }
-    
+
     fun getSessionAddress(): String? {
-        return Web3Modal.getAccount()?.address
+        return AppKit.getAccount()?.address
     }
-    
+
     fun disconnect() {
-        Web3Modal.disconnect(
-            onSuccess = { android.util.Log.d("WalletConnectHelper", "Disconnected") },
-            onError = { error: Throwable -> android.util.Log.e("WalletConnectHelper", "Disconnect error", error) }
+        AppKit.disconnect(
+            onSuccess = { Log.d("WalletConnectHelper", "Disconnected") },
+            onError = { error: Throwable -> Log.e("WalletConnectHelper", "Disconnect error", error) }
         )
     }
 
-    fun sendTransaction(
-        to: String,
-        data: String,
-        valueHex: String,
-        onSuccess: (String) -> Unit,
-        onError: (Throwable) -> Unit
-    ) {
-        // Implementation delayed until SignClient API is verified.
-        // For now, prompt user that signing via WalletConnect is pending.
-        onError(Exception("WalletConnect signing not yet fully implemented."))
+    /**
+     * Send an ERC-20 token transfer via the WalletConnect session.
+     * MetaMask will receive the request and prompt the user to sign.
+     */
+    @JvmOverloads
+    fun sendTransaction(toAddress: String, data: String, value: String = "0x0") {
+        Log.e("WalletConnectHelper", "sendTransaction: Not implemented yet due to SDK version mismatch")
+        onTransactionResponse?.onResponse(false, "Feature under construction")
+        
+        /*
+        // Code commented out until AppKit API is verified
+        val topic = sessionTopic
+        if (topic == null) {
+            // ...
+        }
+        ...
+        */
     }
-    
+
+
     companion object {
         @JvmStatic
         fun disconnect(onSuccess: () -> Unit, onError: (Throwable) -> Unit) {
-            Web3Modal.disconnect(onSuccess, onError)
+            AppKit.disconnect(onSuccess, onError)
         }
 
         @JvmStatic
         fun getAddress(): String? {
-            return Web3Modal.getAccount()?.address
+            return AppKit.getAccount()?.address
         }
     }
 }

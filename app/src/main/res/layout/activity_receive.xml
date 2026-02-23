@@ -41,11 +41,22 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Show this QR code to receive CLB tokens"
-        android:textColor="@color/text_secondary"
-        android:textSize="14sp"
+        android:text="Scan to Pay at Cafeteria"
+        android:textColor="@color/primary"
+        android:textSize="18sp"
+        android:textStyle="bold"
         android:layout_marginTop="24dp"
         android:gravity="center" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Show this QR code to the cashier to receive payments or claim rewards."
+        android:textColor="@color/text_secondary"
+        android:textSize="14sp"
+        android:layout_marginTop="8dp"
+        android:gravity="center"
+        android:paddingHorizontal="32dp" />
 
     <!-- QR Code Card -->
     <androidx.cardview.widget.CardView

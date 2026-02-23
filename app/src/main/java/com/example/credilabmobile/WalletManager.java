@@ -20,18 +20,33 @@ public class WalletManager {
     }
 
     public void setWalletAddress(String address) {
-        // WalletConnect manages the session, but we can store it locally if needed
-        // for UI consistency before the session is fully validated
-        prefs.edit().putString(Constants.PREF_WALLET_ADDRESS, address).apply();
+        // Clean CAIP-10 prefix before storing
+        String cleaned = cleanAddress(address);
+        prefs.edit().putString(Constants.PREF_WALLET_ADDRESS, cleaned).apply();
     }
 
     public String getWalletAddress() {
         // Try getting from WalletConnectHelper first
         String address = WalletConnectHelper.getAddress();
 
-        // Fallback to local storage if Web3Modal is not ready or returns null
-        if (address == null) {
+        // Fallback to local storage if AppKit returns null or empty
+        // (AppKit.getAccount()?.address can return "" right after session approval)
+        if (address == null || address.isEmpty()) {
             address = prefs.getString(Constants.PREF_WALLET_ADDRESS, null);
+        }
+        return cleanAddress(address);
+    }
+
+    /**
+     * Strips CAIP-10 prefix if present.
+     * e.g. "eip155:11155111:0xABC..." -> "0xABC..."
+     */
+    private static String cleanAddress(String address) {
+        if (address == null)
+            return null;
+        if (address.contains(":")) {
+            String[] parts = address.split(":");
+            return parts[parts.length - 1];
         }
         return address;
     }

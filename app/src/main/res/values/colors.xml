@@ -23,4 +23,5 @@
     <color name="warning">#FFFFAB40</color>
 
     <color name="divider">#FF30363D</color>
+    <color name="scanner_overlay">#CC000000</color>
 </resources>

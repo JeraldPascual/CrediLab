@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingStart="16dp"
+    android:paddingEnd="64dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="16dp">
+
+    <!-- Bot Text Bubble -->
+    <!-- "Newspaper" style: Serif, larger line height, perfectly readable. -->
+    <TextView
+        android:id="@+id/textBot"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:text="Bot response..."
+        android:textColor="@color/text_primary"
+        android:textSize="17sp"
+        android:fontFamily="serif"
+        android:lineSpacingExtra="6dp"
+        android:maxWidth="340dp"
+        android:textIsSelectable="true"
+        />
+
+    <!-- Speaker Button (Manual TTS) -->
+    <!-- Small, unobtrusive, next to or below text -->
+    <ImageButton
+        android:id="@+id/btnSpeaker"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:src="@drawable/ic_volume_up"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:tint="@color/text_tertiary"
+        android:scaleType="centerInside"
+        android:layout_marginTop="8dp"
+        app:layout_constraintStart_toStartOf="@id/textBot"
+        app:layout_constraintTop_toBottomOf="@id/textBot"
+        android:visibility="visible"
+        android:contentDescription="Read aloud"
+        />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

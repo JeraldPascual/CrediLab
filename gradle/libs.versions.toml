@@ -1,6 +1,6 @@
 [versions]
-agp = "8.5.0"
-kotlin = "1.9.22"
+agp = "8.7.0"
+kotlin = "2.2.0"
 junit = "4.13.2"
 junitVersion = "1.1.5"
 espressoCore = "3.5.1"
@@ -12,8 +12,10 @@ web3j = "4.12.3"
 zxing = "3.5.3"
 zxingEmbedded = "4.3.0"
 gson = "2.10.1"
-web3modal = "1.5.0"
 timber = "5.0.1"
+coreKtx = "1.15.0"
+googleServices = "4.4.2"
+playServicesAuth = "21.3.0"
 
 [libraries]
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -27,9 +29,25 @@ web3j = { group = "org.web3j", name = "core", version.ref = "web3j" }
 zxing = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
 zxing-android-embedded = { group = "com.journeyapps", name = "zxing-android-embedded", version.ref = "zxingEmbedded" }
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
-web3modal = { group = "com.walletconnect", name = "web3modal", version.ref = "web3modal" }
+reown-bom = { group = "com.reown", name = "android-bom", version = "1.6.2" }
+reown-core = { group = "com.reown", name = "android-core" }
+reown-appkit = { group = "com.reown", name = "appkit" }
+core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+# explicitly defined for better compatibility
 timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
+room-runtime = { group = "androidx.room", name = "room-runtime", version = "2.6.1" }
+room-compiler = { group = "androidx.room", name = "room-compiler", version = "2.6.1" }
+room-ktx = { group = "androidx.room", name = "room-ktx", version = "2.6.1" }
+onnxruntime = { group = "com.microsoft.onnxruntime", name = "onnxruntime-android", version = "1.17.0" }
+onnxruntime-extensions = { group = "com.microsoft.onnxruntime", name = "onnxruntime-extensions-android", version = "0.13.0" }
+markwon = { group = "io.noties.markwon", name = "core", version = "4.6.2" }
+# Firebase
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version = "33.7.0" }
+firebase-auth = { group = "com.google.firebase", name = "firebase-auth" }
+firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore" }
+play-services-auth = { group = "com.google.android.gms", name = "play-services-auth", version.ref = "playServicesAuth" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }

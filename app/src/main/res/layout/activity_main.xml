@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background_dark"
@@ -12,15 +13,48 @@
         android:padding="24dp"
         android:gravity="center_horizontal">
 
-        <!-- Header -->
-        <TextView
-            android:layout_width="wrap_content"
+        <!-- Header with Sign-Out -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="CrediLab"
-            android:textColor="@color/primary"
-            android:textSize="28sp"
-            android:textStyle="bold"
-            android:layout_marginTop="32dp" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="16dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="CrediLab"
+                    android:textColor="@color/primary"
+                    android:textSize="28sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvUserEmail"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=""
+                    android:textColor="@color/text_tertiary"
+                    android:textSize="12sp"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSignOut"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="Sign Out"
+                android:textSize="12sp"
+                android:textColor="@color/text_secondary"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                app:cornerRadius="8dp" />
+        </LinearLayout>
 
         <TextView
             android:layout_width="wrap_content"
@@ -34,11 +68,10 @@
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
+            android:layout_marginTop="24dp"
             app:cardBackgroundColor="@color/surface_dark"
             app:cardCornerRadius="16dp"
-            app:cardElevation="0dp"
-            xmlns:app="http://schemas.android.com/apk/res-auto">
+            app:cardElevation="0dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -50,7 +83,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="CLB Balance"
+                    android:text="CLB Balance (On-Chain)"
                     android:textColor="@color/text_secondary"
                     android:textSize="14sp" />
 
@@ -80,6 +113,35 @@
                     android:layout_marginTop="20dp"
                     android:layout_marginBottom="16dp" />
 
+                <!-- Firestore Credits Section -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="12dp">
+
+                    <TextView
+                        android:id="@+id/tvCreditsLabel"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Pending Credits"
+                        android:textColor="@color/text_tertiary"
+                        android:textSize="13sp"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/tvCredits"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="--"
+                        android:textColor="@color/accent"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:visibility="gone" />
+                </LinearLayout>
+
                 <TextView
                     android:id="@+id/tvWalletAddress"
                     android:layout_width="wrap_content"
@@ -89,6 +151,18 @@
                     android:textSize="13sp" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
+
+        <!-- Credit Pool Info -->
+        <TextView
+            android:id="@+id/tvPoolRemaining"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text=""
+            android:textColor="@color/text_tertiary"
+            android:textSize="12sp"
+            android:gravity="center"
+            android:visibility="gone" />
 
         <!-- Connect / Disconnect Button -->
         <com.google.android.material.button.MaterialButton
@@ -101,8 +175,7 @@
             android:textStyle="bold"
             android:backgroundTint="@color/primary"
             android:textColor="@color/black"
-            app:cornerRadius="12dp"
-            xmlns:app="http://schemas.android.com/apk/res-auto" />
+            app:cornerRadius="12dp" />
 
         <!-- Action Buttons -->
         <LinearLayout
@@ -126,8 +199,7 @@
                 app:strokeColor="@color/primary"
                 app:strokeWidth="2dp"
                 app:cornerRadius="12dp"
-                android:layout_marginEnd="8dp"
-                xmlns:app="http://schemas.android.com/apk/res-auto" />
+                android:layout_marginEnd="8dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnReceive"
@@ -142,9 +214,25 @@
                 app:strokeColor="@color/accent"
                 app:strokeWidth="2dp"
                 app:cornerRadius="12dp"
-                android:layout_marginStart="8dp"
-                xmlns:app="http://schemas.android.com/apk/res-auto" />
+                android:layout_marginStart="8dp" />
         </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnEarn"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:layout_marginTop="16dp"
+            android:text="🎓  Earn CLB (Learn)"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/white"
+            app:backgroundTint="@color/surface_elevated"
+            app:strokeColor="@color/divider"
+            app:strokeWidth="1dp"
+            app:cornerRadius="12dp"
+            app:icon="@drawable/ic_gallery"
+            app:iconTint="@color/primary"
+            app:iconGravity="textStart" />
 
         <!-- Network Info -->
         <TextView
@@ -167,6 +255,31 @@
             style="@style/Widget.MaterialComponents.Button.TextButton"
             android:layout_marginTop="8dp"
             android:visibility="gone" />
+
+        <!-- Swipe Hint -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginTop="32dp"
+            android:alpha="0.6">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Swipe left to chat with Bob (Experimental 🧪)"
+                android:textColor="@color/accent"
+                android:textSize="12sp"
+                android:textStyle="italic"
+                android:layout_marginEnd="4dp"/>
+             <ImageView
+                 android:layout_width="16dp"
+                 android:layout_height="16dp"
+                 android:src="@drawable/ic_send"
+                 app:tint="@color/text_tertiary"
+                 android:rotation="180"/>
+        </LinearLayout>
 
     </LinearLayout>
 </ScrollView>

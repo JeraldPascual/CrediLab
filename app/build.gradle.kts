@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -43,6 +44,19 @@ android {
     }
 }
 
+// Force androidx.lifecycle to a single version to resolve conflict between Firebase BOM and Reown BOM
+configurations.all {
+    resolutionStrategy {
+        force("androidx.lifecycle:lifecycle-process:2.9.2")
+        force("androidx.lifecycle:lifecycle-runtime:2.9.2")
+        force("androidx.lifecycle:lifecycle-runtime-ktx:2.9.2")
+        force("androidx.lifecycle:lifecycle-common:2.9.2")
+        force("androidx.lifecycle:lifecycle-livedata-core:2.9.2")
+        force("androidx.lifecycle:lifecycle-viewmodel:2.9.2")
+        force("androidx.lifecycle:lifecycle-viewmodel-savedstate:2.9.2")
+    }
+}
+
 dependencies {
     implementation(libs.appcompat)
     implementation(libs.material)
@@ -51,11 +65,27 @@ dependencies {
     implementation(libs.zxing)
     implementation(libs.gson)
     implementation(libs.zxing.android.embedded)
-    implementation(libs.web3modal)
-    implementation("com.walletconnect:android-core:1.31.0")
+    implementation(platform(libs.reown.bom))
+    implementation(libs.reown.core)
+    implementation(libs.reown.appkit)
     implementation(libs.timber)
+    implementation(libs.core.ktx)
+
+    // Firebase
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
+    implementation(libs.play.services.auth)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
+
+    // AI & Chat
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    annotationProcessor(libs.room.compiler) // Using annotationProcessor since ksp/kapt not set up yet
+    implementation(libs.onnxruntime)
+    implementation(libs.onnxruntime.extensions)
+    implementation(libs.markwon)
 }
