@@ -21,29 +21,34 @@ export default function StudentHeader({ onMenuToggle, sidebarExpanded }) {
   const navigate = useNavigate();
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [poolHover, setPoolHover] = useState(false);
   const dropdownRef = useRef(null);
+  const poolRef = useRef(null);
 
   // Real-time CLB pool balance from Firestore system/credit_pool
   const [poolRemaining, setPoolRemaining] = useState(null);
   const [poolTotal, setPoolTotal] = useState(10000);
+  const [poolDistributed, setPoolDistributed] = useState(0);
+  const [poolLastIssuance, setPoolLastIssuance] = useState(null);
 
   useEffect(() => {
-    const poolRef = doc(db, "system", "credit_pool");
+    const poolDocRef = doc(db, "system", "credit_pool");
     const unsub = onSnapshot(
-      poolRef,
+      poolDocRef,
       (snap) => {
         if (snap.exists()) {
           const data = snap.data();
           setPoolRemaining(data.remaining ?? data.total ?? 10000);
           setPoolTotal(data.total ?? 10000);
+          setPoolDistributed(data.distributed ?? 0);
+          setPoolLastIssuance(data.lastIssuanceAt ?? null);
         } else {
-          // Doc doesn't exist yet — no rewards distributed yet
           setPoolRemaining(10000);
           setPoolTotal(10000);
+          setPoolDistributed(0);
         }
       },
       () => {
-        // Firestore unavailable (ad blocker etc.) — show 10,000 as fallback
         setPoolRemaining(10000);
       }
     );
@@ -94,7 +99,7 @@ export default function StudentHeader({ onMenuToggle, sidebarExpanded }) {
         </span>
       </div>
 
-      {/* ── Center: Global CLB Pool ── */}
+      {/* ── Center: Global CLB Pool (with hover dropdown) ── */}
       <div className="hidden md:flex flex-1 justify-center">
         {(() => {
           const pct = poolTotal > 0 ? (poolRemaining ?? poolTotal) / poolTotal : 1;
@@ -106,18 +111,78 @@ export default function StudentHeader({ onMenuToggle, sidebarExpanded }) {
             ? "text-yellow-500 bg-yellow-500/10 border-yellow-500/20"
             : "text-green-primary bg-green-primary/10 border-green-primary/20";
           return (
-            <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full border ${colorClass}`}>
-              <CircleStackIcon className="w-4 h-4" />
-              <span className="text-sm font-semibold">CLB Pool:</span>
-              <span className="text-sm font-bold tabular-nums">
-                {poolRemaining === null
-                  ? "…"
-                  : isEmpty
-                  ? "Exhausted"
-                  : poolRemaining.toLocaleString()}
-              </span>
-              {!isEmpty && poolRemaining !== null && (
-                <span className="text-xs opacity-60">/ {poolTotal.toLocaleString()}</span>
+            <div
+              className="relative"
+              ref={poolRef}
+              onMouseEnter={() => setPoolHover(true)}
+              onMouseLeave={() => setPoolHover(false)}
+            >
+              <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full border cursor-default ${colorClass}`}>
+                <CircleStackIcon className="w-4 h-4" />
+                <span className="text-sm font-semibold">CLB Pool:</span>
+                <span className="text-sm font-bold tabular-nums">
+                  {poolRemaining === null
+                    ? "…"
+                    : isEmpty
+                    ? "Exhausted"
+                    : poolRemaining.toLocaleString()}
+                </span>
+                {!isEmpty && poolRemaining !== null && (
+                  <span className="text-xs opacity-60">/ {poolTotal.toLocaleString()}</span>
+                )}
+              </div>
+
+              {/* Hover dropdown */}
+              {poolHover && poolRemaining !== null && (
+                <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-64 bg-white dark:bg-dark-card border border-gray-200 dark:border-dark-border rounded-xl shadow-xl p-4 z-50">
+                  <p className="text-xs font-bold text-gray-900 dark:text-white mb-3">
+                    CLB Token Pool Breakdown
+                  </p>
+
+                  {/* Progress bar */}
+                  <div className="w-full bg-gray-100 dark:bg-dark-border rounded-full h-2 mb-3">
+                    <div
+                      className={`h-2 rounded-full transition-all ${isEmpty ? "bg-red-500" : isLow ? "bg-yellow-500" : "bg-emerald-500"}`}
+                      style={{ width: `${Math.max(1, pct * 100)}%` }}
+                    />
+                  </div>
+
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-gray-500 dark:text-dark-muted">Total Supply</span>
+                      <span className="font-semibold text-gray-900 dark:text-white">{poolTotal.toLocaleString()} CLB</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500 dark:text-dark-muted">Distributed</span>
+                      <span className="font-semibold text-emerald-500">{poolDistributed.toLocaleString()} CLB</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500 dark:text-dark-muted">Remaining</span>
+                      <span className={`font-semibold ${isEmpty ? "text-red-500" : isLow ? "text-yellow-500" : "text-gray-900 dark:text-white"}`}>
+                        {(poolRemaining ?? poolTotal).toLocaleString()} CLB
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500 dark:text-dark-muted">Usage</span>
+                      <span className="font-semibold text-gray-600 dark:text-dark-text">
+                        {(pct * 100).toFixed(1)}% remaining
+                      </span>
+                    </div>
+                    {poolLastIssuance && (
+                      <div className="pt-1 border-t border-gray-100 dark:border-dark-border">
+                        <span className="text-[10px] text-gray-400 dark:text-dark-muted">
+                          Last reward: {new Date(poolLastIssuance).toLocaleDateString("en-US", {
+                            month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"
+                          })}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <p className="mt-3 text-[10px] text-gray-400 dark:text-dark-muted leading-snug">
+                    Fixed supply on Sepolia testnet. Rewards transfer CLB from the system wallet — no minting.
+                  </p>
+                </div>
               )}
             </div>
           );

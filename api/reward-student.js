@@ -129,7 +129,7 @@ export default async function handler(req, res) {
     }
 
     // 2. Parse request body
-    const { challengeId, rewardAmount } = req.body || {};
+    const { challengeId, rewardAmount, targetUid } = req.body || {};
 
     if (!challengeId || typeof challengeId !== 'string') {
       return res.status(400).json({ error: "Missing or invalid challengeId" });
@@ -139,10 +139,57 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Missing or invalid rewardAmount" });
     }
 
-    // Server-side reward cap — never trust client-supplied amounts blindly
-    const MAX_REWARD_PER_CHALLENGE = 100;
+    // For weekly task admin approvals: the admin is authenticated, but CLB
+    // goes to targetUid (the student who submitted). Admin's uid is kept
+    // as `approvedBy` for audit trail.
+    const approvedBy = uid; // the authenticated caller
+    if (targetUid && req.body?.isWeeklyTask) {
+      console.log(`[Reward] Approving weekly task for student ${targetUid}`);
+      uid = targetUid; // redirect all reward logic to the student
+    }
+
+    // Determine if this is a quiz/challenge reward vs weekly task
+    const isQuizReward = !isWeeklyTask;
+
+    // ─── Server-side reward validation ───────────────────────────────────
+    // Inline reward map — must stay in sync with src/data/challenges.js
+    // This prevents spoofed client requests claiming inflated rewards.
+    const REWARD_MAP = {
+      // Core challenges
+      "greeting-001": 20, "grade-calc-002": 55, "fib-003": 18,
+      "reverse-004": 15, "bubblesort-005": 60,
+      // Java challenges — Easy
+      "even-odd-006": 15, "area-calc-007": 15, "temp-convert-008": 18,
+      "sum-digits-009": 18, "multiplication-table-010": 20,
+      // Java challenges — Medium
+      "student-avg-011": 50, "palindrome-check-012": 50, "array-stats-013": 55,
+      "payroll-calc-014": 55, "vowel-count-015": 60,
+      // Java challenges — Hard
+      "bank-account-016": 80, "matrix-add-017": 75, "word-frequency-018": 85,
+      "pattern-print-019": 80, "inventory-mgr-020": 90,
+      // Weekly SDG Tasks (dynamic — capped at 50, not strict-matched)
+      "sdg15-tree-action-w9": 35,
+    };
+
+    // Weekly tasks use "sdg" prefix — allow flexible rewards up to 50 CLB
+    const isWeeklyTask = challengeId.startsWith("sdg") || req.body?.isWeeklyTask;
+    const MAX_REWARD_PER_CHALLENGE = isWeeklyTask ? 50 : 100;
+    const expectedReward = REWARD_MAP[challengeId];
+
+    if (expectedReward !== undefined && rewardAmount !== expectedReward) {
+      console.warn(`[Reward] Mismatch: client sent ${rewardAmount} for ${challengeId}, expected ${expectedReward}`);
+      return res.status(400).json({
+        error: `Reward mismatch for challenge "${challengeId}". Expected ${expectedReward} CLB.`
+      });
+    }
+
     if (rewardAmount > MAX_REWARD_PER_CHALLENGE) {
       return res.status(400).json({ error: `Reward amount exceeds maximum (${MAX_REWARD_PER_CHALLENGE} CLB)` });
+    }
+
+    // For unknown challenge IDs (e.g. weekly tasks), allow up to MAX_REWARD cap
+    if (expectedReward === undefined) {
+      console.warn(`[Reward] Unknown challengeId "${challengeId}" — allowing with cap`);
     }
 
     // 3. Get user data from Firestore
@@ -157,8 +204,9 @@ export default async function handler(req, res) {
     const walletAddress = userData.walletAddress || null;
 
     // 4. Check if challenge already completed (idempotent guard)
+    //    Weekly tasks are tracked in weekly_completions, not completedChallenges
     const completedChallenges = userData.completedChallenges || [];
-    if (completedChallenges.includes(challengeId)) {
+    if (!isWeeklyTask && completedChallenges.includes(challengeId)) {
       return res.status(409).json({
         error: "Challenge already completed",
         alreadyCompleted: true
@@ -167,11 +215,13 @@ export default async function handler(req, res) {
 
     // 5. Mark challenge as complete in Firestore UNCONDITIONALLY
     //    (completion is always recorded regardless of wallet status)
+    //    Weekly tasks don't go into completedChallenges — they have their own collection
     const timestamp = new Date().toISOString();
-    await userRef.update({
-      completedChallenges: [...completedChallenges, challengeId],
-      lastCompletionAt: timestamp
-    });
+    const updatePayload = { lastCompletionAt: timestamp };
+    if (!isWeeklyTask) {
+      updatePayload.completedChallenges = [...completedChallenges, challengeId];
+    }
+    await userRef.update(updatePayload);
 
     // 6. Transfer CLB on-chain if wallet is connected, otherwise queue as pending
     if (walletAddress) {
@@ -180,7 +230,7 @@ export default async function handler(req, res) {
 
         // Log successful on-chain transaction
         await db.collection('events').doc(`issuance-${uid}-${challengeId}-${Date.now()}`).set({
-          type: 'issuance',
+          type: isWeeklyTask ? 'weekly_task_reward' : 'issuance',
           uid,
           challengeId,
           amountCLB: rewardAmount,
@@ -189,17 +239,17 @@ export default async function handler(req, res) {
           blockNumber,
           timestamp,
           status: 'success',
-          method: 'system_wallet'
+          method: 'system_wallet',
+          ...(isWeeklyTask && { approvedBy })
         });
 
         // Update Firestore credits to match on-chain reality
         await userRef.update({
           credits: (userData.credits || 0) + rewardAmount,
           totalCLBEarned: (userData.totalCLBEarned ?? userData.credits ?? 0) + rewardAmount,
+          ...(isQuizReward && { quizCredits: (userData.quizCredits ?? 0) + rewardAmount }),
           lastRewardAt: timestamp
         });
-
-        // Update system pool stats
         const poolRef = db.collection('system').doc('credit_pool');
         const poolDoc = await poolRef.get();
         if (poolDoc.exists) {
@@ -230,10 +280,9 @@ export default async function handler(req, res) {
         await userRef.update({
           credits: (userData.credits || 0) + rewardAmount,
           totalCLBEarned: (userData.totalCLBEarned ?? userData.credits ?? 0) + rewardAmount,
+          ...(isQuizReward && { quizCredits: (userData.quizCredits ?? 0) + rewardAmount }),
           lastRewardAt: timestamp
-        });
-
-        const pendingId = `pending-${uid}-${challengeId}-${Date.now()}`;
+        }); = `pending-${uid}-${challengeId}-${Date.now()}`;
         await db.collection('pending_rewards').doc(pendingId).set({
           uid,
           email: userData.email,
@@ -263,6 +312,7 @@ export default async function handler(req, res) {
       await userRef.update({
         credits: (userData.credits || 0) + rewardAmount,
         totalCLBEarned: (userData.totalCLBEarned ?? userData.credits ?? 0) + rewardAmount,
+        ...(isQuizReward && { quizCredits: (userData.quizCredits ?? 0) + rewardAmount }),
         lastRewardAt: timestamp
       });
 

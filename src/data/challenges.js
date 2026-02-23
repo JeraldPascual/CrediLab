@@ -1,9 +1,11 @@
-const CHALLENGES = [
+import JAVA_CHALLENGES from "./javaChallenges";
+
+const CORE_CHALLENGES = [
   {
     id: "greeting-001",
     title: "Personalized Greeting",
     difficulty: "Easy",
-    reward: 50,
+    reward: 20,  // standardized to Easy tier (15-20 CLB)
     language: "java",
     languageId: 62,
     category: "Basics",
@@ -31,7 +33,7 @@ public class Main {
     id: "grade-calc-002",
     title: "Grade Calculator",
     difficulty: "Medium",
-    reward: 100,
+    reward: 55,  // standardized to Medium tier (50-60 CLB)
     language: "java",
     languageId: 62,
     category: "Control Flow",
@@ -63,7 +65,7 @@ public class Main {
     id: "fib-003",
     title: "Fibonacci Sequence",
     difficulty: "Easy",
-    reward: 50,
+    reward: 18,  // standardized to Easy tier (15-20 CLB)
     language: "java",
     languageId: 62,
     category: "Recursion",
@@ -92,7 +94,7 @@ public class Main {
     id: "reverse-004",
     title: "Reverse a String",
     difficulty: "Easy",
-    reward: 30,
+    reward: 15,  // standardized to Easy tier (15-20 CLB)
     language: "java",
     languageId: 62,
     category: "Strings",
@@ -121,7 +123,7 @@ public class Main {
     id: "bubblesort-005",
     title: "Bubble Sort",
     difficulty: "Medium",
-    reward: 100,
+    reward: 60,  // standardized to Medium tier (50-60 CLB)
     language: "java",
     languageId: 62,
     category: "Sorting",
@@ -148,8 +150,11 @@ public class Main {
   },
 ];
 
+// ─── Merged Challenge Array ──────────────────────────────────────────
+const CHALLENGES = [...CORE_CHALLENGES, ...JAVA_CHALLENGES];
 export default CHALLENGES;
 
+// ─── Lookup Helpers ──────────────────────────────────────────────────
 export function getChallengeById(id) {
   return CHALLENGES.find((c) => c.id === id);
 }
@@ -160,4 +165,27 @@ export function getAllChallengeIds() {
 
 export function getTotalPossibleReward() {
   return CHALLENGES.reduce((sum, c) => sum + c.reward, 0);
+}
+
+// ─── Filter Helpers (for ProblemPage tabs) ────────────────────────────
+export function getChallengesByDifficulty(difficulty) {
+  return CHALLENGES.filter((c) => c.difficulty === difficulty);
+}
+
+export function getChallengesByCategory(category) {
+  return CHALLENGES.filter((c) => c.category === category);
+}
+
+export function getCategories() {
+  return [...new Set(CHALLENGES.map((c) => c.category))];
+}
+
+/**
+ * Build a reward lookup map: { challengeId: reward }
+ * Used by reward-student.js to validate client-sent amounts.
+ */
+export function getRewardMap() {
+  const map = {};
+  CHALLENGES.forEach((c) => { map[c.id] = c.reward; });
+  return map;
 }

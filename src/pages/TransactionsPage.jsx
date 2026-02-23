@@ -5,6 +5,7 @@ import {
   ClockIcon,
   ArrowTopRightOnSquareIcon,
   BanknotesIcon,
+  ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
 import {
   collection,
@@ -16,6 +17,7 @@ import {
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import CHALLENGES from "../data/challenges";
+import { getCLBBalance } from "../../web3/contracts/clbToken";
 
 // Build a lookup map: challengeId → reward amount
 const REWARD_MAP = Object.fromEntries(CHALLENGES.map((c) => [c.id, c.reward]));
@@ -77,8 +79,31 @@ export default function TransactionsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // On-chain balance
+  const [onChainBalance, setOnChainBalance] = useState(null);
+  const [loadingChain, setLoadingChain] = useState(false);
+
   const totalEarned = userData?.totalCLBEarned ?? userData?.credits ?? 0;
   const spendable = userData?.credits ?? 0;
+  const walletAddress = userData?.walletAddress;
+
+  // Fetch on-chain CLB balance
+  useEffect(() => {
+    async function fetchOnChain() {
+      if (!walletAddress) { setOnChainBalance(null); return; }
+      setLoadingChain(true);
+      try {
+        const bal = await getCLBBalance(walletAddress);
+        setOnChainBalance(bal);
+      } catch (e) {
+        console.error("[Transactions] On-chain balance error:", e.message);
+        setOnChainBalance(null);
+      } finally {
+        setLoadingChain(false);
+      }
+    }
+    fetchOnChain();
+  }, [walletAddress]);
 
   const fetchTxs = useCallback(async () => {
     setLoading(true);
@@ -170,6 +195,79 @@ export default function TransactionsPage() {
           <p className="text-xs text-gray-400 dark:text-dark-muted mt-0.5">Available to send to cafeteria</p>
         </div>
       </div>
+
+      {/* ── On-Chain Balance & Mismatch ── */}
+      {walletAddress && (
+        <div className={`rounded-xl border p-5 ${
+          onChainBalance !== null && Math.abs(Number(onChainBalance) - spendable) > 0.01
+            ? "border-yellow-300 dark:border-yellow-700 bg-yellow-50/50 dark:bg-yellow-900/10"
+            : "border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card"
+        }`}>
+          <div className="flex items-start gap-3">
+            {onChainBalance !== null && Math.abs(Number(onChainBalance) - spendable) > 0.01 && (
+              <ExclamationTriangleIcon className="w-5 h-5 text-yellow-500 shrink-0 mt-0.5" />
+            )}
+            <div className="flex-1 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-dark-muted mb-1">
+                    On-Chain CLB Balance (Sepolia)
+                  </p>
+                  {loadingChain ? (
+                    <p className="text-lg font-bold text-gray-400">Loading…</p>
+                  ) : onChainBalance !== null ? (
+                    <p className="text-2xl font-bold text-green-primary">{Number(onChainBalance).toFixed(2)} CLB</p>
+                  ) : (
+                    <p className="text-lg font-bold text-gray-400">Unavailable</p>
+                  )}
+                </div>
+                <a
+                  href={`https://sepolia.etherscan.io/address/${walletAddress}#tokentxns`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-green-primary hover:underline flex items-center gap-1"
+                >
+                  View on Etherscan
+                  <ArrowTopRightOnSquareIcon className="w-3 h-3" />
+                </a>
+              </div>
+
+              {/* Mismatch explanation */}
+              {onChainBalance !== null && Math.abs(Number(onChainBalance) - spendable) > 0.01 && (
+                <div className="space-y-2 pt-2 border-t border-yellow-200 dark:border-yellow-800/40">
+                  <p className="text-sm font-semibold text-yellow-700 dark:text-yellow-300">
+                    ⚠ Balance Mismatch Detected
+                  </p>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <span className="text-xs text-gray-400 dark:text-dark-muted">Firestore (App)</span>
+                      <p className="font-bold text-gray-800 dark:text-white">{spendable} CLB</p>
+                    </div>
+                    <div>
+                      <span className="text-xs text-gray-400 dark:text-dark-muted">On-Chain (Sepolia)</span>
+                      <p className="font-bold text-green-primary">{Number(onChainBalance).toFixed(2)} CLB</p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-dark-muted leading-relaxed">
+                    This can happen for several reasons: <strong>1)</strong> An on-chain transfer completed
+                    but Firestore wasn't updated (network timing). <strong>2)</strong> CLB was sent or received
+                    directly via MetaMask outside of CrediLab. <strong>3)</strong> A pending reward hasn't
+                    been claimed yet — check your Profile page for a "Claim CLB" option.
+                    The on-chain balance is the source of truth for your actual token holdings.
+                  </p>
+                </div>
+              )}
+
+              {onChainBalance !== null && Math.abs(Number(onChainBalance) - spendable) <= 0.01 && (
+                <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1 pt-1">
+                  <CheckCircleIcon className="w-3.5 h-3.5" />
+                  On-chain balance matches your app balance.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Transaction List ── */}
       <div>

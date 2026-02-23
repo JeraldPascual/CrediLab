@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import StudentHeader from "../components/StudentHeader";
 import Sidebar from "../components/Sidebar";
+import CLBBalanceStrip from "../components/CLBBalanceStrip";
 
 export default function StudentDashboard() {
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
@@ -12,6 +13,10 @@ export default function StudentDashboard() {
     navigate(path);
   }
 
+  // Hide balance strip on pages that already show full balance details
+  const hideStripPaths = ["/student/information", "/student/transactions"];
+  const showStrip = !hideStripPaths.includes(location.pathname);
+
   return (
     <div className="h-screen bg-gray-50 dark:bg-dark-bg flex flex-col">
       {/* ── Header ── */}
@@ -19,6 +24,9 @@ export default function StudentDashboard() {
         onMenuToggle={() => setSidebarExpanded((prev) => !prev)}
         sidebarExpanded={sidebarExpanded}
       />
+
+      {/* ── Persistent CLB Balance Strip ── */}
+      {showStrip && <CLBBalanceStrip />}
 
       <div className="flex flex-1 min-h-0">
         {/* ── Sidebar ── */}

@@ -21,6 +21,7 @@ import { getChallengeById } from "../data/challenges";
 import CHALLENGES from "../data/challenges";
 import useAntiCheat from "../hooks/useAntiCheat";
 import { executeCode } from "../utils/executeCode";
+import { getTimeLimitMs, getMinSolveTime, DIFF_COLORS, TIME_LIMIT_SHORT, TIME_LIMIT_LABELS } from "../data/constants";
 
 // CodeMirror imports
 import { EditorState } from "@codemirror/state";
@@ -117,9 +118,7 @@ export default function CodingPortal() {
           } else {
             // Create new session on first access
             const now = Date.now();
-            const timeLimit = challenge.difficulty === 'Easy' ? 30 * 60 * 1000 : // 30 min
-                             challenge.difficulty === 'Medium' ? 60 * 60 * 1000 : // 60 min
-                             90 * 60 * 1000; // 90 min for Hard
+            const timeLimit = getTimeLimitMs(challenge.difficulty);
 
             session = {
               uid: user.uid,
@@ -198,9 +197,7 @@ export default function CodingPortal() {
         } else {
           // Create minimal session
           const now = Date.now();
-          const timeLimit = challenge.difficulty === 'Easy' ? 30 * 60 * 1000 :
-                           challenge.difficulty === 'Medium' ? 60 * 60 * 1000 :
-                           90 * 60 * 1000;
+          const timeLimit = getTimeLimitMs(challenge.difficulty);
 
           const session = {
             uid: user.uid,
@@ -533,7 +530,7 @@ export default function CodingPortal() {
       if (allPassed && !isCompleted) {
         // Calculate time spent (anti-cheat)
         const timeSpentSeconds = Math.floor((Date.now() - startTimeRef.current) / 1000);
-        const minExpectedTime = challenge.difficulty === "Easy" ? 120 : challenge.difficulty === "Medium" ? 300 : 600;
+        const minExpectedTime = getMinSolveTime(challenge.difficulty);
 
         if (timeSpentSeconds < minExpectedTime) {
           console.warn(`⚠️ Suspiciously fast completion: ${timeSpentSeconds}s (expected >${minExpectedTime}s)`);
@@ -544,10 +541,10 @@ export default function CodingPortal() {
         // ── Step 1: Mark session as completed locally FIRST (always, unconditionally) ──
         const localStorageKey = `challenge-session-${user.uid}-${challengeId}`;
         const now = Date.now();
-        const sessionBase = challengeSession || { startedAt: startTimeRef.current, timeLimit: 30 * 60 * 1000 };
+        const sessionBase = challengeSession || { startedAt: startTimeRef.current, timeLimit: getTimeLimitMs(challenge.difficulty) };
         const solveTimeMs = now - sessionBase.startedAt;
         const solveTimeSec = Math.floor(solveTimeMs / 1000);
-        const timeLimitSec = Math.floor((sessionBase.timeLimit || 30 * 60 * 1000) / 1000);
+        const timeLimitSec = Math.floor((sessionBase.timeLimit || getTimeLimitMs(challenge.difficulty)) / 1000);
 
         const pctUsed = solveTimeSec / timeLimitSec;
         let timeBadge = 'Completed';
@@ -599,6 +596,7 @@ export default function CodingPortal() {
               completedChallenges: arrayUnion(challengeId),
               credits: (current.credits || 0) + reward,
               totalCLBEarned: (current.totalCLBEarned ?? current.credits ?? 0) + reward,
+              quizCredits: (current.quizCredits ?? 0) + reward,
               lastCompletionAt: new Date().toISOString(),
               lastRewardAt: new Date().toISOString(),
             });
@@ -752,17 +750,13 @@ export default function CodingPortal() {
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold text-gray-900 dark:text-white">{challenge.title}</span>
           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-            challenge.difficulty === "Easy"
-              ? "bg-green-primary/10 text-green-primary"
-              : challenge.difficulty === "Medium"
-              ? "bg-yellow-100 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400"
-              : "bg-red-100 dark:bg-red-900/20 text-red-500"
+            DIFF_COLORS[challenge.difficulty]
           }`}>
             {challenge.difficulty}
           </span>
           {/* Difficulty-based time limit badge */}
           <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-dark-surface text-gray-500 dark:text-dark-muted font-medium" title="Time limit for this challenge">
-            🕐 {challenge.difficulty === "Easy" ? "30m" : challenge.difficulty === "Medium" ? "60m" : "90m"}
+            🕐 {TIME_LIMIT_SHORT[challenge.difficulty]}
           </span>
           <span className="text-xs font-bold text-green-primary">+{challenge.reward} CLB</span>
 
@@ -1007,14 +1001,10 @@ export default function CodingPortal() {
               {/* Difficulty info row */}
               <div className="flex items-center gap-2 mt-2 flex-wrap">
                 <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                  challenge.difficulty === "Easy"
-                    ? "bg-green-primary/10 text-green-primary"
-                    : challenge.difficulty === "Medium"
-                    ? "bg-yellow-100 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400"
-                    : "bg-red-100 dark:bg-red-900/20 text-red-500"
+                  DIFF_COLORS[challenge.difficulty]
                 }`}>{challenge.difficulty}</span>
                 <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-dark-surface text-gray-500 dark:text-dark-muted font-medium">
-                  🕐 {challenge.difficulty === "Easy" ? "30 min" : challenge.difficulty === "Medium" ? "60 min" : "90 min"}
+                  🕐 {TIME_LIMIT_LABELS[challenge.difficulty]}
                 </span>
                 <span className="text-xs font-bold text-green-primary">+{challenge.reward} CLB</span>
               </div>

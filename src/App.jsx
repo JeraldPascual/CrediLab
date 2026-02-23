@@ -17,6 +17,8 @@ import WalletGuidePage from "./pages/WalletGuidePage";
 import AchievementsPage from "./pages/AchievementsPage";
 import TransactionsPage from "./pages/TransactionsPage";
 import VerifyCertPage from "./pages/VerifyCertPage";
+import WeeklyTaskPage from "./pages/WeeklyTaskPage";
+import CommunityFeed from "./pages/CommunityFeed";
 
 export default function App() {
   return (
@@ -46,6 +48,7 @@ export default function App() {
               <Route path="wallet-guide" element={<WalletGuidePage />} />
               <Route path="achievements" element={<AchievementsPage />} />
               <Route path="transactions" element={<TransactionsPage />} />
+              <Route path="community" element={<CommunityFeed />} />
             </Route>
 
             {/* Challenge list (inside dashboard shell) */}
@@ -66,6 +69,16 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <CodingPortal />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Weekly SDG task submission — full-screen */}
+            <Route
+              path="/weekly-task/:taskId"
+              element={
+                <ProtectedRoute>
+                  <WeeklyTaskPage />
                 </ProtectedRoute>
               }
             />

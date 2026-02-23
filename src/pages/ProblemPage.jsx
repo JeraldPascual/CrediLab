@@ -6,22 +6,55 @@ import {
   ClockIcon,
   ArrowRightIcon,
   NoSymbolIcon,
+  FunnelIcon,
+  SparklesIcon,
+  BoltIcon,
+  GlobeAltIcon,
+  LockClosedIcon,
 } from "@heroicons/react/24/outline";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
 import { db } from "../lib/firebase";
 import CHALLENGES from "../data/challenges";
+import { DIFF_COLORS, TIME_LIMIT_SHORT } from "../data/constants";
+import { getActiveWeeklyTasks, hasCompletedWeeklyTask, getCurrentWeekNumber } from "../data/weeklyTasks";
 
-const DIFF_COLORS = {
-  Easy: "bg-green-primary/10 text-green-primary",
-  Medium: "bg-yellow-100 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400",
-  Hard: "bg-red-100 dark:bg-red-900/20 text-red-500",
+const FILTER_TABS = ["All", "Easy", "Medium", "Hard"];
+
+// Fixed active styles per tab — avoids the invisible Easy (green-on-green) bug
+const TAB_ACTIVE_STYLES = {
+  All:    "bg-green-primary text-white shadow-md shadow-green-primary/30",
+  Easy:   "bg-emerald-500 text-white shadow-md shadow-emerald-500/30",
+  Medium: "bg-yellow-400 text-gray-900 shadow-md shadow-yellow-400/30",
+  Hard:   "bg-red-500 text-white shadow-md shadow-red-500/30",
 };
-
-const TIME_LIMIT = { Easy: "30 min", Medium: "60 min", Hard: "90 min" };
 
 export default function ProblemPage() {
   const { userData, user } = useAuth();
+  const [diffFilter, setDiffFilter] = useState("All");
+  const [weeklyTasks, setWeeklyTasks] = useState([]);
+  const [weeklyCompletedIds, setWeeklyCompletedIds] = useState([]);
+  const [weeklyLoading, setWeeklyLoading] = useState(true);
+
+  // Load active weekly tasks from Firestore
+  useEffect(() => {
+    (async () => {
+      try {
+        const tasks = await getActiveWeeklyTasks();
+        setWeeklyTasks(tasks);
+        if (user) {
+          const completed = await Promise.all(
+            tasks.map((t) => hasCompletedWeeklyTask(user.uid, t.id))
+          );
+          setWeeklyCompletedIds(tasks.filter((_, i) => completed[i]).map((t) => t.id));
+        }
+      } catch (e) {
+        console.warn("Failed to load weekly tasks:", e.message);
+      } finally {
+        setWeeklyLoading(false);
+      }
+    })();
+  }, [user]);
 
   // Session data from localStorage (instant) + Firestore (persistent across devices)
   const [sessionData, setSessionData] = useState({ terminatedIds: [], startedIds: [], localCompletedIds: [], sessionMeta: {} });
@@ -111,10 +144,19 @@ export default function ProblemPage() {
   const firestoreCompletedIds = userData?.completedChallenges || [];
   const completedIds = [...new Set([...firestoreCompletedIds, ...localCompletedIds])];
 
-  const completed  = CHALLENGES.filter((c) => completedIds.includes(c.id));
-  const terminated = CHALLENGES.filter((c) => !completedIds.includes(c.id) && terminatedIds.includes(c.id));
-  const ongoing    = CHALLENGES.filter((c) => !completedIds.includes(c.id) && !terminatedIds.includes(c.id) && startedIds.includes(c.id));
-  const notStarted = CHALLENGES.filter((c) => !completedIds.includes(c.id) && !terminatedIds.includes(c.id) && !startedIds.includes(c.id));
+  // Apply difficulty filter
+  const filteredChallenges = diffFilter === "All"
+    ? CHALLENGES
+    : CHALLENGES.filter((c) => c.difficulty === diffFilter);
+
+  const completed  = filteredChallenges.filter((c) => completedIds.includes(c.id));
+  const terminated = filteredChallenges.filter((c) => !completedIds.includes(c.id) && terminatedIds.includes(c.id));
+  const ongoing    = filteredChallenges.filter((c) => !completedIds.includes(c.id) && !terminatedIds.includes(c.id) && startedIds.includes(c.id));
+  const notStarted = filteredChallenges.filter((c) => !completedIds.includes(c.id) && !terminatedIds.includes(c.id) && !startedIds.includes(c.id));
+
+  // Stats for filter badge counts
+  const countByDiff = {};
+  CHALLENGES.forEach((c) => { countByDiff[c.difficulty] = (countByDiff[c.difficulty] || 0) + 1; });
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
@@ -126,6 +168,129 @@ export default function ProblemPage() {
         <p className="mt-1 text-sm text-gray-500 dark:text-dark-muted">
           Browse, solve, and earn CLB tokens.
         </p>
+      </div>
+
+      {/* ─── Difficulty Filter Tabs ─── */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <FunnelIcon className="w-4 h-4 text-gray-400 dark:text-dark-muted" />
+        {FILTER_TABS.map((tab) => {
+          const isActive = diffFilter === tab;
+          const count = tab === "All" ? CHALLENGES.length : (countByDiff[tab] || 0);
+          return (
+            <button
+              key={tab}
+              onClick={() => setDiffFilter(tab)}
+              className={`text-xs font-semibold px-3 py-1.5 rounded-full transition-all ${
+                isActive
+                  ? TAB_ACTIVE_STYLES[tab]
+                  : "bg-gray-100 dark:bg-dark-surface text-gray-500 dark:text-dark-muted hover:bg-gray-200 dark:hover:bg-dark-border"
+              }`}
+            >
+              {tab} ({count})
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ─── Weekly SDG Tasks Banner ─── */}
+      <div className="rounded-2xl overflow-hidden border border-emerald-500/30 dark:border-emerald-500/20 bg-gradient-to-br from-emerald-950/60 via-teal-900/40 to-green-950/60 dark:from-emerald-950/80 dark:via-teal-900/60 dark:to-green-950/80">
+        {/* Header row */}
+        <div className="flex items-center justify-between px-5 pt-5 pb-3">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
+              <GlobeAltIcon className="w-5 h-5 text-emerald-400" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-white">Weekly SDG Tasks</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  Week {getCurrentWeekNumber()}
+                </span>
+              </div>
+              <p className="text-xs text-emerald-300/70 mt-0.5">Earn bonus CLB by completing sustainable development goals</p>
+            </div>
+          </div>
+          <SparklesIcon className="w-5 h-5 text-emerald-400/60" />
+        </div>
+
+        {/* Divider */}
+        <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent mx-5" />
+
+        {/* Task list */}
+        <div className="p-4 space-y-3">
+          {weeklyLoading ? (
+            <div className="flex items-center gap-3 py-3">
+              <div className="w-4 h-4 rounded-full border-2 border-emerald-500/40 border-t-emerald-400 animate-spin" />
+              <span className="text-xs text-emerald-300/60">Loading this week&apos;s tasks…</span>
+            </div>
+          ) : weeklyTasks.length === 0 ? (
+            <div className="flex items-center gap-3 py-3 text-emerald-300/50">
+              <BoltIcon className="w-4 h-4" />
+              <span className="text-xs">No tasks this week — check back soon!</span>
+            </div>
+          ) : (
+            weeklyTasks.map((task) => {
+              const isDone = weeklyCompletedIds.includes(task.id);
+              return (
+                <Link
+                  to={isDone ? "#" : `/weekly-task/${task.id}`}
+                  key={task.id}
+                  className={`group relative flex items-start gap-3 p-3.5 rounded-xl border transition-all ${
+                    isDone
+                      ? "bg-emerald-500/10 border-emerald-500/20 opacity-70 pointer-events-none"
+                      : "bg-white/5 border-white/10 hover:bg-emerald-500/10 hover:border-emerald-500/30"
+                  }`}
+                >
+                  {/* SDG Goal badge */}
+                  <div className={`shrink-0 w-9 h-9 rounded-lg flex flex-col items-center justify-center border text-[9px] font-black leading-none ${
+                    isDone
+                      ? "bg-emerald-500/20 border-emerald-500/30 text-emerald-400"
+                      : "bg-emerald-600/20 border-emerald-500/40 text-emerald-300"
+                  }`}>
+                    <span className="text-[15px] leading-none">{task.sdgGoal ?? "🌱"}</span>
+                    <span>SDG</span>
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <span className={`text-sm font-semibold ${
+                        isDone ? "text-emerald-400/70 line-through" : "text-white"
+                      }`}>{task.title}</span>
+                      {isDone ? (
+                        <span className="shrink-0 flex items-center gap-1 text-[11px] font-semibold text-emerald-400">
+                          <CheckCircleIcon className="w-3.5 h-3.5" /> Done
+                        </span>
+                      ) : (
+                        <span className="shrink-0 text-xs font-bold text-emerald-300">
+                          +{task.reward ?? 25} CLB
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[12px] text-emerald-300/60 mt-0.5 line-clamp-1">{task.description}</p>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-medium border border-emerald-500/20">
+                        {task.type ?? "reflection"}
+                      </span>
+                      {task.sdgLabel && (
+                        <span className="text-[10px] text-emerald-400/50 truncate">{task.sdgLabel}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {!isDone && (
+                    <ArrowRightIcon className="w-4 h-4 text-emerald-500/40 group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all shrink-0 mt-1" />
+                  )}
+                </Link>
+              );
+            })
+          )}
+        </div>
+
+        {/* Footer note */}
+        <div className="flex items-center gap-2 px-5 pb-4">
+          <LockClosedIcon className="w-3 h-3 text-emerald-500/40" />
+          <span className="text-[11px] text-emerald-500/40">Tasks reset every Monday · Max 3 completions per week</span>
+        </div>
       </div>
 
       {ongoing.length > 0 && (
@@ -160,9 +325,9 @@ export default function ProblemPage() {
         </Section>
       )}
 
-      {CHALLENGES.length === 0 && (
+      {filteredChallenges.length === 0 && (
         <div className="text-center py-16 text-gray-400 dark:text-dark-muted">
-          No challenges available right now.
+          {diffFilter === "All" ? "No challenges available right now." : `No ${diffFilter} challenges available.`}
         </div>
       )}
     </div>
@@ -198,7 +363,7 @@ function ChallengeCard({ challenge, state, meta }) {
 
   const timeLimitBadge = (
     <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-dark-surface text-gray-400 dark:text-dark-muted font-medium">
-      {TIME_LIMIT[challenge.difficulty]}
+      {TIME_LIMIT_SHORT[challenge.difficulty]}
     </span>
   );
 

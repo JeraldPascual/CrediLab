@@ -1,0 +1,23 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "weekly_tasks",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isActive",   "order": "ASCENDING"  },
+        { "fieldPath": "weekNumber", "order": "ASCENDING"  },
+        { "fieldPath": "createdAt",  "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "weekly_completions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "uid",        "order": "ASCENDING"  },
+        { "fieldPath": "weekNumber", "order": "ASCENDING"  },
+        { "fieldPath": "completedAt","order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

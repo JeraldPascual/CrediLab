@@ -18,9 +18,22 @@ export default function WalletGuidePage() {
           Wallet Setup Guide
         </h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-dark-muted">
-          Learn how to install MetaMask, connect your wallet, and receive CLB
-          tokens.
+          Set up MetaMask to receive CLB tokens earned from coding challenges and
+          weekly SDG tasks. Works on both desktop and mobile.
         </p>
+      </div>
+
+      {/* Quick Overview */}
+      <div className="rounded-xl border border-green-200 dark:border-green-800/40 bg-green-50/50 dark:bg-green-900/10 p-4">
+        <p className="text-sm font-semibold text-green-800 dark:text-green-300 mb-2">
+          🎯 Quick Overview
+        </p>
+        <ul className="text-xs text-green-700 dark:text-green-400 space-y-1 list-disc list-inside">
+          <li>CLB tokens are ERC-20 tokens on the <strong>Ethereum Sepolia testnet</strong> (no real money involved)</li>
+          <li>You earn CLB by completing Java challenges and community-approved SDG tasks</li>
+          <li>MetaMask is used to store your tokens and verify ownership on-chain</li>
+          <li>Both the web app and mobile app connect to the same wallet address</li>
+        </ul>
       </div>
 
       {/* Warning */}
@@ -171,26 +184,30 @@ export default function WalletGuidePage() {
         <div className="p-5 space-y-3 text-sm text-gray-600 dark:text-dark-muted">
           <p>
             <strong className="text-gray-900 dark:text-white">1.</strong>{" "}
-            Complete coding challenges to earn CLB (CrediLab) credits.
+            Complete coding challenges or weekly SDG tasks to earn CLB (CrediLab) credits.
           </p>
           <p>
             <strong className="text-gray-900 dark:text-white">2.</strong>{" "}
-            Credits are recorded in your CrediLab profile immediately.
+            For coding challenges, credits are recorded instantly upon passing all test cases.
           </p>
           <p>
             <strong className="text-gray-900 dark:text-white">3.</strong>{" "}
-            If your MetaMask wallet is connected, CLB tokens are automatically
-            transferred on-chain via the Sepolia testnet when you complete a
-            challenge.
+            For weekly SDG tasks, CLB is awarded automatically when your submission
+            receives ≥3 community upvotes (community-approved status).
           </p>
           <p>
             <strong className="text-gray-900 dark:text-white">4.</strong>{" "}
+            If your MetaMask wallet is connected, CLB tokens are automatically
+            transferred on-chain via the Sepolia testnet.
+          </p>
+          <p>
+            <strong className="text-gray-900 dark:text-white">5.</strong>{" "}
             If CLB is still showing as "Pending on-chain" in your profile, click
             the <strong className="text-green-primary">Claim CLB</strong> button
             to trigger the on-chain transfer.
           </p>
           <p>
-            <strong className="text-gray-900 dark:text-white">5.</strong>{" "}
+            <strong className="text-gray-900 dark:text-white">6.</strong>{" "}
             To see your CLB balance in MetaMask, add it as a custom token:
           </p>
           <div className="ml-6 space-y-1 text-xs">
@@ -237,6 +254,41 @@ export default function WalletGuidePage() {
             Sepolia ETH (for gas fees) is free — search "Sepolia faucet" to get
             test ETH. You don't need gas to <em>receive</em> CLB, only to send it.
           </p>
+        </div>
+      </div>
+
+      {/* ── Troubleshooting ── */}
+      <div className="rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card overflow-hidden">
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 dark:bg-dark-surface border-b border-gray-200 dark:border-dark-border">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-red-400" />
+            <span className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
+            <span className="w-2.5 h-2.5 rounded-full bg-green-400" />
+          </div>
+          <div className="flex items-center gap-1.5 ml-2">
+            <ExclamationTriangleIcon className="w-4 h-4 text-green-primary" />
+            <span className="text-xs font-semibold text-gray-600 dark:text-dark-muted uppercase tracking-wide">
+              Troubleshooting
+            </span>
+          </div>
+        </div>
+        <div className="p-5 space-y-3 text-sm text-gray-600 dark:text-dark-muted">
+          <div>
+            <p className="font-semibold text-gray-900 dark:text-white text-xs mb-1">CLB balance shows 0 in MetaMask?</p>
+            <p className="text-xs">Make sure you've added the CLB token contract address and switched to the Sepolia network. Token balances only appear after importing the custom token.</p>
+          </div>
+          <div>
+            <p className="font-semibold text-gray-900 dark:text-white text-xs mb-1">Balance mismatch between app and wallet?</p>
+            <p className="text-xs">Visit the <strong className="text-green-primary">Transactions</strong> page in your dashboard to see a detailed comparison of your on-chain vs. app balance with explanations.</p>
+          </div>
+          <div>
+            <p className="font-semibold text-gray-900 dark:text-white text-xs mb-1">MetaMask not popping up when connecting?</p>
+            <p className="text-xs">Ensure the MetaMask extension is enabled and not blocked by your browser. Try clicking the MetaMask icon in your toolbar first, then retry connecting.</p>
+          </div>
+          <div>
+            <p className="font-semibold text-gray-900 dark:text-white text-xs mb-1">Using the mobile app?</p>
+            <p className="text-xs">The CrediLab mobile app (Android/Kotlin) shares the same Firebase backend. Use the same wallet address on both platforms — your CLB syncs automatically via the blockchain.</p>
+          </div>
         </div>
       </div>
     </div>

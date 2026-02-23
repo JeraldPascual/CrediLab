@@ -5,6 +5,7 @@ import {
   WalletIcon,
   SparklesIcon,
   BanknotesIcon,
+  GlobeAltIcon,
 } from "@heroicons/react/24/outline";
 
 const NAV_ITEMS = [
@@ -17,6 +18,11 @@ const NAV_ITEMS = [
     label: "Challenges",
     path: "/problem",
     icon: CodeBracketIcon,
+  },
+  {
+    label: "Community",
+    path: "/student/community",
+    icon: GlobeAltIcon,
   },
   {
     label: "Leaderboard",
