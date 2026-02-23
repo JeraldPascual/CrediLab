@@ -148,9 +148,6 @@ export default async function handler(req, res) {
       uid = targetUid; // redirect all reward logic to the student
     }
 
-    // Determine if this is a quiz/challenge reward vs weekly task
-    const isQuizReward = !isWeeklyTask;
-
     // ─── Server-side reward validation ───────────────────────────────────
     // Inline reward map — must stay in sync with src/data/challenges.js
     // This prevents spoofed client requests claiming inflated rewards.
@@ -173,6 +170,8 @@ export default async function handler(req, res) {
 
     // Weekly tasks use "sdg" prefix — allow flexible rewards up to 50 CLB
     const isWeeklyTask = challengeId.startsWith("sdg") || req.body?.isWeeklyTask;
+    // Determine if this is a quiz/challenge reward vs weekly task (must be after isWeeklyTask)
+    const isQuizReward = !isWeeklyTask;
     const MAX_REWARD_PER_CHALLENGE = isWeeklyTask ? 50 : 100;
     const expectedReward = REWARD_MAP[challengeId];
 
@@ -282,7 +281,22 @@ export default async function handler(req, res) {
           totalCLBEarned: (userData.totalCLBEarned ?? userData.credits ?? 0) + rewardAmount,
           ...(isQuizReward && { quizCredits: (userData.quizCredits ?? 0) + rewardAmount }),
           lastRewardAt: timestamp
-        }); = `pending-${uid}-${challengeId}-${Date.now()}`;
+        });
+
+        // Decrement pool even on fallback so accounting stays accurate
+        const poolRefFallback = db.collection('system').doc('credit_pool');
+        const poolDocFallback = await poolRefFallback.get();
+        if (poolDocFallback.exists) {
+          await poolRefFallback.update({
+            distributed: (poolDocFallback.data().distributed || 0) + rewardAmount,
+            remaining: (poolDocFallback.data().remaining || 10000) - rewardAmount,
+            lastIssuanceAt: timestamp
+          });
+        } else {
+          await poolRefFallback.set({ total: 10000, distributed: rewardAmount, remaining: 10000 - rewardAmount, lastIssuanceAt: timestamp });
+        }
+
+        const pendingId = `pending-${uid}-${challengeId}-${Date.now()}`;
         await db.collection('pending_rewards').doc(pendingId).set({
           uid,
           email: userData.email,

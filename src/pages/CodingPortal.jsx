@@ -583,45 +583,49 @@ export default function CodingPortal() {
           // Silent fail — localStorage already updated
         }
 
-        // ── Step 2: Write completion + CLB reward directly to Firestore (works in dev & prod) ──
+        // ── Step 2: Call backend API — single source of truth for Firestore + on-chain CLB ──
+        //    The API handles: idempotency check, Firestore credits update, on-chain transfer,
+        //    pool decrement, and event logging. Do NOT write credits directly here to avoid double-credit.
         try {
-          const userRef = doc(db, 'users', user.uid);
-          const userSnap = await getDoc(userRef);
-          const current = userSnap.exists() ? userSnap.data() : {};
-          const alreadyDone = (current.completedChallenges || []).includes(challengeId);
-
-          if (!alreadyDone) {
-            const reward = challenge.reward || 0;
-            await updateDoc(userRef, {
-              completedChallenges: arrayUnion(challengeId),
-              credits: (current.credits || 0) + reward,
-              totalCLBEarned: (current.totalCLBEarned ?? current.credits ?? 0) + reward,
-              quizCredits: (current.quizCredits ?? 0) + reward,
-              lastCompletionAt: new Date().toISOString(),
-              lastRewardAt: new Date().toISOString(),
-            });
-            console.log(`✅ Firestore updated — +${reward} CLB, challenge ${challengeId} marked complete`);
-          }
-        } catch (fsErr) {
-          console.error('Firestore write failed:', fsErr.message);
-        }
-
-        // ── Step 3: Call backend API in background for on-chain CLB transfer (production only) ──
-        //    This is fire-and-forget — Firestore is already updated above.
-        user.getIdToken().then((token) =>
-          fetch('/api/reward-student', {
+          const token = await user.getIdToken();
+          const apiRes = await fetch('/api/reward-student', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ challengeId, rewardAmount: challenge.reward }),
-          })
-          .then((r) => r.ok ? r.json() : null)
-          .then((result) => {
-            if (result?.transferred) console.log(`⛓️ On-chain TX: ${result.txHash}`);
-          })
-          .catch(() => { /* API unavailable in dev — Firestore already updated */ })
-        ).catch(() => {});
+          });
+          const result = apiRes.ok ? await apiRes.json() : null;
+          if (result?.transferred) {
+            console.log(`⛓️ On-chain TX: ${result.txHash}`);
+            console.log(`✅ Firestore updated — +${challenge.reward} CLB, challenge ${challengeId} marked complete`);
+          } else if (result?.pending) {
+            console.log(`⏳ CLB queued — will be sent when chain is available`);
+          } else if (result?.alreadyCompleted) {
+            console.log(`ℹ️ Challenge already completed — no double-award`);
+          } else if (!apiRes.ok) {
+            // API failed — fall back to direct Firestore write so student doesn't lose progress
+            console.warn(`⚠️ API ${apiRes.status} — falling back to Firestore-only write`);
+            const userRef = doc(db, 'users', user.uid);
+            const userSnap = await getDoc(userRef);
+            const current = userSnap.exists() ? userSnap.data() : {};
+            const alreadyDone = (current.completedChallenges || []).includes(challengeId);
+            if (!alreadyDone) {
+              const reward = challenge.reward || 0;
+              await updateDoc(userRef, {
+                completedChallenges: arrayUnion(challengeId),
+                credits: (current.credits || 0) + reward,
+                totalCLBEarned: (current.totalCLBEarned ?? current.credits ?? 0) + reward,
+                quizCredits: (current.quizCredits ?? 0) + reward,
+                lastCompletionAt: new Date().toISOString(),
+                lastRewardAt: new Date().toISOString(),
+              });
+              console.log(`✅ Firestore fallback — +${reward} CLB written directly`);
+            }
+          }
+        } catch (apiErr) {
+          console.error('Reward API error:', apiErr.message);
+        }
 
-        // ── Step 4: Refresh userData so all UI reflects the new Firestore state ──
+        // ── Step 3: Refresh userData so all UI reflects the new Firestore state ──
         try {
           await refreshUserData();
         } catch {

@@ -11,6 +11,7 @@ import {
   collection,
   query,
   where,
+  orderBy,
   limit,
   getDocs,
 } from "firebase/firestore";
@@ -113,6 +114,7 @@ export default function TransactionsPage() {
       const q = query(
         collection(db, "events"),
         where("uid", "==", user.uid),
+        orderBy("timestamp", "desc"),
         limit(PAGE_SIZE)
       );
       const snap = await getDocs(q);
