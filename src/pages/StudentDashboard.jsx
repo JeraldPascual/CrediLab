@@ -18,7 +18,7 @@ export default function StudentDashboard() {
   const showStrip = !hideStripPaths.includes(location.pathname);
 
   return (
-    <div className="h-screen bg-gray-50 dark:bg-dark-bg flex flex-col">
+    <div className="h-screen bg-slate-50 dark:bg-dark-bg flex flex-col">
       {/* ── Header ── */}
       <StudentHeader
         onMenuToggle={() => setSidebarExpanded((prev) => !prev)}

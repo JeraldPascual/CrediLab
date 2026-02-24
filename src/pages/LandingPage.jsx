@@ -1,3 +1,4 @@
+import { useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRightIcon,
@@ -19,9 +20,10 @@ export default function LandingPage() {
   const { dark, toggleDark } = useTheme();
 
   return (
-    <div className="min-h-screen flex flex-col bg-white dark:bg-dark-bg">
+    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-dark-bg">
       {/* ── Header ── */}
-      <header className="w-full px-6 md:px-12 py-5 flex items-center justify-between border-b border-gray-100 dark:border-dark-border">
+      <header className="w-full border-b border-gray-100 dark:border-dark-border">
+        <div className="max-w-7xl mx-auto px-8 md:px-16 py-5 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <span className="text-2xl font-bold text-green-primary">CrediLab</span>
           <span className="hidden sm:inline text-sm text-gray-500 dark:text-dark-muted">
@@ -47,80 +49,11 @@ export default function LandingPage() {
             Get Started
           </Link>
         </div>
+        </div>
       </header>
 
       {/* ── Hero Section ── */}
-      <main className="flex-1 flex items-center">
-        <div className="w-full max-w-7xl mx-auto px-8 md:px-16 py-20 md:py-28 grid md:grid-cols-2 gap-16 items-center">
-          {/* Left — Text */}
-          <div className="space-y-8">
-            <div className="inline-block px-3 py-1 text-xs font-medium rounded-full bg-green-primary/10 text-green-primary">
-              Decentralized Learning Platform
-            </div>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight text-gray-900 dark:text-white">
-              Earn Crypto by{" "}
-              <span className="text-green-primary">Solving Code</span>{" "}
-              Challenges
-            </h1>
-            <p className="text-lg text-gray-600 dark:text-dark-muted max-w-lg">
-              A blockchain-powered coding platform where students solve Java
-              challenges, earn CLB tokens on the Ethereum Sepolia testnet, and
-              build real-world programming skills — bridging education with
-              Web3 technology.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 pt-2">
-              <Link
-                to="/register"
-                className="inline-flex items-center justify-center gap-2 px-8 py-3.5 text-base font-semibold rounded-lg bg-green-primary text-dark-bg hover:bg-green-dark transition-colors"
-              >
-                Start learning now
-                <ArrowRightIcon className="w-4 h-4" />
-              </Link>
-              <Link
-                to="/login"
-                className="inline-flex items-center justify-center gap-2 px-8 py-3.5 text-base font-semibold rounded-lg border border-gray-300 dark:border-dark-border text-gray-700 dark:text-dark-text hover:border-green-primary hover:text-green-primary transition-colors"
-              >
-                I have an account
-              </Link>
-            </div>
-          </div>
-
-          {/* Right — UI Mockup / Illustration */}
-          <div className="hidden md:flex justify-center">
-            <div className="relative w-full max-w-md">
-              {/* Mock card stack */}
-              <div className="absolute -top-4 -left-4 w-full h-full rounded-2xl bg-green-primary/10 rotate-3" />
-              <div className="relative bg-white dark:bg-dark-card border border-gray-200 dark:border-dark-border rounded-2xl p-6 shadow-xl">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-3 h-3 rounded-full bg-red-400" />
-                  <div className="w-3 h-3 rounded-full bg-yellow-400" />
-                  <div className="w-3 h-3 rounded-full bg-green-400" />
-                  <span className="ml-auto text-xs text-gray-400 dark:text-dark-muted font-mono">
-                    Challenge.java
-                  </span>
-                </div>
-                <pre className="text-sm font-mono text-gray-700 dark:text-dark-text leading-relaxed">
-{`public class Challenge {
-  public static int solve(int n) {
-    if (n <= 1) return n;
-    return solve(n - 1)
-         + solve(n - 2);
-  }
-}`}
-                </pre>
-                <div className="mt-4 flex items-center justify-between">
-                  <span className="text-xs text-gray-400 dark:text-dark-muted">
-                    Fibonacci Sequence
-                  </span>
-                  <span className="px-2 py-1 text-xs font-semibold rounded bg-green-primary/20 text-green-primary">
-                    +50 CLB
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </main>
+      <HeroSpotlight />
 
       {/* ── Features Strip ── */}
       <section className="border-t border-gray-100 dark:border-dark-border bg-gray-50 dark:bg-dark-surface">
@@ -187,7 +120,7 @@ export default function LandingPage() {
               { step: "04", title: "Earn & Track", desc: "Correct solutions earn CLB. Track rewards, rank up, and compete on the leaderboard." },
             ].map((item) => (
               <div key={item.step} className="text-center space-y-3">
-                <div className="mx-auto w-12 h-12 rounded-full bg-green-primary/10 flex items-center justify-center">
+                <div className="mx-auto w-12 h-12 rounded-full bg-emerald-100 dark:bg-green-primary/10 flex items-center justify-center">
                   <span className="text-lg font-bold text-green-primary">{item.step}</span>
                 </div>
                 <h3 className="font-semibold text-gray-900 dark:text-white">{item.title}</h3>
@@ -203,7 +136,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-8 md:px-16 py-20">
           <div className="grid md:grid-cols-2 gap-16 items-center">
             <div className="space-y-6">
-              <div className="inline-block px-3 py-1 text-xs font-medium rounded-full bg-green-primary/10 text-green-primary">
+              <div className="inline-block px-3 py-1 text-xs font-medium rounded-full bg-emerald-100 dark:bg-green-primary/10 text-emerald-700 dark:text-green-primary border border-emerald-200 dark:border-transparent">
                 Multi-Platform
               </div>
               <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -218,7 +151,7 @@ export default function LandingPage() {
               </p>
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-green-primary/10 flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-green-primary/10 flex items-center justify-center shrink-0">
                     <ComputerDesktopIcon className="w-4 h-4 text-green-primary" />
                   </div>
                   <div>
@@ -229,7 +162,7 @@ export default function LandingPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-green-primary/10 flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-green-primary/10 flex items-center justify-center shrink-0">
                     <DevicePhoneMobileIcon className="w-4 h-4 text-green-primary" />
                   </div>
                   <div>
@@ -240,7 +173,7 @@ export default function LandingPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-green-primary/10 flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-green-primary/10 flex items-center justify-center shrink-0">
                     <GlobeAltIcon className="w-4 h-4 text-green-primary" />
                   </div>
                   <div>
@@ -295,7 +228,7 @@ export default function LandingPage() {
       {/* ── SDG Alignment ── */}
       <section className="border-t border-gray-100 dark:border-dark-border">
         <div className="max-w-7xl mx-auto px-8 md:px-16 py-20 text-center">
-          <div className="inline-block px-3 py-1 text-xs font-medium rounded-full bg-green-primary/10 text-green-primary mb-4">
+          <div className="inline-block px-3 py-1 text-xs font-medium rounded-full bg-emerald-100 dark:bg-green-primary/10 text-emerald-700 dark:text-green-primary border border-emerald-200 dark:border-transparent mb-4">
             UN Sustainable Development Goals
           </div>
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">
@@ -324,14 +257,14 @@ export default function LandingPage() {
       </section>
 
       {/* ── CTA Banner ── */}
-      <section className="border-t border-gray-100 dark:border-dark-border bg-green-primary/5 dark:bg-green-primary/5">
+      <section className="border-t border-gray-100 dark:border-dark-border bg-emerald-50/60 dark:bg-green-primary/5">
         <div className="max-w-7xl mx-auto px-8 md:px-16 py-16 text-center space-y-6">
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
             Ready to Start Earning?
           </h2>
-          <p className="text-gray-600 dark:text-dark-muted max-w-lg mx-auto">
+          <p className="text-gray-500 dark:text-dark-muted max-w-lg mx-auto">
             Join CrediLab today, solve your first Java challenge, and earn CLB tokens
-            on the blockchain. It's free to start.
+            on the blockchain. It&apos;s free to start.
           </p>
           <Link
             to="/register"
@@ -351,10 +284,133 @@ export default function LandingPage() {
   );
 }
 
+function HeroSpotlight() {
+  const containerRef = useRef(null);
+  const spotlightRef = useRef(null);
+
+  const handleMouseMove = useCallback((e) => {
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect || !spotlightRef.current) return;
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    spotlightRef.current.style.background = `radial-gradient(600px circle at ${x}px ${y}px, rgba(0,230,130,0.12), transparent 60%)`;
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    if (spotlightRef.current) {
+      spotlightRef.current.style.background = "transparent";
+    }
+  }, []);
+
+  return (
+    <main
+      ref={containerRef}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      className="relative flex-1 flex items-center overflow-hidden"
+    >
+      {/* Spotlight overlay */}
+      <div
+        ref={spotlightRef}
+        className="pointer-events-none absolute inset-0 z-0 transition-[background] duration-100"
+      />
+
+      {/* Grid pattern — light mode (black lines) */}
+      <div
+        className="pointer-events-none absolute inset-0 z-0 opacity-[0.06] dark:hidden"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgb(0 0 0) 1px, transparent 1px), linear-gradient(90deg, rgb(0 0 0) 1px, transparent 1px)",
+          backgroundSize: "48px 48px",
+        }}
+      />
+      {/* Grid pattern — dark mode (white lines) */}
+      <div
+        className="pointer-events-none absolute inset-0 z-0 opacity-0 dark:opacity-[0.08] hidden dark:block"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgb(255 255 255) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255) 1px, transparent 1px)",
+          backgroundSize: "48px 48px",
+        }}
+      />
+
+      {/* Content */}
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-8 md:px-16 py-12 md:py-16 grid md:grid-cols-2 gap-16 items-center">
+        {/* Left — Text */}
+        <div className="space-y-7">
+          <div className="inline-block px-3 py-1 text-xs font-medium rounded-full bg-emerald-100 dark:bg-green-primary/10 text-emerald-700 dark:text-green-primary border border-emerald-200 dark:border-transparent">
+            Decentralized Learning Platform
+          </div>
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight text-gray-900 dark:text-white">
+            Earn Crypto by{" "}
+            <span className="text-green-primary">Solving Code</span>{" "}
+            Challenges
+          </h1>
+          <p className="text-lg text-gray-600 dark:text-dark-muted max-w-lg">
+            A blockchain-powered coding platform where students solve Java
+            challenges, earn CLB tokens on the Ethereum Sepolia testnet, and
+            build real-world programming skills — bridging education with
+            Web3 technology.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 pt-1">
+            <Link
+              to="/register"
+              className="inline-flex items-center justify-center gap-2 px-8 py-3.5 text-base font-semibold rounded-lg bg-green-primary text-dark-bg hover:bg-green-dark transition-colors"
+            >
+              Start learning now
+              <ArrowRightIcon className="w-4 h-4" />
+            </Link>
+            <Link
+              to="/login"
+              className="inline-flex items-center justify-center gap-2 px-8 py-3.5 text-base font-semibold rounded-lg border border-gray-300 dark:border-dark-border text-gray-700 dark:text-dark-text hover:border-green-primary hover:text-green-primary transition-colors"
+            >
+              I have an account
+            </Link>
+          </div>
+        </div>
+
+        {/* Right — Code card */}
+        <div className="hidden md:flex justify-center">
+          <div className="relative w-full max-w-md">
+              <div className="absolute -top-4 -left-4 w-full h-full rounded-2xl bg-emerald-100 dark:bg-green-primary/10 rotate-3" />
+            <div className="relative bg-white dark:bg-dark-card border border-gray-200 dark:border-dark-border rounded-2xl p-6 shadow-xl">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-3 h-3 rounded-full bg-red-400" />
+                <div className="w-3 h-3 rounded-full bg-yellow-400" />
+                <div className="w-3 h-3 rounded-full bg-green-400" />
+                <span className="ml-auto text-xs text-gray-400 dark:text-dark-muted font-mono">
+                  Challenge.java
+                </span>
+              </div>
+              <pre className="text-sm font-mono text-gray-700 dark:text-dark-text leading-relaxed">
+{`public class Challenge {
+  public static int solve(int n) {
+    if (n <= 1) return n;
+    return solve(n - 1)
+         + solve(n - 2);
+  }
+}`}
+              </pre>
+              <div className="mt-4 flex items-center justify-between">
+                <span className="text-xs text-gray-400 dark:text-dark-muted">
+                  Fibonacci Sequence
+                </span>
+                <span className="px-2 py-1 text-xs font-semibold rounded bg-emerald-100 dark:bg-green-primary/20 text-emerald-700 dark:text-green-primary border border-emerald-200 dark:border-transparent">
+                  +50 CLB
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
+
 function FeatureCard({ title, description, icon: Icon }) {
   return (
     <div className="flex gap-4 items-start p-5 rounded-xl bg-white dark:bg-dark-card border border-gray-100 dark:border-dark-border hover:border-green-primary/30 transition-colors">
-      <div className="shrink-0 w-10 h-10 rounded-lg bg-green-primary/10 flex items-center justify-center">
+      <div className="shrink-0 w-10 h-10 rounded-lg bg-emerald-100 dark:bg-green-primary/10 flex items-center justify-center">
         <Icon className="w-5 h-5 text-green-primary" />
       </div>
       <div>

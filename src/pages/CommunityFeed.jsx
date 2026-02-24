@@ -24,7 +24,6 @@ import {
   increment,
   serverTimestamp,
 } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
 import { useAuth } from "../context/AuthContext";
 import { db } from "../lib/firebase";
 import { SDG_ICONS, SDG_GOALS } from "../data/weeklyTasks";
@@ -172,39 +171,14 @@ export default function CommunityFeed() {
         + (direction === "up" ? (alreadyUp ? -1 : (alreadyDown ? 2 : 1)) : (alreadyDown ? 1 : (alreadyUp ? -2 : -1)));
 
       if (currentNet >= APPROVAL_THRESHOLD && sub.status !== "community_approved") {
+        // Mark as community-approved — CLB is NOT auto-awarded here.
+        // Only the weekly winner (highest net score at week end) receives CLB.
+        // Use /api/award-weekly-winner to trigger the reward.
         await updateDoc(docRef, {
           status: "community_approved",
           approvedAt: serverTimestamp(),
           approvalMethod: "community_vote",
         });
-
-        // ── Auto-award CLB to the submission author ──
-        // Idempotent: only triggers when status flips AND clbAwarded isn't set
-        const freshSnap = await getDoc(docRef);
-        const freshData = freshSnap.data();
-        if (!freshData?.clbAwarded) {
-          try {
-            const token = await getAuth().currentUser?.getIdToken();
-            if (token) {
-              await fetch("/api/reward-student", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({
-                  challengeId: sub.taskId,
-                  targetUid: sub.uid,
-                  isWeeklyTask: true,
-                }),
-              });
-              // Mark doc so reward isn't sent again on future votes
-              await updateDoc(docRef, { clbAwarded: true });
-            }
-          } catch (rewardErr) {
-            console.error("[CommunityFeed] Auto-reward failed:", rewardErr.message);
-          }
-        }
       } else if (currentNet <= FLAG_THRESHOLD && sub.status !== "flagged") {
         await updateDoc(docRef, {
           status: "flagged",
@@ -436,18 +410,19 @@ function SubmissionPost({ sub, currentUid, onVote, onViewPhoto, isVoting }) {
           </div>
 
           {/* SDG tag */}
-          <div className="mb-2">
+          <div className="mb-2 flex items-center flex-wrap gap-1.5">
             <span className="text-[11px] font-medium text-gray-500 dark:text-dark-muted bg-gray-100 dark:bg-dark-bg px-2 py-0.5 rounded-full">
               SDG {sdgNum}: {SDG_GOALS[sdgNum] ?? "Sustainable Action"}
             </span>
-            <span className="text-[11px] font-bold text-emerald-500 ml-2">
-              +{sub.rewardCLB ?? 25} CLB
-            </span>
-            {sub.clbAwarded && (
-              <span className="text-[10px] font-semibold text-green-600 bg-green-100 dark:bg-green-900/20 dark:text-green-400 ml-2 px-1.5 py-0.5 rounded-full">
-                CLB Awarded ✓
+            {sub.clbAwarded ? (
+              <span className="text-[10px] font-semibold text-green-600 bg-green-100 dark:bg-green-900/20 dark:text-green-400 px-1.5 py-0.5 rounded-full">
+                🏆 Weekly Winner · CLB Awarded
               </span>
-            )}
+            ) : isApproved ? (
+              <span className="text-[10px] font-medium text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded-full">
+                Community Approved
+              </span>
+            ) : null}
           </div>
 
           {/* Photo */}

@@ -82,7 +82,7 @@ export default function LeaderboardView() {
                   key={entry.uid}
                   className={`hover:bg-gray-50 dark:hover:bg-dark-surface transition-colors ${
                     entry.uid === user?.uid
-                      ? "bg-green-primary/5 dark:bg-green-primary/5"
+                      ? "bg-emerald-50 dark:bg-green-primary/5"
                       : ""
                   }`}
                 >

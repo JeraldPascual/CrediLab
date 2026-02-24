@@ -74,7 +74,7 @@ export default function Sidebar({ expanded = true, onNavigate, currentPath }) {
                   ${!expanded ? "justify-center" : ""}
                   ${
                     active
-                      ? "bg-green-primary/10 text-green-primary"
+                      ? "bg-emerald-100 dark:bg-green-primary/10 text-emerald-700 dark:text-green-primary"
                       : "text-gray-600 dark:text-dark-muted hover:bg-gray-100 dark:hover:bg-dark-card hover:text-gray-900 dark:hover:text-white"
                   }
                 `}

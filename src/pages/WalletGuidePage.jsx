@@ -318,7 +318,7 @@ function GuideSection({ icon: Icon, title, steps }) {
       <div className="p-5 space-y-4">
         {steps.map((step, i) => (
           <div key={i} className="flex gap-3">
-            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-green-primary/10 text-green-primary flex items-center justify-center text-xs font-bold">
+            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-emerald-100 dark:bg-green-primary/10 text-emerald-700 dark:text-green-primary border border-emerald-200 dark:border-transparent flex items-center justify-center text-xs font-bold">
               {i + 1}
             </div>
             <div>

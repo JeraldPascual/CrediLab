@@ -29,7 +29,7 @@ const PAGE_SIZE = 20;
 function statusBadge(status, method) {
   if (status === "success") {
     return (
-      <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-green-primary/10 text-green-primary">
+      <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-green-primary/10 text-emerald-700 dark:text-green-primary border border-emerald-200 dark:border-transparent">
         <CheckCircleIcon className="w-3.5 h-3.5" />
         Confirmed
       </span>

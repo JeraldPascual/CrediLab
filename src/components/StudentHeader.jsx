@@ -109,7 +109,7 @@ export default function StudentHeader({ onMenuToggle, sidebarExpanded }) {
             ? "text-red-500 bg-red-500/10 border-red-500/20"
             : isLow
             ? "text-yellow-500 bg-yellow-500/10 border-yellow-500/20"
-            : "text-green-primary bg-green-primary/10 border-green-primary/20";
+            : "text-green-primary bg-emerald-100 dark:bg-green-primary/10 border-emerald-200 dark:border-green-primary/20";
           return (
             <div
               className="relative"
@@ -192,7 +192,7 @@ export default function StudentHeader({ onMenuToggle, sidebarExpanded }) {
       {/* ── Right: Badge + Dark Mode + User ── */}
       <div className="ml-auto flex items-center gap-3">
         {/* Student Badge */}
-        <span className="hidden sm:inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-green-primary/10 text-green-primary border border-green-primary/20">
+        <span className="hidden sm:inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-emerald-100 dark:bg-green-primary/10 text-emerald-700 dark:text-green-primary border border-emerald-200 dark:border-green-primary/20">
           Student
         </span>
 

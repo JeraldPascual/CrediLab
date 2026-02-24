@@ -320,7 +320,7 @@ export default function ProfilePage() {
         {walletAddress ? (
           <div className="space-y-3">
             {/* Wallet Address Display */}
-            <div className="flex items-center gap-3 p-4 rounded-xl bg-green-primary/5 border border-green-primary/20">
+            <div className="flex items-center gap-3 p-4 rounded-xl bg-emerald-50 dark:bg-green-primary/5 border border-emerald-200 dark:border-green-primary/20">
               {showWallet ? (
                 <span className="text-sm font-mono text-gray-700 dark:text-dark-text flex-1 truncate">
                   {walletAddress}
@@ -332,7 +332,7 @@ export default function ProfilePage() {
               )}
               <button
                 onClick={() => setShowWallet(!showWallet)}
-                className="p-2 rounded-lg hover:bg-green-primary/10 transition-colors"
+                className="p-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-green-primary/10 transition-colors"
                 title={showWallet ? "Hide address" : "Reveal address"}
               >
                 {showWallet ? (
@@ -344,7 +344,7 @@ export default function ProfilePage() {
               {showWallet && (
                 <button
                   onClick={handleCopy}
-                  className="p-2 rounded-lg hover:bg-green-primary/10 transition-colors"
+                  className="p-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-green-primary/10 transition-colors"
                   title="Copy address"
                 >
                   {copied ? (
@@ -357,7 +357,7 @@ export default function ProfilePage() {
             </div>
 
             {/* CLB Balance Display */}
-            <div className="p-4 rounded-xl bg-gradient-to-br from-green-primary/10 to-green-primary/5 border border-green-primary/20">
+            <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-50 to-emerald-50/30 dark:from-green-primary/10 dark:to-green-primary/5 border border-emerald-200 dark:border-green-primary/20">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium text-gray-600 dark:text-dark-muted">
                   CLB Token Balance
