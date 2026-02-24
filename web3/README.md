@@ -1,41 +1,42 @@
-# Web3 / Blockchain — Student B's Domain
+# Web3 / Blockchain Layer
 
-##  Ownership
-This folder belongs to **Student B (Blockchain Specialist)**. You have full autonomy to reorganize, rename, or restructure anything here.
+## Architecture
 
-##  Initial Structure
 ```
 web3/
-├── contracts/      # Solidity smart contracts (if deploying to Sepolia)
-├── wallet/         # MetaMask + WalletConnect integration logic
-├── utils/          # Web3 helpers (ethers.js wrappers, hash utilities)
-└── README.md       # This file — your notes & decisions
+├── contracts/
+│   └── clbToken.js      # CrediLabSystem ERC20+ERC1155 contract interface (ethers.js)
+├── wallet/
+│   └── metamask.js       # MetaMask connection, Sepolia auto-switch, account listener
+├── utils/
+│   └── helpers.js        # sha256, shortenAddress, isWeb3Available
+└── README.md
 ```
 
-##  Your Responsibilities
-1. **WalletConnect** — Mobile wallet connection (QR code flow)
-2. **MetaMask** — Desktop wallet connection (works with Student A's UI)
-3. **Ethereum Sepolia** — On-chain credential storage OR smart contracts (your call)
-4. **Credit System Backend** — Firestore credit pool logic (deduct from pool, award to user)
-5. **Leaderboard** — Firestore real-time ranking by credits
-6. **Credential Verification** — Store code hash + wallet address + timestamp
+## Smart Contract
 
-##  Key Decisions (TBD by You)
-- [ ] **Approach:** On-chain hash storage vs smart contract vs hybrid (Firestore + Sepolia)?
-- [ ] **Library:** `ethers.js` vs `web3.js`? (ethers.js is already in package.json as a starting point)
-- [ ] **Contract:** Do we need a Solidity contract, or just wallet-based identity?
-- [ ] **Folder structure:** Does this layout work for you, or do you want to reorganize?
+- **Contract:** CrediLabSystem (hybrid ERC20 + ERC1155)
+- **Address:** `0xBFDB5f0C96aA9E2eECA9303E71a2b28b7C09Aee4`
+- **Network:** Ethereum Sepolia Testnet
+- **ERC20 (CLB):** Fungible token awarded for challenge completion
+- **ERC1155 (Badges):** Soulbound badges (ID 1-99), transferable frames (ID 100+)
 
-##  Integration Points
-- Student A will call your wallet functions from `/src` (e.g., `connectMetaMask()`, `onWalletChange()`)
-- Credit/leaderboard utils may live in `/src/utils/` or here — your call on where the boundary is
-- All on-chain interactions use **Sepolia testnet only** (zero gas costs, no real ETH)
+## Integration Points
 
-##  Dependencies
-- `ethers` — Ethereum interaction library (installed)
-- `vite-plugin-node-polyfills` — Required for Buffer/crypto support in browser (installed)
+| Consumer | Function | Purpose |
+|---|---|---|
+| `ProfilePage.jsx` | `connectMetaMask()`, `getCLBBalance()` | Wallet linking + balance display |
+| `api/reward-student.js` | `sendCLBOnChain()` (server-side) | Auto-transfer CLB on challenge completion |
+| `api/claim-tokens.js` | `sendCLBOnChain()` (server-side) | Cash out Firestore credits → on-chain |
+| `ActivitiesView.jsx` | `shortenAddress()` | Display wallet address |
 
-##  Getting Started
-1. Check `wallet/` for MetaMask + WalletConnect stubs
-2. Check `utils/` for ethers.js helper stubs
-3. Decide your approach and update this README
+## Security
+
+- Private key is **NEVER** loaded in frontend code
+- System wallet transfers run only in Vercel serverless functions (`api/`)
+- Frontend functions are read-only (`getCLBBalance`, `getContractInfo`) or user-signed (`transferCLBWithMetaMask`)
+
+## Dependencies
+
+- `ethers` ^6.16.0 — Ethereum interaction library
+- `vite-plugin-node-polyfills` — Buffer/crypto polyfills for browser

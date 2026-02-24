@@ -1,17 +1,14 @@
 /**
- * MetaMask Wallet Connection (Desktop)
+ * MetaMask Wallet Connection
  *
- * Purpose: Connect user's MetaMask wallet for credential verification.
- * Network: Ethereum Sepolia Testnet (zero gas costs)
- * Owner: Student B (integration with Student A's UI)
+ * Handles MetaMask wallet linking for CLB token transfers on Sepolia testnet.
+ * Used by ProfilePage to connect wallets and by the reward system to send CLB.
  *
- * Status: Scaffold — Student B will finalize implementation
- *
- * NOTE TO STUDENT B:
- * This is a starting point. Feel free to rewrite, reorganize, or replace entirely.
- * The key requirement is:
- * - connectMetaMask() returns a wallet address
- * - onWalletChange() fires when the user switches wallets
+ * Exports:
+ *   connectMetaMask()      → prompts user, returns wallet address
+ *   onWalletChange(cb)     → listens for account switches
+ *   getCurrentWallet()     → silent check, no prompt
+ *   ensureSepoliaNetwork() → auto-switch to Sepolia testnet
  */
 
 // Sepolia Testnet configuration

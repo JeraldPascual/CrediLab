@@ -1,10 +1,10 @@
 /**
  * Web3 Utility Helpers
  *
- * Purpose: Shared helpers for Ethereum/web3 operations.
- * Owner: Student B
- *
- * Status: Scaffold — Student B will expand or revise as needed
+ * Shared helpers for Ethereum/web3 operations used across the app.
+ * - sha256()          → code hash verification (Web Crypto API)
+ * - shortenAddress()  → display-friendly wallet address
+ * - isWeb3Available() → MetaMask detection check
  */
 
 /**

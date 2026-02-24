@@ -1,11 +1,13 @@
 # Data
 
-Static challenge definitions and constants.
+Static challenge definitions, constants, and Firestore-driven task helpers.
 
 | File | Contents |
 |---|---|
-| `challenges.js` | 10 core challenges (greeting → inventory-mgr) with test cases, boilerplate, credit rewards |
-| `javaChallenges.js` | 10 Java-specific challenges (student-avg → inventory-mgr) — higher difficulty tier |
-| `weeklyTasks.js` | SDG goal icons/labels used by the community feed |
+| `challenges.js` | 5 core challenges + re-exports `javaChallenges.js` into a single `CHALLENGES` array. Lookup helpers included. |
+| `javaChallenges.js` | 15 Java challenges across Easy/Medium/Hard tiers with test cases and starter code |
+| `constants.js` | Single source of truth: reward tiers, time limits, difficulty colors, categories, weekly task config |
+| `achievements.js` | Skill tiers (Novice → Expert) and cafeteria claim tiers (revenue model) |
+| `weeklyTasks.js` | Firestore-driven weekly SDG tasks — static fallback + read/write helpers + completion tracking |
 
-Credit values here must match `REWARD_MAP` in `api/reward-student.js`.
+**Important:** Credit values in `challenges.js` must match `REWARD_MAP` in `api/reward-student.js`.
