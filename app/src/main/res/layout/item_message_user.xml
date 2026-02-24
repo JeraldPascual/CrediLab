@@ -51,7 +51,7 @@
             android:text="User message"
             android:textColor="@color/black"
             android:textSize="16sp"
-            android:fontFamily="serif"
+            android:fontFamily="@font/figtree"
             android:maxWidth="300dp"
             android:paddingHorizontal="16dp"
             android:paddingVertical="12dp"

@@ -64,6 +64,7 @@ dependencies {
     implementation(libs.web3j)
     implementation(libs.zxing)
     implementation(libs.gson)
+    implementation(libs.okhttp)
     implementation(libs.zxing.android.embedded)
     implementation(platform(libs.reown.bom))
     implementation(libs.reown.core)
@@ -75,7 +76,11 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
+    implementation(libs.firebase.storage)
     implementation(libs.play.services.auth)
+
+    // Image loading
+    implementation(libs.glide)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)

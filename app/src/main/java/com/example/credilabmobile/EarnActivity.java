@@ -40,6 +40,9 @@ public class EarnActivity extends AppCompatActivity {
         ImageView btnClose = findViewById(R.id.btnClose);
         btnClose.setOnClickListener(v -> finish());
 
+        ImageView btnRules = findViewById(R.id.btnRules);
+        btnRules.setOnClickListener(v -> showRulesDialog());
+
         rvLanguages = findViewById(R.id.rvLanguages);
         rvLanguages.setLayoutManager(new LinearLayoutManager(this));
 
@@ -224,36 +227,82 @@ public class EarnActivity extends AppCompatActivity {
 
     private void resetDifficulty(LanguageAdapter.LanguageItem item, String difficulty, Dialog dialog) {
         String diffLabel = difficulty.substring(0, 1).toUpperCase() + difficulty.substring(1);
-        new AlertDialog.Builder(this)
-                .setTitle("Reset " + diffLabel + "?")
-                .setMessage("Reset " + item.name + " — " + diffLabel + " progress?")
-                .setPositiveButton("Reset", (d, w) -> {
-                    Executors.newSingleThreadExecutor().execute(() -> {
-                        try {
-                            AppDatabase db = ChatRepository.getInstance(getApplicationContext()).getDatabase();
-                            db.quizDao().deleteProgress(item.key, difficulty);
-                            runOnUiThread(() -> {
-                                switch (difficulty) {
-                                    case "easy":
-                                        item.easyDone = 0;
-                                        break;
-                                    case "medium":
-                                        item.mediumDone = 0;
-                                        break;
-                                    case "hard":
-                                        item.hardDone = 0;
-                                        break;
-                                }
-                                adapter.notifyDataSetChanged();
-                                dialog.dismiss();
-                            });
-                        } catch (Exception e) {
-                            e.printStackTrace();
+
+        View customView = getLayoutInflater().inflate(R.layout.dialog_custom, null);
+        TextView tvTitle = customView.findViewById(R.id.tvDialogTitle);
+        TextView tvMessage = customView.findViewById(R.id.tvDialogMessage);
+        com.google.android.material.button.MaterialButton btnConfirm = customView.findViewById(R.id.btnConfirm);
+        com.google.android.material.button.MaterialButton btnCancel = customView.findViewById(R.id.btnCancel);
+
+        tvTitle.setText("Reset " + diffLabel + "?");
+        tvMessage.setText("Reset " + item.name + " — " + diffLabel + " progress?");
+        btnConfirm.setText("Reset");
+        btnCancel.setVisibility(View.VISIBLE);
+
+        AlertDialog resetDialog = new AlertDialog.Builder(this)
+                .setView(customView)
+                .create();
+
+        if (resetDialog.getWindow() != null) {
+            resetDialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(0));
+        }
+
+        btnConfirm.setOnClickListener(v -> {
+            resetDialog.dismiss();
+            Executors.newSingleThreadExecutor().execute(() -> {
+                try {
+                    AppDatabase db = ChatRepository.getInstance(getApplicationContext()).getDatabase();
+                    db.quizDao().deleteProgress(item.key, difficulty);
+                    runOnUiThread(() -> {
+                        switch (difficulty) {
+                            case "easy":
+                                item.easyDone = 0;
+                                break;
+                            case "medium":
+                                item.mediumDone = 0;
+                                break;
+                            case "hard":
+                                item.hardDone = 0;
+                                break;
                         }
+                        adapter.notifyDataSetChanged();
+                        dialog.dismiss();
                     });
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
+        });
+
+        btnCancel.setOnClickListener(v -> resetDialog.cancel());
+        resetDialog.show();
+    }
+
+    private void showRulesDialog() {
+        View customView = getLayoutInflater().inflate(R.layout.dialog_custom, null);
+        TextView tvTitle = customView.findViewById(R.id.tvDialogTitle);
+        TextView tvMessage = customView.findViewById(R.id.tvDialogMessage);
+        com.google.android.material.button.MaterialButton btnConfirm = customView.findViewById(R.id.btnConfirm);
+
+        tvTitle.setText("Earn & CLB Rules");
+        tvMessage.setText("📖 How It Works:\n\n" +
+                "• You have 3 lives per quiz session.\n" +
+                "• If you lose all your lives, you are penalized by losing 20 questions of progress!\n" +
+                "• Complete 50 questions in a difficulty to finish it.\n" +
+                "• Passing difficulties rewards you with CLB tokens to your wallet.\n" +
+                "• Finish all difficulties to unlock special challenges!");
+        btnConfirm.setText("Got it");
+
+        AlertDialog rulesDialog = new AlertDialog.Builder(this)
+                .setView(customView)
+                .create();
+
+        if (rulesDialog.getWindow() != null) {
+            rulesDialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(0));
+        }
+
+        btnConfirm.setOnClickListener(v -> rulesDialog.dismiss());
+        rulesDialog.show();
     }
 
     private void launchQuiz(LanguageAdapter.LanguageItem item, String difficulty) {

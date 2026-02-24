@@ -29,6 +29,10 @@ public class ChatRepository {
     private AppDatabase db;
     private ChatDao chatDao;
     private LLMEngine llmEngine;
+    private String textLlmPath;
+    private String visionEmbedPath;
+    private String visionLlmPath;
+    private String textEmbedPath;
     private ExecutorService executor;
     private Handler mainHandler;
 
@@ -215,68 +219,81 @@ public class ChatRepository {
 
     public void initializeModel(Context context) {
         executor.execute(() -> {
-            File filesDir = context.getExternalFilesDir(null);
-            if (filesDir == null) {
-                postStatus("Error: External Storage Unavailable");
-                return;
-            }
+            try {
+                File filesDir = context.getExternalFilesDir(null);
+                if (filesDir == null) {
+                    postStatus("Error: External Storage Unavailable");
+                    return;
+                }
 
-            // Look for 'phi3' (Vision) or 'phi3mini' (Text)
-            File visionDir = new File(filesDir, "phi3");
-            File textDir = new File(filesDir, "phi3mini");
+                Log.d(TAG, "Searching for ONNX models in: " + filesDir.getAbsolutePath());
 
-            // SEARCH FOR VISION MODEL FILES
-            // USER specified: phi-3-v-128k-instruct-vision.onnx is in phi3 folder
-            File visionLlmFile = findOnnxFile(visionDir, "phi-3-v-128k-instruct-vision.onnx");
+                // Look for 'phi3' (Vision) or 'phi3mini' (Text)
+                File visionDir = new File(filesDir, "phi3");
+                File textDir = new File(filesDir, "phi3mini");
 
-            if (visionLlmFile == null) {
-                // Fallback to original name just in case
-                visionLlmFile = findOnnxFile(visionDir, "phi-3-vision-128k-instruct-int4-cpu-ep.onnx");
-            }
+                // SEARCH FOR TEXT MODEL FILE
+                File textLlmFile = findOnnxFile(textDir,
+                        "phi3-mini-4k-instruct-cpu-int4-rtn-block-32-acc-level-4.onnx");
 
-            if (visionLlmFile != null) {
-                // Assume other files are in the same directory
-                File parentDir = visionLlmFile.getParentFile();
-                // Standard names for the other parts usually accompany the main model
-                File visionEmbedFile = new File(parentDir, "phi-3-vision-128k-instruct-vision-int4-cpu-ep.onnx");
-                File textEmbedFile = new File(parentDir, "phi-3-vision-128k-instruct-text-embedding-int4-cpu-ep.onnx");
+                if (textLlmFile != null) {
+                    textLlmPath = textLlmFile.getAbsolutePath();
+                    Log.d(TAG, "Found Text LLM File: " + textLlmPath);
+                } else {
+                    Log.d(TAG, "Text LLM file not found in: " + textDir.getAbsolutePath());
+                }
 
-                // If user only has ONE file, maybe it's a monolithic model?
-                // But LLMEngine expects 3 paths. We'll try to load providing the same path or
-                // null if not found?
-                // Actually, if they are missing, LLMEngine might fail or default.
-                // Let's try to find them by partial name or assume standard names.
+                // SEARCH FOR VISION MODEL FILES
+                File visionFile = findOnnxFile(visionDir, "phi-3-v-128k-instruct-text.onnx");
 
-                if (visionEmbedFile.exists() && textEmbedFile.exists()) {
+                if (visionFile == null) {
+                    visionFile = findOnnxFile(visionDir, "phi-3-vision-128k-instruct-int4-cpu-ep.onnx");
+                }
+
+                if (visionFile != null) {
+                    File parentDir = visionFile.getParentFile();
+                    File vEmbedFile = new File(parentDir, "phi-3-v-128k-instruct-vision.onnx");
+                    if (!vEmbedFile.exists()) {
+                        vEmbedFile = new File(parentDir, "phi-3-vision-128k-instruct-vision-int4-cpu-ep.onnx");
+                    }
+
+                    File tEmbedFile = new File(parentDir, "phi-3-v-128k-instruct-text-embedding.onnx");
+                    if (!tEmbedFile.exists()) {
+                        tEmbedFile = new File(parentDir, "phi-3-vision-128k-instruct-text-embedding-int4-cpu-ep.onnx");
+                    }
+
+                    if (vEmbedFile.exists() && tEmbedFile.exists()) {
+                        visionLlmPath = visionFile.getAbsolutePath();
+                        visionEmbedPath = vEmbedFile.getAbsolutePath();
+                        textEmbedPath = tEmbedFile.getAbsolutePath();
+                        Log.d(TAG, "Found Vision Model & Embeddings");
+                    } else {
+                        Log.w(TAG, "Vision model found but embeddings missing!");
+                    }
+                } else {
+                    Log.d(TAG, "Vision LLM file not found in: " + visionDir.getAbsolutePath());
+                }
+
+                // INITIALIZE DEFAULT MODEL
+                if (textLlmPath != null) {
+                    postStatus("Loading Text Model...");
+                    llmEngine.loadTextModel(null, textLlmPath);
+                    llmEngine.setSystemPrompt(SYSTEM_PROMPT);
+                    postStatus("Bob (Text) Ready");
+                } else if (visionLlmPath != null) {
                     postStatus("Loading Vision Model...");
-                    llmEngine.loadVisionModel(visionEmbedFile.getAbsolutePath(), visionLlmFile.getAbsolutePath(),
-                            textEmbedFile.getAbsolutePath());
+                    llmEngine.loadVisionModel(visionEmbedPath, visionLlmPath, textEmbedPath);
                     llmEngine.setSystemPrompt(SYSTEM_PROMPT);
                     postStatus("Bob (Vision) Ready");
-                    return;
                 } else {
-                    postStatus("Vision components missing. Using Text Model only if available.");
+                    postStatus("Models not found. Please check 'phi3' or 'phi3mini' folder content.");
                 }
+            } catch (Exception e) {
+                Log.e(TAG, "CRITICAL ERROR while initializing models", e);
+                postStatus("Error loading model: " + e.getMessage());
             }
-
-            // SEARCH FOR TEXT MODEL FILE
-            // USER specified:
-            // phi3-mini-4k-instruct-cpu-int4-rtn-block-32-acc-level-4.onnx[.data] is in
-            // phi3mini
-            // We look for the .onnx file (the .data is loaded automatically by ONNX
-            // Runtime)
-            File textLlmFile = findOnnxFile(textDir, "phi3-mini-4k-instruct-cpu-int4-rtn-block-32-acc-level-4.onnx");
-
-            if (textLlmFile != null) {
-                postStatus("Loading Text Model...");
-                llmEngine.loadTextModel(null, textLlmFile.getAbsolutePath());
-                llmEngine.setSystemPrompt(SYSTEM_PROMPT);
-                postStatus("Bob (Text) Ready");
-                return;
-            }
-
-            postStatus("Models not found. Please check 'phi3' or 'phi3mini' folder content.");
         });
+
     }
 
     private File findOnnxFile(File directory, String targetFileName) {
@@ -338,10 +355,13 @@ public class ChatRepository {
         isGenerating.setValue(true);
 
         executor.execute(() -> {
+            if (textLlmPath != null) {
+                llmEngine.loadTextModel(null, textLlmPath);
+            } else if (visionLlmPath != null) {
+                llmEngine.loadVisionModel(visionEmbedPath, visionLlmPath, textEmbedPath);
+            }
+
             // Context injection?
-            // If context is provided (from image analysis), prepend it to text or system
-            // prompt?
-            // "Bob" style: just prepend to prompt.
             String finalPrompt = text;
             if (context != null && !context.isEmpty()) {
                 finalPrompt = "Context: " + context + "\n\nUser: " + text;
@@ -380,10 +400,15 @@ public class ChatRepository {
 
     public void analyzeImage(Bitmap image, ChatCallback callback) {
         executor.execute(() -> {
-            // System prompt for vision?
-            // "Describe this image"
-            // LLMEngine.runVisionInference
-            // But we need a separate callback-based flow.
+            if (visionLlmPath != null) {
+                llmEngine.loadVisionModel(visionEmbedPath, visionLlmPath, textEmbedPath);
+            } else {
+                mainHandler.post(() -> {
+                    if (callback != null)
+                        callback.onResponse("Error: Vision model not found on device.");
+                });
+                return;
+            }
 
             StringBuilder builder = new StringBuilder();
             LLMEngine.TokenCallback tokenCallback = token -> {

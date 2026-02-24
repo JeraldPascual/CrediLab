@@ -54,6 +54,7 @@ class WalletConnectHelper(private val context: android.content.Context) {
                     if (!address.isNullOrEmpty()) {
                         Log.d("WalletConnectHelper", "Saving wallet address: $address")
                         WalletManager.getInstance(context).setWalletAddress(address)
+                        onConnectionStateChange?.invoke(true)
                     } else {
                         Log.w("WalletConnectHelper", "Could not extract address, scheduling retry")
                         android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
@@ -67,13 +68,15 @@ class WalletConnectHelper(private val context: android.content.Context) {
                                 }
                             } catch (e: Exception) {
                                 Log.e("WalletConnectHelper", "Delayed getAccount failed", e)
+                            } finally {
+                                onConnectionStateChange?.invoke(true)
                             }
                         }, 1000)
                     }
                 } catch (e: Exception) {
                     Log.e("WalletConnectHelper", "Error saving address in callback", e)
+                    onConnectionStateChange?.invoke(true)
                 }
-                onConnectionStateChange?.invoke(true)
             }
 
             override fun onSessionRejected(rejectedSession: Modal.Model.RejectedSession) {

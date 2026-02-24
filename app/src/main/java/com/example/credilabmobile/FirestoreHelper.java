@@ -4,13 +4,16 @@ import android.util.Log;
 
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QuerySnapshot;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 /**
  * Read-only helper for Firestore data.
- * Reads user profile (walletAddress, credits) and system credit pool.
+ * Reads user profile, system credit pool, and leaderboard.
  */
 public class FirestoreHelper {
     private static final String TAG = "FirestoreHelper";
@@ -23,16 +26,52 @@ public class FirestoreHelper {
     // --- Data Models ---
 
     public static class UserData {
+        public final String uid;
+        public final String displayName;
+        public final String firstName;
+        public final String lastName;
+        public final String email;
+        public final String photoURL;
         public final String walletAddress;
         public final long credits;
         public final long totalCLBEarned;
         public final List<String> completedChallenges;
+        public final String equippedFrame;
+        public final List<String> equippedBadges;
+        public final List<String> unlockedFrames;
+        public final List<String> unlockedBadges;
 
-        public UserData(String walletAddress, long credits, long totalCLBEarned, List<String> completedChallenges) {
+        public UserData(String uid, String displayName, String firstName, String lastName,
+                String email, String photoURL, String walletAddress,
+                long credits, long totalCLBEarned, List<String> completedChallenges,
+                String equippedFrame, List<String> equippedBadges,
+                List<String> unlockedFrames, List<String> unlockedBadges) {
+            this.uid = uid;
+            this.displayName = displayName;
+            this.firstName = firstName;
+            this.lastName = lastName;
+            this.email = email;
+            this.photoURL = photoURL;
             this.walletAddress = walletAddress;
             this.credits = credits;
             this.totalCLBEarned = totalCLBEarned;
             this.completedChallenges = completedChallenges;
+            this.equippedFrame = equippedFrame;
+            this.equippedBadges = equippedBadges;
+            this.unlockedFrames = unlockedFrames;
+            this.unlockedBadges = unlockedBadges;
+        }
+
+        /** Helper: best display name available */
+        public String getBestName() {
+            if (displayName != null && !displayName.isEmpty())
+                return displayName;
+            String full = ((firstName != null ? firstName : "") + " " + (lastName != null ? lastName : "")).trim();
+            if (!full.isEmpty())
+                return full;
+            if (email != null)
+                return email;
+            return "Anonymous";
         }
     }
 
@@ -62,6 +101,45 @@ public class FirestoreHelper {
         void onFailure(Exception e);
     }
 
+    public interface LeaderboardCallback {
+        void onSuccess(List<UserData> users);
+
+        void onFailure(Exception e);
+    }
+
+    // --- Helpers to safely read fields ---
+
+    private static long safeLong(DocumentSnapshot doc, String field) {
+        Long val = doc.getLong(field);
+        return val != null ? val : 0;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<String> safeStringList(DocumentSnapshot doc, String field) {
+        Object val = doc.get(field);
+        if (val instanceof List)
+            return (List<String>) val;
+        return null;
+    }
+
+    private static UserData parseUserDoc(DocumentSnapshot doc) {
+        return new UserData(
+                doc.getId(),
+                doc.getString("displayName"),
+                doc.getString("firstName"),
+                doc.getString("lastName"),
+                doc.getString("email"),
+                doc.getString("photoURL"),
+                doc.getString("walletAddress"),
+                safeLong(doc, "credits"),
+                safeLong(doc, "totalCLBEarned"),
+                safeStringList(doc, "completedChallenges"),
+                doc.getString("equippedFrame"),
+                safeStringList(doc, "equippedBadges"),
+                safeStringList(doc, "unlockedFrames"),
+                safeStringList(doc, "unlockedBadges"));
+    }
+
     // --- Read Methods ---
 
     /**
@@ -71,18 +149,15 @@ public class FirestoreHelper {
         db.collection("users").document(uid).get()
                 .addOnSuccessListener(doc -> {
                     if (doc.exists()) {
-                        String walletAddress = doc.getString("walletAddress");
-                        long credits = doc.getLong("credits") != null ? doc.getLong("credits") : 0;
-                        long totalCLBEarned = doc.getLong("totalCLBEarned") != null ? doc.getLong("totalCLBEarned") : 0;
-
-                        @SuppressWarnings("unchecked")
-                        List<String> challenges = (List<String>) doc.get("completedChallenges");
-
-                        Log.d(TAG, "User data loaded — wallet: " + walletAddress + ", credits: " + credits);
-                        callback.onSuccess(new UserData(walletAddress, credits, totalCLBEarned, challenges));
+                        UserData data = parseUserDoc(doc);
+                        Log.d(TAG, "User data loaded — name: " + data.getBestName()
+                                + ", wallet: " + data.walletAddress
+                                + ", credits: " + data.credits);
+                        callback.onSuccess(data);
                     } else {
                         Log.w(TAG, "No user document found for UID: " + uid);
-                        callback.onSuccess(new UserData(null, 0, 0, null));
+                        callback.onSuccess(new UserData(uid, null, null, null, null, null, null,
+                                0, 0, null, null, null, null, null));
                     }
                 })
                 .addOnFailureListener(e -> {
@@ -98,9 +173,9 @@ public class FirestoreHelper {
         db.collection("system").document("credit_pool").get()
                 .addOnSuccessListener(doc -> {
                     if (doc.exists()) {
-                        long total = doc.getLong("total") != null ? doc.getLong("total") : 0;
-                        long distributed = doc.getLong("distributed") != null ? doc.getLong("distributed") : 0;
-                        long remaining = doc.getLong("remaining") != null ? doc.getLong("remaining") : 0;
+                        long total = safeLong(doc, "total");
+                        long distributed = safeLong(doc, "distributed");
+                        long remaining = safeLong(doc, "remaining");
 
                         Log.d(TAG, "Credit pool — remaining: " + remaining + "/" + total);
                         callback.onSuccess(new CreditPool(total, distributed, remaining));
@@ -112,6 +187,94 @@ public class FirestoreHelper {
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "Failed to read credit pool", e);
                     callback.onFailure(e);
+                });
+    }
+
+    /**
+     * Read all users for leaderboard, sorted by totalCLBEarned descending.
+     * Returns top 20 users who have earned at least some credits.
+     */
+    public void getAllUsers(LeaderboardCallback callback) {
+        db.collection("users").get()
+                .addOnSuccessListener(snapshot -> {
+                    List<UserData> users = new ArrayList<>();
+                    for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                        UserData u = parseUserDoc(doc);
+                        // Only include users with some activity
+                        if (u.totalCLBEarned > 0 || u.credits > 0 ||
+                                (u.completedChallenges != null && !u.completedChallenges.isEmpty())) {
+                            users.add(u);
+                        }
+                    }
+                    // Sort by totalCLBEarned descending
+                    Collections.sort(users, (a, b) -> Long.compare(b.totalCLBEarned, a.totalCLBEarned));
+                    // Take top 20
+                    if (users.size() > 20) {
+                        users = new ArrayList<>(users.subList(0, 20));
+                    }
+                    Log.d(TAG, "Leaderboard loaded: " + users.size() + " entries");
+                    callback.onSuccess(users);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to fetch leaderboard", e);
+                    callback.onFailure(e);
+                });
+    }
+
+    /**
+     * Update user profile information (nickname and photo URL).
+     */
+    public void updateUserProfile(String uid, String nickname, String photoUrl, Runnable onSuccess,
+            java.util.function.Consumer<Exception> onFailure) {
+        db.collection("users").document(uid)
+                .update(
+                        "displayName", nickname,
+                        "photoURL", photoUrl)
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "User profile updated successfully for UID: " + uid);
+                    onSuccess.run();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to update user profile", e);
+                    onFailure.accept(e);
+                });
+    }
+
+    /**
+     * Update user wallet address.
+     */
+    public void updateWalletAddress(String uid, String walletAddress, Runnable onSuccess,
+            java.util.function.Consumer<Exception> onFailure) {
+        db.collection("users").document(uid)
+                .update("walletAddress", walletAddress)
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "Wallet address updated successfully for UID: " + uid);
+                    if (onSuccess != null)
+                        onSuccess.run();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to update wallet address", e);
+                    if (onFailure != null)
+                        onFailure.accept(e);
+                });
+    }
+
+    /**
+     * Increase the user's credits atomically via FieldValue.increment.
+     */
+    public void claimQuizReward(String uid, long amount, Runnable onSuccess,
+            java.util.function.Consumer<Exception> onFailure) {
+        db.collection("users").document(uid)
+                .update(
+                        "credits", com.google.firebase.firestore.FieldValue.increment(amount),
+                        "totalCLBEarned", com.google.firebase.firestore.FieldValue.increment(amount))
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "Quiz reward " + amount + " CLB claimed for UID: " + uid);
+                    onSuccess.run();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to claim quiz reward", e);
+                    onFailure.accept(e);
                 });
     }
 }

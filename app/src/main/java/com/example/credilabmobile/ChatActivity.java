@@ -274,21 +274,41 @@ public class ChatActivity extends AppCompatActivity {
 
         btnGallery.setOnClickListener(v -> showImageWarning());
 
-        // Initialize Search (Async)
-        android.util.Log.d(TAG, "onCreate: Initializing Model...");
-        repository.initializeModel(this); // Assuming explicit init call here, or piggyback on search init
-        repository.initializeSearch(new ChatRepository.ModelInitCallback() {
-            @Override
-            public void onSuccess() {
-                android.util.Log.d(TAG, "initializeSearch: Success");
-                runOnUiThread(() -> updateUi(UiState.IDLE));
-            }
+        // Observe Model Status
+        repository.getModelStatus().observe(this, status -> {
+            if (status != null) {
+                android.util.Log.d(TAG, "modelStatus updated: " + status);
 
-            @Override
-            public void onError(Exception e) {
-                android.util.Log.e(TAG, "initializeSearch: Error", e);
+                // Update the loading text if it's visible, otherwise we could just ignore
+                TextView txtStatus = null; // We don't have an explicit ID for the status text
+                if (txtStatus == null) {
+                    // txtLoadingStatus needs an ID in activity_chat.xml, but for now we'll just
+                    // check if Bob is ready
+                    // Let's find child TextView
+                    android.view.View overlay = findViewById(R.id.loadingOverlay);
+                    if (overlay instanceof android.view.ViewGroup) {
+                        try {
+                            android.widget.LinearLayout ll = (android.widget.LinearLayout) ((android.view.ViewGroup) overlay)
+                                    .getChildAt(0);
+                            TextView tv = (TextView) ll.getChildAt(1);
+                            tv.setText(status);
+                        } catch (Exception e) {
+                        }
+                    }
+                }
+
+                if (status.contains("Ready")) {
+                    updateUi(UiState.IDLE);
+                } else if (status.contains("Error") || status.contains("not found")) {
+                    Toast.makeText(this, status, Toast.LENGTH_LONG).show();
+                    // Still transition to IDLE so user can close or retry
+                    updateUi(UiState.IDLE);
+                }
             }
         });
+
+        android.util.Log.d(TAG, "onCreate: Initializing Model...");
+        repository.initializeModel(this);
 
         // Watch Text Change to enable send button
         etMessage.addTextChangedListener(new android.text.TextWatcher() {
@@ -346,10 +366,8 @@ public class ChatActivity extends AppCompatActivity {
         dialogView.findViewById(R.id.btnCancel).setOnClickListener(v -> dialog.dismiss());
         dialogView.findViewById(R.id.btnConfirmDelete).setOnClickListener(v -> {
             dialog.dismiss();
-            boolean isCurrent = false;
-            if (repository.getCurrentSessionId() != null) {
-                isCurrent = repository.getCurrentSessionId().equals(session.id);
-            }
+            final boolean isCurrent = repository.getCurrentSessionId() != null &&
+                    repository.getCurrentSessionId().equals(session.id);
 
             repository.deleteSession(session.id, () -> {
                 // Refresh List
@@ -359,7 +377,7 @@ public class ChatActivity extends AppCompatActivity {
                         filterHistory(searchHistory.getText().toString());
 
                         // If we deleted the active session, reset UI
-                        if (true) { // Logic simplified for now, assuming current check pass
+                        if (isCurrent) {
                             adapter.clear();
                             repository.createNewChat();
                             setEmptyStateVisible(true);
@@ -593,7 +611,7 @@ public class ChatActivity extends AppCompatActivity {
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
             ChatSession session = sessions.get(position);
             holder.title.setText(session.title != null ? session.title : "New Chat");
-            holder.date.setText(dateFormat.format(new Date(session  .lastActive)));
+            holder.date.setText(dateFormat.format(new Date(session.lastActive)));
             holder.itemView.setOnClickListener(v -> listener.onClick(session));
             holder.itemView.setOnLongClickListener(v -> {
                 listener.onLongClick(session);

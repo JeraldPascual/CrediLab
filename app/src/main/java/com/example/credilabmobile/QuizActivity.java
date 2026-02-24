@@ -214,15 +214,11 @@ public class QuizActivity extends AppCompatActivity {
         }
 
         if (lives <= 0) {
-            btnNext.setText("Try Again");
-            btnNext.setVisibility(View.VISIBLE);
-            btnNext.setOnClickListener(v -> {
-                lives = 3;
-                currentIndex = 0;
-                Collections.shuffle(questions);
-                btnNext.setOnClickListener(v2 -> onNextClicked());
-                displayQuestion();
-            });
+            btnNext.setVisibility(View.GONE);
+            for (MaterialCardView card : optionCards) {
+                card.setClickable(false);
+            }
+            decrementProgressAndShowDialog();
         } else {
             btnNext.setText("Next");
             btnNext.setVisibility(View.VISIBLE);
@@ -245,6 +241,54 @@ public class QuizActivity extends AppCompatActivity {
         } else {
             displayQuestion();
         }
+    }
+
+    private void decrementProgressAndShowDialog() {
+        Executors.newSingleThreadExecutor().execute(() -> {
+            try {
+                AppDatabase db = ChatRepository.getInstance(getApplicationContext()).getDatabase();
+                QuizProgress prog = db.quizDao().getProgress(language, currentDifficulty);
+                int previousScore = 0;
+                if (prog != null) {
+                    previousScore = prog.answeredCorrectly;
+                    prog.answeredCorrectly = Math.max(0, prog.answeredCorrectly - 20);
+                    db.quizDao().upsertProgress(prog);
+                }
+                final int lostAmount = prog != null ? (previousScore - prog.answeredCorrectly) : 0;
+
+                runOnUiThread(() -> {
+                    android.view.View dialogView = getLayoutInflater().inflate(R.layout.dialog_out_of_lives, null);
+                    TextView tvMessage = dialogView.findViewById(R.id.tvLockedMessage);
+                    MaterialButton btnOutOk = dialogView.findViewById(R.id.btnOutOk);
+
+                    if (lostAmount > 0) {
+                        tvMessage.setText("You lost all your lives. You've been pushed back " + lostAmount
+                                + " questions on your progress!");
+                    } else {
+                        tvMessage.setText(
+                                "You lost all your lives, but luckily you didn't have any progress to lose yet!");
+                    }
+
+                    AlertDialog dialog = new AlertDialog.Builder(QuizActivity.this)
+                            .setView(dialogView)
+                            .setCancelable(false)
+                            .create();
+
+                    if (dialog.getWindow() != null) {
+                        dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(0));
+                    }
+
+                    btnOutOk.setOnClickListener(v -> {
+                        dialog.dismiss();
+                        finish();
+                    });
+
+                    dialog.show();
+                });
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     private void saveProgress() {
@@ -275,27 +319,221 @@ public class QuizActivity extends AppCompatActivity {
     private void showComplete() {
         String diffLabel = currentDifficulty.substring(0, 1).toUpperCase() + currentDifficulty.substring(1);
 
-        // Save completion record
+        com.google.firebase.auth.FirebaseUser user = com.google.firebase.auth.FirebaseAuth.getInstance()
+                .getCurrentUser();
+        if (user == null) {
+            android.view.View dialogView = getLayoutInflater().inflate(R.layout.dialog_custom, null);
+            TextView tvTitle = dialogView.findViewById(R.id.tvDialogTitle);
+            TextView tvMessage = dialogView.findViewById(R.id.tvDialogMessage);
+            MaterialButton btnConfirm = dialogView.findViewById(R.id.btnConfirm);
+
+            tvTitle.setText("🎉 " + diffLabel + " Complete!");
+            tvMessage.setText("Great job! Please sign in to earn rewards.");
+            btnConfirm.setText("Done");
+
+            AlertDialog dialog = new AlertDialog.Builder(this)
+                    .setView(dialogView)
+                    .setCancelable(false)
+                    .create();
+
+            if (dialog.getWindow() != null) {
+                dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(0));
+            }
+
+            btnConfirm.setOnClickListener(v -> {
+                dialog.dismiss();
+                finish();
+            });
+            dialog.show();
+            return;
+        }
+
         Executors.newSingleThreadExecutor().execute(() -> {
             try {
                 AppDatabase db = ChatRepository.getInstance(getApplicationContext()).getDatabase();
                 QuizCompletion existing = db.quizDao().getCompletion(language, currentDifficulty);
+
                 if (existing == null) {
+                    // First time completion! Award CLB.
                     db.quizDao().insertCompletion(
                             new QuizCompletion(language, currentDifficulty, System.currentTimeMillis()));
+
+                    long rewardAmount = 10;
+                    if (currentDifficulty.equals("medium"))
+                        rewardAmount = 25;
+                    else if (currentDifficulty.equals("hard"))
+                        rewardAmount = 50;
+
+                    final long finalReward = rewardAmount;
+
+                    runOnUiThread(() -> {
+                        android.view.View dialogView = getLayoutInflater().inflate(R.layout.dialog_claim_reward, null);
+                        TextView tvTitle = dialogView.findViewById(R.id.tvDialogTitle);
+                        TextView tvMessage = dialogView.findViewById(R.id.tvDialogMessage);
+                        ProgressBar pb = dialogView.findViewById(R.id.progressBarClaim);
+                        MaterialButton btnClaim = dialogView.findViewById(R.id.btnClaim);
+
+                        tvTitle.setText("🎉 " + diffLabel + " Complete!");
+                        tvMessage.setText("Great job! You've conquered " + languageName + " — " + diffLabel
+                                + "!\n\nClaim your " + finalReward + " CLB reward below.");
+
+                        AlertDialog dialog = new AlertDialog.Builder(this)
+                                .setView(dialogView)
+                                .setCancelable(false)
+                                .create();
+
+                        // Make dialog background transparent since the layout has its own background
+                        if (dialog.getWindow() != null) {
+                            dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(0));
+                        }
+
+                        btnClaim.setOnClickListener(v -> {
+                            btnClaim.setEnabled(false);
+                            pb.setVisibility(View.VISIBLE);
+
+                            user.getIdToken(false).addOnSuccessListener(result -> {
+                                String idToken = result.getToken();
+                                CrediLabApiClient.rewardStudent(idToken, "mobile_quiz_" + currentDifficulty,
+                                        (int) finalReward, new CrediLabApiClient.ApiCallback() {
+                                            @Override
+                                            public void onSuccess(String responseBody) {
+                                                runOnUiThread(() -> {
+                                                    dialog.dismiss();
+                                                    android.view.View successCustomView = getLayoutInflater()
+                                                            .inflate(R.layout.dialog_custom, null);
+                                                    TextView successTvTitle = successCustomView
+                                                            .findViewById(R.id.tvDialogTitle);
+                                                    TextView successTvMessage = successCustomView
+                                                            .findViewById(R.id.tvDialogMessage);
+                                                    MaterialButton successBtnConfirm = successCustomView
+                                                            .findViewById(R.id.btnConfirm);
+
+                                                    successTvTitle.setText("Reward Claimed!");
+                                                    successTvMessage.setText("You successfully claimed " + finalReward
+                                                            + " CLB directly to your balance/wallet!");
+                                                    successBtnConfirm.setText("Done");
+
+                                                    AlertDialog successDialog = new AlertDialog.Builder(
+                                                            QuizActivity.this)
+                                                            .setView(successCustomView)
+                                                            .setCancelable(false)
+                                                            .create();
+                                                    if (successDialog.getWindow() != null) {
+                                                        successDialog.getWindow().setBackgroundDrawable(
+                                                                new android.graphics.drawable.ColorDrawable(0));
+                                                    }
+                                                    successBtnConfirm.setOnClickListener(v1 -> {
+                                                        successDialog.dismiss();
+                                                        finish();
+                                                    });
+                                                    successDialog.show();
+                                                });
+                                            }
+
+                                            @Override
+                                            public void onFailure(int responseCode, String message) {
+                                                runOnUiThread(() -> {
+                                                    dialog.dismiss();
+                                                    String errTitle = "Claim Failed";
+                                                    String errMessage = "Error processing claim:\n" + message;
+                                                    if (responseCode == 409) {
+                                                        errTitle = "Already Rewarded";
+                                                        errMessage = "You have already claimed the ON-CHAIN reward for this difficulty tier!";
+                                                    }
+
+                                                    android.view.View errCustomView = getLayoutInflater()
+                                                            .inflate(R.layout.dialog_custom, null);
+                                                    TextView errTvTitle = errCustomView
+                                                            .findViewById(R.id.tvDialogTitle);
+                                                    TextView errTvMessage = errCustomView
+                                                            .findViewById(R.id.tvDialogMessage);
+                                                    MaterialButton errBtnConfirm = errCustomView
+                                                            .findViewById(R.id.btnConfirm);
+
+                                                    errTvTitle.setText(errTitle);
+                                                    errTvMessage.setText(errMessage);
+                                                    errBtnConfirm.setText("Done");
+
+                                                    AlertDialog errDialog = new AlertDialog.Builder(QuizActivity.this)
+                                                            .setView(errCustomView)
+                                                            .setCancelable(false)
+                                                            .create();
+                                                    if (errDialog.getWindow() != null) {
+                                                        errDialog.getWindow().setBackgroundDrawable(
+                                                                new android.graphics.drawable.ColorDrawable(0));
+                                                    }
+                                                    errBtnConfirm.setOnClickListener(v2 -> {
+                                                        errDialog.dismiss();
+                                                        finish();
+                                                    });
+                                                    errDialog.show();
+                                                });
+                                            }
+                                        });
+                            }).addOnFailureListener(e -> {
+                                runOnUiThread(() -> {
+                                    pb.setVisibility(View.GONE);
+                                    btnClaim.setEnabled(true);
+
+                                    android.view.View authCustomView = getLayoutInflater().inflate(
+                                            R.layout.dialog_custom,
+                                            null);
+                                    TextView authTvTitle = authCustomView.findViewById(R.id.tvDialogTitle);
+                                    TextView authTvMessage = authCustomView.findViewById(R.id.tvDialogMessage);
+                                    MaterialButton authBtnConfirm = authCustomView.findViewById(R.id.btnConfirm);
+
+                                    authTvTitle.setText("Authentication Error");
+                                    authTvMessage.setText("Failed to retrieve Firebase ID token.");
+                                    authBtnConfirm.setText("OK");
+
+                                    AlertDialog authErrDialog = new AlertDialog.Builder(QuizActivity.this)
+                                            .setView(authCustomView)
+                                            .create();
+                                    if (authErrDialog.getWindow() != null) {
+                                        authErrDialog.getWindow()
+                                                .setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(0));
+                                    }
+                                    authBtnConfirm.setOnClickListener(v3 -> authErrDialog.dismiss());
+                                    authErrDialog.show();
+                                });
+                            });
+                        });
+
+                        dialog.show();
+                    });
+                } else {
+                    // Already completed previously
+                    runOnUiThread(() -> {
+                        android.view.View doneCustomView = getLayoutInflater().inflate(R.layout.dialog_custom, null);
+                        TextView doneTvTitle = doneCustomView.findViewById(R.id.tvDialogTitle);
+                        TextView doneTvMessage = doneCustomView.findViewById(R.id.tvDialogMessage);
+                        MaterialButton doneBtnConfirm = doneCustomView.findViewById(R.id.btnConfirm);
+
+                        doneTvTitle.setText("🎉 " + diffLabel + " Complete!");
+                        doneTvMessage.setText("Great job! You've already conquered " + languageName + " — " + diffLabel
+                                + ".\n\nYou've previously claimed the rewards for this section.");
+                        doneBtnConfirm.setText("Done");
+
+                        AlertDialog doneDialog = new AlertDialog.Builder(this)
+                                .setView(doneCustomView)
+                                .setCancelable(false)
+                                .create();
+                        if (doneDialog.getWindow() != null) {
+                            doneDialog.getWindow()
+                                    .setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(0));
+                        }
+                        doneBtnConfirm.setOnClickListener(v4 -> {
+                            doneDialog.dismiss();
+                            finish();
+                        });
+                        doneDialog.show();
+                    });
                 }
             } catch (Exception e) {
                 e.printStackTrace();
+                runOnUiThread(() -> finish());
             }
         });
-
-        new AlertDialog.Builder(this)
-                .setTitle("🎉 " + diffLabel + " Complete!")
-                .setMessage("Great job! You've completed " + languageName + " \u2014 " + diffLabel
-                        + "!\n\n\ud83c\udfc6 This achievement has been recorded!\nYou can earn titles, badges, and certificates by completing more quizzes.")
-                .setCancelable(false)
-                .setPositiveButton("Done", (d, w) -> finish())
-                .show();
     }
 
     private void highlightOption(int idx, boolean correct) {

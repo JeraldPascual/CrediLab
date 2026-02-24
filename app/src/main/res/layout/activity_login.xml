@@ -8,14 +8,30 @@
     android:gravity="center"
     android:padding="32dp">
 
-    <!-- App Title -->
-    <TextView
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="CrediLab"
-        android:textColor="@color/primary"
-        android:textSize="40sp"
-        android:textStyle="bold" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="8dp">
+
+        <ImageView
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:src="@drawable/ic_credilab_logo"
+            android:scaleType="fitCenter"
+            android:adjustViewBounds="true"
+            android:contentDescription="CrediLab Logo" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="CrediLab"
+            android:textColor="@color/primary"
+            android:textSize="40sp"
+            android:textStyle="bold"
+            android:layout_marginStart="12dp" />
+    </LinearLayout>
 
     <TextView
         android:layout_width="wrap_content"
