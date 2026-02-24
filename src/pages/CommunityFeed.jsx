@@ -18,7 +18,6 @@ import {
   getDocs,
   doc,
   updateDoc,
-  getDoc,
   arrayUnion,
   arrayRemove,
   increment,

@@ -31,7 +31,7 @@ This installs:
 cp .env.example .env
 ```
 
-Edit `.env` and fill in your credentials: 
+Edit `.env` and fill in your credentials:
 - **Judge0 API Key** (get from RapidAPI or Student A)
 - **Firebase Config** (get from Firebase Console or Student A)
 - **WalletConnect Project ID** (Student B — get from cloud.walletconnect.com)
@@ -170,12 +170,12 @@ npm run dev -- --port 3000
 ##  Documentation
 
 All project documentation is in `/project_context/`:
-- `PROJECT_OVERVIEW.md` — Mission, problem, solution
-- `TECH_STACK.md` — Technologies we're using
-- `TEAM_ROLES.md` — Who does what
-- `MVP_ROADMAP.md` — Timeline and tasks
-- `TECHNICAL_SPECIFICATIONS.md` — API specs, code examples
-- `REALISTIC_MVP_SCOPE.md` — What we're building vs not building
+- `PROJECT_OVERVIEW.md` — Mission, problem, solution, SDG alignment
+- `HACKATHON_RULES.md` — Scoring rubric, deadlines, submission requirements
+
+Other key docs:
+- `README.md` — Architecture, features, API endpoints
+- `.env.example` — All required environment variables
 
 **Read these before coding** — they contain all the answers.
 

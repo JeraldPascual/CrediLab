@@ -90,13 +90,6 @@ export default async function handler(req, res) {
 
     // 1. Fetch all community_approved submissions for the week
     const ref = db.collection('weekly_completions');
-    const snap = await ref
-      .where('weekNumber', '==', weekNumber)
-      .where('status', '==', 'community_approved')
-      .where('clbAwarded', '==', false)  // not yet awarded
-      .get();
-
-    // Also include docs where clbAwarded field doesn't exist yet
     const snapAll = await ref
       .where('weekNumber', '==', weekNumber)
       .where('status', '==', 'community_approved')
