@@ -309,18 +309,18 @@ export default function ProblemPage() {
 
 // ─── Window Pane Component ─────────────────────────────────────────
 const PANES = [
-  { key: "available", label: "Available",         icon: CodeBracketIcon,  accent: "text-green-primary",  activeClass: "border-green-primary text-green-primary" },
-  { key: "completed", label: "Completed",         icon: CheckCircleIcon,  accent: "text-emerald-500",    activeClass: "border-emerald-500 text-emerald-500" },
-  { key: "terminated",label: "Timed Out",         icon: NoSymbolIcon,     accent: "text-red-500",        activeClass: "border-red-500 text-red-500" },
+  { key: "available",  label: "Available",            icon: CodeBracketIcon, accent: "text-green-primary", activeClass: "border-green-primary text-green-primary" },
+  { key: "ongoing",    label: "In Progress",           icon: ClockIcon,       accent: "text-yellow-500",   activeClass: "border-yellow-500 text-yellow-600 dark:text-yellow-400" },
+  { key: "completed",  label: "Completed",             icon: CheckCircleIcon, accent: "text-emerald-500",  activeClass: "border-emerald-500 text-emerald-500" },
+  { key: "terminated", label: "Timed Out / Terminated", icon: NoSymbolIcon,    accent: "text-red-500",     activeClass: "border-red-500 text-red-500" },
 ];
 
 function ChallengePane({ ongoing, notStarted, completed, terminated, sessionMeta, filteredEmpty, diffFilter }) {
   const [activePane, setActivePane] = useState("available");
 
-  const availableAll = [...ongoing, ...notStarted];
-
   const paneItems = {
-    available: availableAll,
+    available: notStarted,
+    ongoing,
     completed,
     terminated,
   };
@@ -330,7 +330,7 @@ function ChallengePane({ ongoing, notStarted, completed, terminated, sessionMeta
   return (
     <div className="space-y-0">
       {/* Tab bar */}
-      <div className="flex border-b border-gray-200 dark:border-dark-border">
+      <div className="flex flex-wrap border-b border-gray-200 dark:border-dark-border">
         {PANES.map((pane) => {
           const count = paneItems[pane.key]?.length ?? 0;
           const isActive = activePane === pane.key;
@@ -350,6 +350,7 @@ function ChallengePane({ ongoing, notStarted, completed, terminated, sessionMeta
                 isActive
                   ? pane.key === "terminated" ? "bg-red-100 dark:bg-red-900/20 text-red-500"
                     : pane.key === "completed" ? "bg-emerald-100 dark:bg-emerald-900/20 text-emerald-500"
+                    : pane.key === "ongoing" ? "bg-yellow-100 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400"
                     : "bg-emerald-100 dark:bg-green-primary/10 text-emerald-700 dark:text-green-primary"
                   : "bg-gray-100 dark:bg-dark-surface text-gray-400 dark:text-dark-muted"
               }`}>
@@ -369,7 +370,8 @@ function ChallengePane({ ongoing, notStarted, completed, terminated, sessionMeta
         ) : currentItems.length === 0 ? (
           <div className="text-center py-14">
             <p className="text-sm text-gray-400 dark:text-dark-muted">
-              {activePane === "available" && "No challenges available — all done or filtered!"}
+              {activePane === "available" && "No challenges available — start one to get going!"}
+              {activePane === "ongoing" && "No challenges in progress — pick one from Available."}
               {activePane === "completed" && "Complete a challenge to see it here."}
               {activePane === "terminated" && "No timed out or terminated sessions."}
             </p>
@@ -383,7 +385,7 @@ function ChallengePane({ ongoing, notStarted, completed, terminated, sessionMeta
                 state={
                   activePane === "completed" ? "completed"
                   : activePane === "terminated" ? "terminated"
-                  : ongoing.some((o) => o.id === ch.id) ? "ongoing"
+                  : activePane === "ongoing" ? "ongoing"
                   : "notStarted"
                 }
                 meta={sessionMeta[ch.id]}

@@ -680,7 +680,7 @@ export default function CodingPortal() {
                 Your <span className="font-semibold text-gray-700 dark:text-dark-text">{timeLimitLabel}</span> session for this <span className="font-semibold text-gray-700 dark:text-dark-text">{challenge.difficulty}</span> challenge has expired.
               </p>
               <p className="text-sm text-gray-400 dark:text-dark-muted mb-6">
-                You'll need to start a new session to attempt this challenge again.
+                Click <strong>Retry Challenge</strong> to start a fresh session and try again.
               </p>
             </>
           )}
@@ -695,7 +695,9 @@ export default function CodingPortal() {
               <button
                 onClick={() => {
                   const localStorageKey = `challenge-session-${user.uid}-${challengeId}`;
+                  const violationsKey = `credilab-violations-${user.uid}-${challengeId}`;
                   localStorage.removeItem(localStorageKey);
+                  localStorage.removeItem(violationsKey);
                   // Reset all session state
                   setSessionExpired(false);
                   setChallengeSession(null);

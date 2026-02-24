@@ -61,6 +61,20 @@ export default function useAntiCheat({
   const violationRef = useRef(loadPersistedViolations());
   const violationLog = useRef([]); // Detailed log of each violation
 
+  // Re-sync from localStorage once storageKey becomes available (e.g. auth loads after mount)
+  useEffect(() => {
+    if (!storageKey) return;
+    const count = loadPersistedViolations();
+    if (count > violationRef.current) {
+      violationRef.current = count;
+      setViolations(count);
+      if (count >= maxViolations) {
+        setTerminated(true);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storageKey]);
+
   // Persist violations to localStorage whenever they change
   const persistViolations = useCallback(
     (count, log) => {

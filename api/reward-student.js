@@ -166,12 +166,18 @@ export default async function handler(req, res) {
       "pattern-print-019": 80, "inventory-mgr-020": 90,
       // Weekly SDG Tasks (dynamic — capped at 50, not strict-matched)
       "sdg15-tree-action-w9": 35,
+      // Mobile app quiz rewards — isolated from web completedChallenges
+      "mobile_quiz_easy": 10,
+      "mobile_quiz_medium": 25,
+      "mobile_quiz_hard": 50,
     };
 
     // Weekly tasks use "sdg" prefix — allow flexible rewards up to 50 CLB
     const isWeeklyTask = challengeId.startsWith("sdg") || req.body?.isWeeklyTask;
+    // Mobile quiz rewards — separate flow, never touch web completedChallenges
+    const isMobileQuiz = challengeId.startsWith("mobile_quiz_");
     // Determine if this is a quiz/challenge reward vs weekly task (must be after isWeeklyTask)
-    const isQuizReward = !isWeeklyTask;
+    const isQuizReward = !isWeeklyTask && !isMobileQuiz;
     const MAX_REWARD_PER_CHALLENGE = isWeeklyTask ? 50 : 100;
     const expectedReward = REWARD_MAP[challengeId];
 
@@ -203,22 +209,40 @@ export default async function handler(req, res) {
     const walletAddress = userData.walletAddress || null;
 
     // 4. Check if challenge already completed (idempotent guard)
-    //    Weekly tasks are tracked in weekly_completions, not completedChallenges
+    //    Web challenges  → tracked in completedChallenges (Firestore field)
+    //    Weekly tasks    → tracked in weekly_completions (separate collection)
+    //    Mobile quizzes  → tracked in mobileQuizRewards (separate field, never touches
+    //                       completedChallenges so web progress is never polluted)
     const completedChallenges = userData.completedChallenges || [];
-    if (!isWeeklyTask && completedChallenges.includes(challengeId)) {
+    const mobileQuizRewards = userData.mobileQuizRewards || [];
+
+    if (!isWeeklyTask && !isMobileQuiz && completedChallenges.includes(challengeId)) {
       return res.status(409).json({
         error: "Challenge already completed",
         alreadyCompleted: true
       });
     }
 
+    // Mobile quiz rewards are one-time per difficulty tier (easy/medium/hard),
+    // even though the quizzes themselves are infinitely repeatable.
+    if (isMobileQuiz && mobileQuizRewards.includes(challengeId)) {
+      return res.status(409).json({
+        error: `You have already claimed the reward for ${challengeId}. Quizzes are repeatable but CLB rewards are earned once per difficulty.`,
+        alreadyRewarded: true
+      });
+    }
+
     // 5. Mark challenge as complete in Firestore UNCONDITIONALLY
-    //    (completion is always recorded regardless of wallet status)
-    //    Weekly tasks don't go into completedChallenges — they have their own collection
+    //    Web challenges  → append to completedChallenges
+    //    Weekly tasks    → skip (own collection)
+    //    Mobile quizzes  → append to mobileQuizRewards (isolated from web progress)
     const timestamp = new Date().toISOString();
     const updatePayload = { lastCompletionAt: timestamp };
-    if (!isWeeklyTask) {
+    if (!isWeeklyTask && !isMobileQuiz) {
       updatePayload.completedChallenges = [...completedChallenges, challengeId];
+    }
+    if (isMobileQuiz) {
+      updatePayload.mobileQuizRewards = [...mobileQuizRewards, challengeId];
     }
     await userRef.update(updatePayload);
 
@@ -247,6 +271,7 @@ export default async function handler(req, res) {
           credits: (userData.credits || 0) + rewardAmount,
           totalCLBEarned: (userData.totalCLBEarned ?? userData.credits ?? 0) + rewardAmount,
           ...(isQuizReward && { quizCredits: (userData.quizCredits ?? 0) + rewardAmount }),
+          ...(isMobileQuiz && { mobileQuizCredits: (userData.mobileQuizCredits ?? 0) + rewardAmount }),
           lastRewardAt: timestamp
         });
         const poolRef = db.collection('system').doc('credit_pool');
@@ -280,6 +305,7 @@ export default async function handler(req, res) {
           credits: (userData.credits || 0) + rewardAmount,
           totalCLBEarned: (userData.totalCLBEarned ?? userData.credits ?? 0) + rewardAmount,
           ...(isQuizReward && { quizCredits: (userData.quizCredits ?? 0) + rewardAmount }),
+          ...(isMobileQuiz && { mobileQuizCredits: (userData.mobileQuizCredits ?? 0) + rewardAmount }),
           lastRewardAt: timestamp
         });
 
@@ -327,6 +353,7 @@ export default async function handler(req, res) {
         credits: (userData.credits || 0) + rewardAmount,
         totalCLBEarned: (userData.totalCLBEarned ?? userData.credits ?? 0) + rewardAmount,
         ...(isQuizReward && { quizCredits: (userData.quizCredits ?? 0) + rewardAmount }),
+        ...(isMobileQuiz && { mobileQuizCredits: (userData.mobileQuizCredits ?? 0) + rewardAmount }),
         lastRewardAt: timestamp
       });
 
