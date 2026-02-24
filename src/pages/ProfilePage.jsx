@@ -34,6 +34,7 @@ export default function ProfilePage() {
   const [walletError, setWalletError] = useState("");
   const [claimingCLB, setClaimingCLB] = useState(false);
   const [claimResult, setClaimResult] = useState(null);
+  const [photoError, setPhotoError] = useState("");
 
   // Sync local state when userData arrives / updates from Firestore onSnapshot
   // (userData is null on first render; onSnapshot delivers it asynchronously)
@@ -154,8 +155,9 @@ export default function ProfilePage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setPhotoError("");
     if (file.size > 5 * 1024 * 1024) {
-      alert("Image must be under 5MB.");
+      setPhotoError("Image must be under 5MB.");
       return;
     }
 
@@ -184,12 +186,12 @@ export default function ProfilePage() {
         window.location.reload();
       } catch (err) {
         console.error("Photo upload failed:", err);
-        alert("Failed to save photo. Please try again.");
+        setPhotoError("Failed to save photo. Please try again.");
       }
     };
     img.onerror = () => {
       URL.revokeObjectURL(objectUrl);
-      alert("Could not read image file.");
+      setPhotoError("Could not read image file.");
     };
     img.src = objectUrl;
   }
@@ -256,6 +258,9 @@ export default function ProfilePage() {
           <p className="text-sm text-gray-500 dark:text-dark-muted">
             Upload a photo (auto-compressed to 128×128)
           </p>
+          {photoError && (
+            <p className="mt-1 text-xs text-red-500 dark:text-red-400">{photoError}</p>
+          )}
         </div>
       </div>
 

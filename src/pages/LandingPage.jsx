@@ -22,33 +22,33 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-dark-bg">
       {/* ── Header ── */}
-      <header className="w-full border-b border-gray-100 dark:border-dark-border">
-        <div className="max-w-7xl mx-auto px-8 md:px-16 py-5 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="text-2xl font-bold text-green-primary">CrediLab</span>
-          <span className="hidden sm:inline text-sm text-gray-500 dark:text-dark-muted">
-            Learn to earn.
-          </span>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={toggleDark}
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-card transition-colors"
-            aria-label="Toggle dark mode"
-          >
-            {dark ? (
-              <SunIcon className="w-5 h-5 text-yellow-400" />
-            ) : (
-              <MoonIcon className="w-5 h-5 text-gray-600" />
-            )}
-          </button>
-          <Link
-            to="/login"
-            className="px-5 py-2 text-sm font-semibold rounded-lg bg-green-primary text-dark-bg hover:bg-green-dark transition-colors"
-          >
-            Get Started
-          </Link>
-        </div>
+      <header className="sticky top-0 z-50 w-full border-b border-white/20 dark:border-white/5 bg-white/70 dark:bg-dark-bg/70 backdrop-blur-md shadow-sm shadow-black/5 dark:shadow-black/20 transition-colors">
+        <div className="max-w-7xl mx-auto px-8 md:px-16 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl font-bold text-green-primary">CrediLab</span>
+            <span className="hidden sm:inline text-sm text-gray-500 dark:text-dark-muted">
+              Learn to earn.
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={toggleDark}
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-card transition-colors"
+              aria-label="Toggle dark mode"
+            >
+              {dark ? (
+                <SunIcon className="w-5 h-5 text-yellow-400" />
+              ) : (
+                <MoonIcon className="w-5 h-5 text-gray-600" />
+              )}
+            </button>
+            <Link
+              to="/login"
+              className="px-5 py-2 text-sm font-semibold rounded-lg bg-green-primary text-dark-bg hover:bg-green-dark transition-colors"
+            >
+              Get Started
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -74,7 +74,7 @@ export default function LandingPage() {
             />
             <FeatureCard
               title="Earn CLB Tokens"
-              description="Correct solutions earn CLB tokens transferred directly to your MetaMask wallet on the Sepolia testnet."
+              description="A transcript says you passed. CLB tokens prove you wrote the code. Every verified solution mints tamper-proof on-chain credentials to your MetaMask wallet."
               icon={CurrencyDollarIcon}
             />
             <FeatureCard
@@ -88,8 +88,8 @@ export default function LandingPage() {
               icon={UserGroupIcon}
             />
             <FeatureCard
-              title="Wallet Integration"
-              description="Connect MetaMask on desktop or mobile. View your on-chain balance, transaction history, and token status."
+              title="Anti-Cheat Verified"
+              description="Focus-loss detection and copy-paste tracking ensure every token earned is legitimate. No shortcuts — your credentials mean something."
               icon={ShieldCheckIcon}
             />
             <FeatureCard
