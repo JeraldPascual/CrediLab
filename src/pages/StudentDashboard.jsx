@@ -3,6 +3,7 @@ import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import StudentHeader from "../components/StudentHeader";
 import Sidebar from "../components/Sidebar";
 import CLBBalanceStrip from "../components/CLBBalanceStrip";
+import MobileWarningBanner from "../components/MobileWarningBanner";
 
 export default function StudentDashboard() {
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
@@ -19,6 +20,9 @@ export default function StudentDashboard() {
 
   return (
     <div className="h-screen bg-slate-50 dark:bg-dark-bg flex flex-col">
+      {/* ── Mobile Warning ── */}
+      <MobileWarningBanner />
+
       {/* ── Header ── */}
       <StudentHeader
         onMenuToggle={() => setSidebarExpanded((prev) => !prev)}

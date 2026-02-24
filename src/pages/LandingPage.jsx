@@ -1,5 +1,7 @@
 import { useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
+// eslint-disable-next-line no-unused-vars
+import { useScroll, useTransform, motion } from "motion/react";
 import {
   ArrowRightIcon,
   CodeBracketIcon,
@@ -15,14 +17,26 @@ import {
   SparklesIcon,
 } from "@heroicons/react/24/outline";
 import { useTheme } from "../context/ThemeContext";
+import { StickyScroll } from "../components/ui/StickyScrollReveal";
+import { CanvasText } from "../components/ui/CanvasText";
 
 export default function LandingPage() {
   const { dark, toggleDark } = useTheme();
 
+  /* ── Parallax: hero fades / scales as user scrolls into features ── */
+  const heroRef = useRef(null);
+  const { scrollYProgress: heroProgress } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"],
+  });
+  const heroOpacity = useTransform(heroProgress, [0, 0.8], [1, 0]);
+  const heroScale = useTransform(heroProgress, [0, 0.8], [1, 0.96]);
+  const heroBlur = useTransform(heroProgress, [0, 0.8], [0, 8]);
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-dark-bg">
       {/* ── Header ── */}
-      <header className="sticky top-0 z-50 w-full border-b border-white/20 dark:border-white/5 bg-white/70 dark:bg-dark-bg/70 backdrop-blur-md shadow-sm shadow-black/5 dark:shadow-black/20 transition-colors">
+      <header className="sticky top-0 z-50 w-full bg-slate-50/90 dark:bg-dark-bg/80 backdrop-blur-md shadow-[0_1px_0_0] shadow-gray-200/50 dark:shadow-white/5 transition-colors">
         <div className="max-w-7xl mx-auto px-8 md:px-16 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="text-2xl font-bold text-green-primary">CrediLab</span>
@@ -44,7 +58,7 @@ export default function LandingPage() {
             </button>
             <Link
               to="/login"
-              className="px-5 py-2 text-sm font-semibold rounded-lg bg-green-primary text-dark-bg hover:bg-green-dark transition-colors"
+              className="relative px-5 py-2 text-sm font-semibold rounded-lg bg-green-primary text-dark-bg hover:bg-green-dark shadow-[2px_2px_0px_0px] shadow-green-dark/60 dark:shadow-green-dark/40 hover:shadow-[1px_1px_0px_0px] hover:translate-x-[1px] hover:translate-y-[1px] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all duration-150"
             >
               Get Started
             </Link>
@@ -52,13 +66,19 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* ── Hero Section ── */}
-      <HeroSpotlight />
+      {/* ── Hero Section (parallax: fades + scales on scroll) ── */}
+      <motion.div
+        ref={heroRef}
+        style={{ opacity: heroOpacity, scale: heroScale, filter: useTransform(heroBlur, (v) => `blur(${v}px)`) }}
+        className="relative"
+      >
+        <HeroSpotlight />
+      </motion.div>
 
-      {/* ── Features Strip ── */}
-      <section className="border-t border-gray-100 dark:border-dark-border bg-gray-50 dark:bg-dark-surface">
+      {/* ── Features ── */}
+      <section className="relative z-10 bg-slate-50 dark:bg-dark-bg">
         <div className="max-w-7xl mx-auto px-8 md:px-16 py-20">
-          <div className="text-center mb-12">
+          <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
               Everything You Need to <span className="text-green-primary">Learn & Earn</span>
             </h2>
@@ -66,43 +86,113 @@ export default function LandingPage() {
               CrediLab combines coding education, blockchain rewards, and community-driven learning into one seamless platform.
             </p>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            <FeatureCard
-              title="Java Challenges"
-              description="21 curated problems across Easy, Medium, and Hard tiers — auto-assessed in real-time using Judge0."
-              icon={CodeBracketIcon}
+
+          {/* Desktop: sticky scroll reveal */}
+          <div className="hidden md:block">
+            <StickyScroll
+              content={[
+                {
+                  title: "Java Challenges",
+                  description:
+                    "21 curated problems across Easy, Medium, and Hard tiers — auto-assessed in real-time using Judge0. Write, submit, and get instant feedback in a professional code editor.",
+                  content: (
+                    <div className="h-full w-full flex items-center justify-center text-white p-6">
+                      <div className="text-center space-y-2">
+                        <CodeBracketIcon className="w-10 h-10 mx-auto" />
+                        <p className="font-bold text-lg">Code Editor</p>
+                        <p className="text-sm opacity-80">21 Problems · 3 Tiers</p>
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  title: "Earn CLB Tokens",
+                  description:
+                    "A transcript says you passed. CLB tokens prove you wrote the code. Every verified solution mints tamper-proof on-chain credentials to your MetaMask wallet.",
+                  content: (
+                    <div className="h-full w-full flex items-center justify-center text-white p-6">
+                      <div className="text-center space-y-2">
+                        <CurrencyDollarIcon className="w-10 h-10 mx-auto" />
+                        <p className="font-bold text-lg">CLB Tokens</p>
+                        <p className="text-sm opacity-80">On-Chain Rewards</p>
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  title: "Leaderboard & Rankings",
+                  description:
+                    "Compete with peers on the live leaderboard. Climb tiers from Bronze to Diamond based on your CLB earnings.",
+                  content: (
+                    <div className="h-full w-full flex items-center justify-center text-white p-6">
+                      <div className="text-center space-y-2">
+                        <ChartBarIcon className="w-10 h-10 mx-auto" />
+                        <p className="font-bold text-lg">Leaderboard</p>
+                        <p className="text-sm opacity-80">Bronze → Diamond</p>
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  title: "Community Voting",
+                  description:
+                    "Submit weekly SDG tasks and get community-validated through Reddit-style upvotes. Top posts earn bonus CLB.",
+                  content: (
+                    <div className="h-full w-full flex items-center justify-center text-white p-6">
+                      <div className="text-center space-y-2">
+                        <UserGroupIcon className="w-10 h-10 mx-auto" />
+                        <p className="font-bold text-lg">Community</p>
+                        <p className="text-sm opacity-80">Peer Validation</p>
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  title: "Anti-Cheat Verified",
+                  description:
+                    "Focus-loss detection and copy-paste tracking ensure every token earned is legitimate. No shortcuts — your credentials mean something.",
+                  content: (
+                    <div className="h-full w-full flex items-center justify-center text-white p-6">
+                      <div className="text-center space-y-2">
+                        <ShieldCheckIcon className="w-10 h-10 mx-auto" />
+                        <p className="font-bold text-lg">Anti-Cheat</p>
+                        <p className="text-sm opacity-80">Integrity First</p>
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  title: "Achievement System",
+                  description:
+                    "Unlock skill-based achievements as you progress. Track your growth from beginner to expert coder.",
+                  content: (
+                    <div className="h-full w-full flex items-center justify-center text-white p-6">
+                      <div className="text-center space-y-2">
+                        <SparklesIcon className="w-10 h-10 mx-auto" />
+                        <p className="font-bold text-lg">Achievements</p>
+                        <p className="text-sm opacity-80">Skill Growth</p>
+                      </div>
+                    </div>
+                  ),
+                },
+              ]}
             />
-            <FeatureCard
-              title="Earn CLB Tokens"
-              description="A transcript says you passed. CLB tokens prove you wrote the code. Every verified solution mints tamper-proof on-chain credentials to your MetaMask wallet."
-              icon={CurrencyDollarIcon}
-            />
-            <FeatureCard
-              title="Leaderboard & Rankings"
-              description="Compete with peers on the live leaderboard. Climb tiers from Bronze to Diamond based on your CLB earnings."
-              icon={ChartBarIcon}
-            />
-            <FeatureCard
-              title="Community Voting"
-              description="Submit weekly SDG tasks and get community-validated through Reddit-style upvotes. Top posts earn bonus CLB."
-              icon={UserGroupIcon}
-            />
-            <FeatureCard
-              title="Anti-Cheat Verified"
-              description="Focus-loss detection and copy-paste tracking ensure every token earned is legitimate. No shortcuts — your credentials mean something."
-              icon={ShieldCheckIcon}
-            />
-            <FeatureCard
-              title="Achievement System"
-              description="Unlock skill-based achievements as you progress. Track your growth from beginner to expert coder."
-              icon={SparklesIcon}
-            />
+          </div>
+
+          {/* Mobile fallback: standard grid */}
+          <div className="md:hidden grid gap-6">
+            <FeatureCard title="Java Challenges" description="21 curated problems across Easy, Medium, and Hard tiers — auto-assessed in real-time using Judge0." icon={CodeBracketIcon} />
+            <FeatureCard title="Earn CLB Tokens" description="CLB tokens prove you wrote the code. Every verified solution mints tamper-proof on-chain credentials to your MetaMask wallet." icon={CurrencyDollarIcon} />
+            <FeatureCard title="Leaderboard & Rankings" description="Compete with peers on the live leaderboard. Climb tiers from Bronze to Diamond based on your CLB earnings." icon={ChartBarIcon} />
+            <FeatureCard title="Community Voting" description="Submit weekly SDG tasks and get community-validated through Reddit-style upvotes. Top posts earn bonus CLB." icon={UserGroupIcon} />
+            <FeatureCard title="Anti-Cheat Verified" description="Focus-loss detection and copy-paste tracking ensure every token earned is legitimate. No shortcuts — your credentials mean something." icon={ShieldCheckIcon} />
+            <FeatureCard title="Achievement System" description="Unlock skill-based achievements as you progress. Track your growth from beginner to expert coder." icon={SparklesIcon} />
           </div>
         </div>
       </section>
 
       {/* ── How It Works ── */}
-      <section className="border-t border-gray-100 dark:border-dark-border">
+      <section className="bg-white dark:bg-dark-surface">
         <div className="max-w-7xl mx-auto px-8 md:px-16 py-20">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -120,7 +210,7 @@ export default function LandingPage() {
               { step: "04", title: "Earn & Track", desc: "Correct solutions earn CLB. Track rewards, rank up, and compete on the leaderboard." },
             ].map((item) => (
               <div key={item.step} className="text-center space-y-3">
-                <div className="mx-auto w-12 h-12 rounded-full bg-emerald-100 dark:bg-green-primary/10 flex items-center justify-center">
+                <div className="mx-auto w-12 h-12 rounded-full bg-green-primary/10 flex items-center justify-center">
                   <span className="text-lg font-bold text-green-primary">{item.step}</span>
                 </div>
                 <h3 className="font-semibold text-gray-900 dark:text-white">{item.title}</h3>
@@ -131,92 +221,65 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Multi-Platform Endorsement ── */}
-      <section className="border-t border-gray-100 dark:border-dark-border bg-gray-50 dark:bg-dark-surface">
+      {/* ── Multi-Platform ── */}
+      <section className="bg-slate-50 dark:bg-dark-bg">
         <div className="max-w-7xl mx-auto px-8 md:px-16 py-20">
-          <div className="grid md:grid-cols-2 gap-16 items-center">
-            <div className="space-y-6">
-              <div className="inline-block px-3 py-1 text-xs font-medium rounded-full bg-emerald-100 dark:bg-green-primary/10 text-emerald-700 dark:text-green-primary border border-emerald-200 dark:border-transparent">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            {/* Left — text + platform list */}
+            <div>
+              <div className="inline-block px-3 py-1 text-xs font-medium rounded-full bg-green-primary/10 text-green-primary border border-green-primary/20 mb-4">
                 Multi-Platform
               </div>
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
                 Available on <span className="text-green-primary">Web</span> &{" "}
                 <span className="text-green-primary">Mobile</span>
               </h2>
-              <p className="text-gray-600 dark:text-dark-muted leading-relaxed">
-                CrediLab delivers a seamless experience across platforms. Use the full-featured
-                web application for coding challenges and in-depth analytics, or switch to the
-                mobile companion app for on-the-go wallet management, quick SDG task submissions,
-                and community engagement.
+              <p className="text-gray-500 dark:text-dark-muted mb-8">
+                CrediLab delivers a seamless experience across platforms. Use the full-featured web application for coding challenges and in-depth analytics, or switch to the mobile companion app for on-the-go wallet management, quick SDG task submissions, and community engagement.
               </p>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-green-primary/10 flex items-center justify-center shrink-0">
-                    <ComputerDesktopIcon className="w-4 h-4 text-green-primary" />
+              <div className="space-y-5">
+                {[
+                  { icon: ComputerDesktopIcon, title: "Web Application", desc: "Full IDE, code editor with syntax highlighting, leaderboard, achievements, and complete dashboard." },
+                  { icon: DevicePhoneMobileIcon, title: "Mobile App (Android)", desc: "Built with Kotlin — manage your wallet, submit weekly SDG tasks with photos, and track CLB on the go." },
+                  { icon: GlobeAltIcon, title: "Shared Blockchain Layer", desc: "Both platforms connect to the same Sepolia smart contract — your CLB balance syncs everywhere." },
+                ].map((item) => (
+                  <div key={item.title} className="flex items-start gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-green-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                      <item.icon className="w-5 h-5 text-green-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-gray-900 dark:text-white">{item.title}</p>
+                      <p className="text-sm text-gray-500 dark:text-dark-muted">{item.desc}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white">Web Application</p>
-                    <p className="text-xs text-gray-500 dark:text-dark-muted">
-                      Full IDE, code editor with syntax highlighting, leaderboard, achievements, and complete dashboard.
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-green-primary/10 flex items-center justify-center shrink-0">
-                    <DevicePhoneMobileIcon className="w-4 h-4 text-green-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white">Mobile App (Android)</p>
-                    <p className="text-xs text-gray-500 dark:text-dark-muted">
-                      Built with Kotlin — manage your wallet, submit weekly SDG tasks with photos, and track CLB on the go.
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-green-primary/10 flex items-center justify-center shrink-0">
-                    <GlobeAltIcon className="w-4 h-4 text-green-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white">Shared Blockchain Layer</p>
-                    <p className="text-xs text-gray-500 dark:text-dark-muted">
-                      Both platforms connect to the same Sepolia smart contract — your CLB balance syncs everywhere.
-                    </p>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
-            <div className="hidden md:flex justify-center">
-              <div className="relative">
-                {/* Desktop mockup */}
-                <div className="w-72 h-48 rounded-xl bg-white dark:bg-dark-card border border-gray-200 dark:border-dark-border p-4 shadow-lg">
-                  <div className="flex items-center gap-1.5 mb-3">
-                    <span className="w-2 h-2 rounded-full bg-red-400" />
-                    <span className="w-2 h-2 rounded-full bg-yellow-400" />
-                    <span className="w-2 h-2 rounded-full bg-green-400" />
-                    <span className="ml-auto text-[10px] text-gray-400 font-mono">credilab.vercel.app</span>
+
+            {/* Right — app mockup */}
+            <div className="hidden md:flex justify-center items-center">
+              <div className="relative pr-20">
+                {/* Web mockup */}
+                <div className="w-72 bg-dark-card border border-dark-border rounded-xl p-4 shadow-xl">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
+                    <span className="ml-auto text-[10px] text-dark-muted font-mono">credilab.vercel.app</span>
                   </div>
                   <div className="space-y-2">
-                    <div className="h-3 w-24 bg-green-primary/20 rounded" />
-                    <div className="h-2 w-full bg-gray-100 dark:bg-dark-surface rounded" />
-                    <div className="h-2 w-4/5 bg-gray-100 dark:bg-dark-surface rounded" />
-                    <div className="flex gap-2 mt-3">
-                      <div className="h-6 w-16 bg-green-primary/30 rounded text-[8px] font-bold text-green-primary flex items-center justify-center">+50 CLB</div>
-                      <div className="h-6 w-16 bg-gray-100 dark:bg-dark-surface rounded" />
-                    </div>
+                    <div className="h-3 w-28 rounded bg-green-primary/30" />
+                    <div className="h-2 w-full rounded bg-dark-border" />
+                    <div className="h-2 w-3/4 rounded bg-dark-border" />
+                    <div className="mt-3 inline-block px-3 py-1 text-[10px] font-bold rounded bg-green-primary/20 text-green-primary">+50 CLB</div>
                   </div>
                 </div>
-                {/* Mobile mockup overlapping */}
-                <div className="absolute -bottom-6 -right-6 w-28 h-48 rounded-2xl bg-white dark:bg-dark-card border-2 border-gray-200 dark:border-dark-border p-2 shadow-xl">
-                  <div className="w-8 h-1 bg-gray-300 dark:bg-dark-border rounded-full mx-auto mb-2" />
-                  <div className="space-y-1.5">
-                    <div className="h-2 w-12 bg-green-primary/20 rounded" />
-                    <div className="h-1.5 w-full bg-gray-100 dark:bg-dark-surface rounded" />
-                    <div className="h-1.5 w-3/4 bg-gray-100 dark:bg-dark-surface rounded" />
-                    <div className="h-8 w-full bg-green-primary/10 rounded-lg mt-2 flex items-center justify-center">
-                      <span className="text-[7px] font-bold text-green-primary">250 CLB</span>
-                    </div>
-                    <div className="h-6 w-full bg-gray-50 dark:bg-dark-surface rounded" />
-                    <div className="h-6 w-full bg-gray-50 dark:bg-dark-surface rounded" />
+                {/* Mobile mockup (overlapping) */}
+                <div className="absolute -right-16 top-8 w-36 bg-dark-card border border-dark-border rounded-xl p-3 shadow-xl">
+                  <div className="space-y-2">
+                    <div className="h-2.5 w-20 rounded bg-green-primary/30" />
+                    <div className="h-2 w-full rounded bg-dark-border" />
+                    <div className="mt-2 inline-block px-2 py-0.5 text-[9px] font-bold rounded bg-green-primary/20 text-green-primary">250 CLB</div>
                   </div>
                 </div>
               </div>
@@ -226,9 +289,9 @@ export default function LandingPage() {
       </section>
 
       {/* ── SDG Alignment ── */}
-      <section className="border-t border-gray-100 dark:border-dark-border">
+      <section className="bg-white dark:bg-dark-surface">
         <div className="max-w-7xl mx-auto px-8 md:px-16 py-20 text-center">
-          <div className="inline-block px-3 py-1 text-xs font-medium rounded-full bg-emerald-100 dark:bg-green-primary/10 text-emerald-700 dark:text-green-primary border border-emerald-200 dark:border-transparent mb-4">
+          <div className="inline-block px-3 py-1 text-xs font-medium rounded-full bg-green-primary/10 text-green-primary border border-green-primary/20 mb-4">
             UN Sustainable Development Goals
           </div>
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">
@@ -241,12 +304,12 @@ export default function LandingPage() {
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-2xl mx-auto">
             {[
-              { icon: "🌳", label: "SDG 15", desc: "Life on Land" },
-              { icon: "🎓", label: "SDG 4", desc: "Quality Education" },
-              { icon: "💡", label: "SDG 9", desc: "Innovation" },
-              { icon: "🤝", label: "SDG 17", desc: "Partnerships" },
+              { icon: "🌳", label: "SDG 15", desc: "Life on Land", accent: "border-green-400" },
+              { icon: "🎓", label: "SDG 4", desc: "Quality Education", accent: "border-purple-400" },
+              { icon: "💡", label: "SDG 9", desc: "Innovation", accent: "border-yellow-400" },
+              { icon: "🤝", label: "SDG 17", desc: "Partnerships", accent: "border-orange-400" },
             ].map((sdg) => (
-              <div key={sdg.label} className="rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card p-4 space-y-1">
+              <div key={sdg.label} className={`rounded-xl border-2 ${sdg.accent} bg-gray-50 dark:bg-dark-card p-4 space-y-1 hover:scale-105 transition-transform`}>
                 <span className="text-2xl">{sdg.icon}</span>
                 <p className="text-xs font-bold text-gray-900 dark:text-white">{sdg.label}</p>
                 <p className="text-[11px] text-gray-500 dark:text-dark-muted">{sdg.desc}</p>
@@ -257,10 +320,24 @@ export default function LandingPage() {
       </section>
 
       {/* ── CTA Banner ── */}
-      <section className="border-t border-gray-100 dark:border-dark-border bg-emerald-50/60 dark:bg-green-primary/5">
+      <section className="bg-slate-50 dark:bg-dark-bg">
         <div className="max-w-7xl mx-auto px-8 md:px-16 py-16 text-center space-y-6">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Ready to Start Earning?
+          <h2 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white">
+            Ready to{" "}
+            <CanvasText
+              text="Start Earning?"
+              className="text-3xl md:text-5xl font-bold"
+              backgroundClassName="bg-slate-50 dark:bg-dark-bg"
+              colors={[
+                "#00e89f",
+                "#00c987",
+                "#10b981",
+                "#059669",
+                "#06b6d4",
+                "#4ecdc4",
+              ]}
+              animationDuration={6}
+            />
           </h2>
           <p className="text-gray-500 dark:text-dark-muted max-w-lg mx-auto">
             Join CrediLab today, solve your first Java challenge, and earn CLB tokens
@@ -268,7 +345,7 @@ export default function LandingPage() {
           </p>
           <Link
             to="/register"
-            className="inline-flex items-center gap-2 px-8 py-3.5 text-base font-semibold rounded-lg bg-green-primary text-dark-bg hover:bg-green-dark transition-colors"
+            className="relative inline-flex items-center gap-2 px-8 py-3.5 text-base font-semibold rounded-lg bg-green-primary text-dark-bg hover:bg-green-dark shadow-[3px_3px_0px_0px] shadow-green-dark/60 dark:shadow-green-dark/40 hover:shadow-[1px_1px_0px_0px] hover:shadow-green-dark/60 hover:translate-x-[2px] hover:translate-y-[2px] active:shadow-none active:translate-x-[3px] active:translate-y-[3px] transition-all duration-150"
           >
             Create Free Account
             <ArrowRightIcon className="w-4 h-4" />
@@ -277,13 +354,14 @@ export default function LandingPage() {
       </section>
 
       {/* ── Footer ── */}
-      <footer className="border-t border-gray-100 dark:border-dark-border px-8 md:px-16 py-8 text-center text-sm text-gray-400 dark:text-dark-muted">
+      <footer className="bg-white dark:bg-dark-surface px-8 md:px-16 py-8 text-center text-sm text-gray-400 dark:text-dark-muted">
         © {new Date().getFullYear()} CrediLab — BulSU Hackathon Project
       </footer>
     </div>
   );
 }
 
+/* ── Hero with spotlight + grid background ── */
 function HeroSpotlight() {
   const containerRef = useRef(null);
   const spotlightRef = useRef(null);
@@ -315,22 +393,26 @@ function HeroSpotlight() {
         className="pointer-events-none absolute inset-0 z-0 transition-[background] duration-100"
       />
 
-      {/* Grid pattern — light mode (black lines) */}
+      {/* Grid pattern — light mode (with bottom fade) */}
       <div
         className="pointer-events-none absolute inset-0 z-0 opacity-[0.06] dark:hidden"
         style={{
           backgroundImage:
             "linear-gradient(rgb(0 0 0) 1px, transparent 1px), linear-gradient(90deg, rgb(0 0 0) 1px, transparent 1px)",
           backgroundSize: "48px 48px",
+          maskImage: "linear-gradient(to bottom, black 50%, transparent 100%)",
+          WebkitMaskImage: "linear-gradient(to bottom, black 50%, transparent 100%)",
         }}
       />
-      {/* Grid pattern — dark mode (white lines) */}
+      {/* Grid pattern — dark mode (with bottom fade) */}
       <div
         className="pointer-events-none absolute inset-0 z-0 opacity-0 dark:opacity-[0.08] hidden dark:block"
         style={{
           backgroundImage:
             "linear-gradient(rgb(255 255 255) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255) 1px, transparent 1px)",
           backgroundSize: "48px 48px",
+          maskImage: "linear-gradient(to bottom, black 50%, transparent 100%)",
+          WebkitMaskImage: "linear-gradient(to bottom, black 50%, transparent 100%)",
         }}
       />
 
@@ -338,7 +420,7 @@ function HeroSpotlight() {
       <div className="relative z-10 w-full max-w-7xl mx-auto px-8 md:px-16 py-12 md:py-16 grid md:grid-cols-2 gap-16 items-center">
         {/* Left — Text */}
         <div className="space-y-7">
-          <div className="inline-block px-3 py-1 text-xs font-medium rounded-full bg-emerald-100 dark:bg-green-primary/10 text-emerald-700 dark:text-green-primary border border-emerald-200 dark:border-transparent">
+          <div className="inline-block px-3 py-1 text-xs font-medium rounded-full bg-green-primary/10 text-green-primary border border-green-primary/20">
             Decentralized Learning Platform
           </div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight text-gray-900 dark:text-white">
@@ -355,14 +437,14 @@ function HeroSpotlight() {
           <div className="flex flex-col sm:flex-row gap-4 pt-1">
             <Link
               to="/register"
-              className="inline-flex items-center justify-center gap-2 px-8 py-3.5 text-base font-semibold rounded-lg bg-green-primary text-dark-bg hover:bg-green-dark transition-colors"
+              className="relative inline-flex items-center justify-center gap-2 px-8 py-3.5 text-base font-semibold rounded-lg bg-green-primary text-dark-bg hover:bg-green-dark shadow-[3px_3px_0px_0px] shadow-green-dark/60 dark:shadow-green-dark/40 hover:shadow-[1px_1px_0px_0px] hover:shadow-green-dark/60 hover:translate-x-[2px] hover:translate-y-[2px] active:shadow-none active:translate-x-[3px] active:translate-y-[3px] transition-all duration-150"
             >
               Start learning now
               <ArrowRightIcon className="w-4 h-4" />
             </Link>
             <Link
               to="/login"
-              className="inline-flex items-center justify-center gap-2 px-8 py-3.5 text-base font-semibold rounded-lg border border-gray-300 dark:border-dark-border text-gray-700 dark:text-dark-text hover:border-green-primary hover:text-green-primary transition-colors"
+              className="relative inline-flex items-center justify-center gap-2 px-8 py-3.5 text-base font-semibold rounded-lg border-2 border-gray-300 dark:border-dark-border text-gray-700 dark:text-dark-text hover:border-green-primary hover:text-green-primary shadow-[3px_3px_0px_0px] shadow-gray-300 dark:shadow-dark-border hover:shadow-green-primary/40 hover:shadow-[1px_1px_0px_0px] hover:translate-x-[2px] hover:translate-y-[2px] active:shadow-none active:translate-x-[3px] active:translate-y-[3px] transition-all duration-150"
             >
               I have an account
             </Link>
@@ -372,7 +454,7 @@ function HeroSpotlight() {
         {/* Right — Code card */}
         <div className="hidden md:flex justify-center">
           <div className="relative w-full max-w-md">
-              <div className="absolute -top-4 -left-4 w-full h-full rounded-2xl bg-emerald-100 dark:bg-green-primary/10 rotate-3" />
+            <div className="absolute -top-4 -left-4 w-full h-full rounded-2xl bg-green-primary/10 rotate-3" />
             <div className="relative bg-white dark:bg-dark-card border border-gray-200 dark:border-dark-border rounded-2xl p-6 shadow-xl">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-3 h-3 rounded-full bg-red-400" />
@@ -395,7 +477,7 @@ function HeroSpotlight() {
                 <span className="text-xs text-gray-400 dark:text-dark-muted">
                   Fibonacci Sequence
                 </span>
-                <span className="px-2 py-1 text-xs font-semibold rounded bg-emerald-100 dark:bg-green-primary/20 text-emerald-700 dark:text-green-primary border border-emerald-200 dark:border-transparent">
+                <span className="px-2 py-1 text-xs font-semibold rounded bg-green-primary/10 text-green-primary border border-green-primary/20">
                   +50 CLB
                 </span>
               </div>
@@ -407,10 +489,11 @@ function HeroSpotlight() {
   );
 }
 
+/* ── Feature Card (mobile fallback) ── */
 function FeatureCard({ title, description, icon: Icon }) {
   return (
     <div className="flex gap-4 items-start p-5 rounded-xl bg-white dark:bg-dark-card border border-gray-100 dark:border-dark-border hover:border-green-primary/30 transition-colors">
-      <div className="shrink-0 w-10 h-10 rounded-lg bg-emerald-100 dark:bg-green-primary/10 flex items-center justify-center">
+      <div className="shrink-0 w-10 h-10 rounded-lg bg-green-primary/10 flex items-center justify-center">
         <Icon className="w-5 h-5 text-green-primary" />
       </div>
       <div>

@@ -83,3 +83,12 @@ body.lite-mode * {
   animation-duration: 0s !important;
   transition-duration: 0s !important;
 }
+
+/* ── Hide scrollbar utility (for sticky scroll) ── */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
