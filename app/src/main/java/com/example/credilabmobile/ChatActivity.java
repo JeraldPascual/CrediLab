@@ -457,7 +457,11 @@ public class ChatActivity extends AppCompatActivity {
         }
 
         RecyclerView recycler = dialogView.findViewById(R.id.recyclerGallery);
-        recycler.setLayoutManager(new androidx.recyclerview.widget.GridLayoutManager(this, 3));
+        if (images != null && images.size() == 1) {
+            recycler.setLayoutManager(new androidx.recyclerview.widget.LinearLayoutManager(this));
+        } else {
+            recycler.setLayoutManager(new androidx.recyclerview.widget.GridLayoutManager(this, 3));
+        }
         recycler.setAdapter(new GalleryGridAdapter(images));
 
         dialogView.findViewById(R.id.btnCloseGallery).setOnClickListener(v -> dialog.dismiss());
@@ -490,13 +494,6 @@ public class ChatActivity extends AppCompatActivity {
             String path = images.get(position);
             Bitmap bmp = BitmapFactory.decodeFile(path);
             holder.iv.setImageBitmap(bmp);
-
-            android.view.ViewGroup.LayoutParams params = holder.itemView.getLayoutParams();
-            params.height = parentWidth / 3;
-            holder.iv.setLayoutParams(new androidx.cardview.widget.CardView.LayoutParams(
-                    androidx.cardview.widget.CardView.LayoutParams.MATCH_PARENT,
-                    300));
-            holder.iv.setScaleType(android.widget.ImageView.ScaleType.CENTER_CROP);
         }
 
         @Override
