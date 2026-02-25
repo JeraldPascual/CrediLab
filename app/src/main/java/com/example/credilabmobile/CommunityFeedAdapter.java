@@ -77,7 +77,7 @@ public class CommunityFeedAdapter extends RecyclerView.Adapter<CommunityFeedAdap
         }
 
         if (sub.photoBase64 != null && !sub.photoBase64.isEmpty()) {
-            holder.ivSubmissionPhoto.setVisibility(View.VISIBLE);
+            holder.cardSubmissionPhoto.setVisibility(View.VISIBLE);
             try {
                 String base64String = sub.photoBase64;
                 if (base64String.contains(",")) {
@@ -102,11 +102,11 @@ public class CommunityFeedAdapter extends RecyclerView.Adapter<CommunityFeedAdap
                     dialog.show();
                 });
             } catch (Exception e) {
-                holder.ivSubmissionPhoto.setVisibility(View.GONE);
+                holder.cardSubmissionPhoto.setVisibility(View.GONE);
                 holder.ivSubmissionPhoto.setOnClickListener(null);
             }
         } else {
-            holder.ivSubmissionPhoto.setVisibility(View.GONE);
+            holder.cardSubmissionPhoto.setVisibility(View.GONE);
             holder.ivSubmissionPhoto.setOnClickListener(null);
         }
 
@@ -140,6 +140,7 @@ public class CommunityFeedAdapter extends RecyclerView.Adapter<CommunityFeedAdap
     public static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView ivProfile, ivSubmissionPhoto, btnUpvote, btnDownvote;
         TextView tvUserName, tvTime, tvResponse, tvNetScore, tvSubmissionStatus;
+        View cardSubmissionPhoto;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -148,6 +149,7 @@ public class CommunityFeedAdapter extends RecyclerView.Adapter<CommunityFeedAdap
             tvTime = itemView.findViewById(R.id.tvTime);
             tvResponse = itemView.findViewById(R.id.tvResponse);
             ivSubmissionPhoto = itemView.findViewById(R.id.ivSubmissionPhoto);
+            cardSubmissionPhoto = itemView.findViewById(R.id.cardSubmissionPhoto);
             btnUpvote = itemView.findViewById(R.id.btnUpvote);
             btnDownvote = itemView.findViewById(R.id.btnDownvote);
             tvNetScore = itemView.findViewById(R.id.tvNetScore);

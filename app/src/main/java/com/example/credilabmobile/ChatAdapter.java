@@ -116,26 +116,26 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         TextView textView;
         android.widget.ImageView imageView;
         android.widget.ProgressBar progressBar;
+        View imgContainer;
 
         public UserViewHolder(@NonNull View itemView) {
             super(itemView);
             textView = itemView.findViewById(R.id.textUser);
             imageView = itemView.findViewById(R.id.imgAttachmentUser);
             progressBar = itemView.findViewById(R.id.progressImage);
+            imgContainer = itemView.findViewById(R.id.imgContainer);
         }
 
         public void bind(Message message) {
             textView.setText(message.text);
             if (message.image != null) {
-                // Image Logic
+                imgContainer.setVisibility(View.VISIBLE);
                 if (message.isLoading) {
-                    imageView.setVisibility(View.VISIBLE);
                     imageView.setImageBitmap(message.image);
                     imageView.setAlpha(0.5f); // Fade out during load
                     progressBar.setVisibility(View.VISIBLE);
                     imageView.setOnClickListener(null);
                 } else {
-                    imageView.setVisibility(View.VISIBLE);
                     imageView.setImageBitmap(message.image);
                     imageView.setAlpha(1.0f); // Clear when done
                     progressBar.setVisibility(View.GONE);
@@ -157,8 +157,7 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                     });
                 }
             } else {
-                imageView.setVisibility(View.GONE);
-                progressBar.setVisibility(View.GONE);
+                imgContainer.setVisibility(View.GONE);
                 imageView.setOnClickListener(null);
             }
         }
