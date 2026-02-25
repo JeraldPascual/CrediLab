@@ -260,8 +260,10 @@ public class ChatActivity extends AppCompatActivity {
                             runOnUiThread(() -> {
                                 clearImageSelection(); // Remove invalid image
                                 updateUi(UiState.IDLE);
-                                Toast.makeText(ChatActivity.this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT)
-                                        .show();
+                                if (e.getMessage() == null || !e.getMessage().contains("Unable to resolve host")) {
+                                    Toast.makeText(ChatActivity.this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT)
+                                            .show();
+                                }
                             });
                         }
                     });

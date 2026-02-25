@@ -11,6 +11,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import com.example.credilabmobile.data.WeeklyTask;
+import com.example.credilabmobile.data.TaskSubmission;
+
 /**
  * Read-only helper for Firestore data.
  * Reads user profile, system credit pool, and leaderboard.
@@ -103,6 +106,18 @@ public class FirestoreHelper {
 
     public interface LeaderboardCallback {
         void onSuccess(List<UserData> users);
+
+        void onFailure(Exception e);
+    }
+
+    public interface WeeklyTasksCallback {
+        void onSuccess(List<WeeklyTask> tasks);
+
+        void onFailure(Exception e);
+    }
+
+    public interface TaskSubmissionCallback {
+        void onSuccess(List<TaskSubmission> submissions);
 
         void onFailure(Exception e);
     }
@@ -276,5 +291,164 @@ public class FirestoreHelper {
                     Log.e(TAG, "Failed to claim quiz reward", e);
                     onFailure.accept(e);
                 });
+    }
+
+    // --- Weekly Tasks Methods ---
+
+    public void getActiveWeeklyTasks(WeeklyTasksCallback callback) {
+        db.collection("weekly_tasks")
+                .whereEqualTo("isActive", true)
+                .get()
+                .addOnSuccessListener(snap -> {
+                    List<WeeklyTask> tasks = new ArrayList<>();
+                    for (DocumentSnapshot doc : snap.getDocuments()) {
+                        WeeklyTask t = new WeeklyTask();
+                        t.id = doc.getId();
+                        t.weekNumber = (int) safeLong(doc, "weekNumber");
+                        t.title = doc.getString("title");
+                        t.description = doc.getString("description");
+                        t.rewardCLB = (int) safeLong(doc, "rewardCLB");
+                        t.isActive = Boolean.TRUE.equals(doc.getBoolean("isActive"));
+                        t.type = doc.getString("type");
+                        t.sdgGoal = (int) safeLong(doc, "sdgGoal");
+                        tasks.add(t);
+                    }
+                    callback.onSuccess(tasks);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to get active weekly tasks", e);
+                    callback.onFailure(e);
+                });
+    }
+
+    public void hasCompletedWeeklyTask(String uid, String taskId, java.util.function.Consumer<Boolean> callback) {
+        db.collection("weekly_completions").document(uid + "_" + taskId).get()
+                .addOnSuccessListener(doc -> callback.accept(doc.exists()))
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to check completed weekly task", e);
+                    callback.accept(false);
+                });
+    }
+
+    public void submitWeeklyTask(TaskSubmission submission, Runnable onSuccess,
+            java.util.function.Consumer<Exception> onFailure) {
+        db.collection("weekly_completions").document(submission.id)
+                .set(submission)
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "Weekly task submitted: " + submission.id);
+                    onSuccess.run();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to submit weekly task", e);
+                    onFailure.accept(e);
+                });
+    }
+
+    public void getCommunitySubmissions(TaskSubmissionCallback callback) {
+        // According to web app, it filters by status.
+        db.collection("weekly_completions")
+                .whereIn("status", java.util.Arrays.asList("pending_review", "community_approved", "completed"))
+                .get()
+                .addOnSuccessListener(snap -> {
+                    List<TaskSubmission> submissions = new ArrayList<>();
+                    for (DocumentSnapshot doc : snap.getDocuments()) {
+                        TaskSubmission sub = doc.toObject(TaskSubmission.class);
+                        if (sub != null) {
+                            sub.id = doc.getId();
+                            submissions.add(sub);
+                        }
+                    }
+                    callback.onSuccess(submissions);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to get community submissions", e);
+                    callback.onFailure(e);
+                });
+    }
+
+    public void upvoteSubmission(String submissionId, String uid, boolean isAdding, Runnable onSuccess,
+            java.util.function.Consumer<Exception> onFailure) {
+        com.google.firebase.firestore.DocumentReference docRef = db.collection("weekly_completions")
+                .document(submissionId);
+
+        db.runTransaction(transaction -> {
+            DocumentSnapshot snapshot = transaction.get(docRef);
+            if (!snapshot.exists()) {
+                throw new com.google.firebase.firestore.FirebaseFirestoreException("Document does not exist",
+                        com.google.firebase.firestore.FirebaseFirestoreException.Code.NOT_FOUND);
+            }
+            TaskSubmission current = snapshot.toObject(TaskSubmission.class);
+            if (current == null)
+                return null;
+
+            if (isAdding) {
+                if (!current.upvoters.contains(uid)) {
+                    current.upvoters.add(uid);
+                    current.upvotes++;
+                }
+                if (current.downvoters.contains(uid)) {
+                    current.downvoters.remove(uid);
+                    current.downvotes--;
+                }
+            } else {
+                if (current.upvoters.contains(uid)) {
+                    current.upvoters.remove(uid);
+                    current.upvotes--;
+                }
+            }
+            current.netScore = current.upvotes - current.downvotes;
+            transaction.set(docRef, current);
+            return null;
+        }).addOnSuccessListener(result -> {
+            if (onSuccess != null)
+                onSuccess.run();
+        }).addOnFailureListener(e -> {
+            Log.e(TAG, "Transaction failed for upvote", e);
+            if (onFailure != null)
+                onFailure.accept(e);
+        });
+    }
+
+    public void downvoteSubmission(String submissionId, String uid, boolean isAdding, Runnable onSuccess,
+            java.util.function.Consumer<Exception> onFailure) {
+        com.google.firebase.firestore.DocumentReference docRef = db.collection("weekly_completions")
+                .document(submissionId);
+
+        db.runTransaction(transaction -> {
+            DocumentSnapshot snapshot = transaction.get(docRef);
+            if (!snapshot.exists()) {
+                throw new com.google.firebase.firestore.FirebaseFirestoreException("Document does not exist",
+                        com.google.firebase.firestore.FirebaseFirestoreException.Code.NOT_FOUND);
+            }
+            TaskSubmission current = snapshot.toObject(TaskSubmission.class);
+            if (current == null)
+                return null;
+
+            if (isAdding) {
+                if (!current.downvoters.contains(uid)) {
+                    current.downvoters.add(uid);
+                    current.downvotes++;
+                }
+                if (current.upvoters.contains(uid)) {
+                    current.upvoters.remove(uid);
+                    current.upvotes--;
+                }
+            } else {
+                if (current.downvoters.contains(uid)) {
+                    current.downvoters.remove(uid);
+                    current.downvotes--;
+                }
+            }
+            current.netScore = current.upvotes - current.downvotes;
+            transaction.set(docRef, current);
+            return null;
+        }).addOnSuccessListener(result -> {
+            if (onSuccess != null)
+                onSuccess.run();
+        }).addOnFailureListener(e -> {
+            Log.e(TAG, "Transaction failed for downvote", e);
+            if (onFailure != null)
+                onFailure.accept(e);
+        });
     }
 }

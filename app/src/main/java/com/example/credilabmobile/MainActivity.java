@@ -32,6 +32,10 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.core.content.FileProvider;
 import java.io.File;
 import java.io.IOException;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
+import android.net.NetworkRequest;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
@@ -75,6 +79,55 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
 
+    private ConnectivityManager.NetworkCallback networkCallback;
+
+    private void setupNetworkListener() {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(android.content.Context.CONNECTIVITY_SERVICE);
+        if (cm == null)
+            return;
+
+        // Check initial state
+        boolean isConnected = false;
+        Network activeNetwork = cm.getActiveNetwork();
+        if (activeNetwork != null) {
+            NetworkCapabilities caps = cm.getNetworkCapabilities(activeNetwork);
+            isConnected = caps != null && caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
+        }
+
+        if (!isConnected && binding.offlineOverlay != null) {
+            binding.offlineOverlay.setVisibility(View.VISIBLE);
+        }
+
+        NetworkRequest request = new NetworkRequest.Builder()
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                .build();
+
+        networkCallback = new ConnectivityManager.NetworkCallback() {
+            @Override
+            public void onAvailable(Network network) {
+                runOnUiThread(() -> {
+                    if (binding.offlineOverlay != null) {
+                        if (binding.offlineOverlay.getVisibility() == View.VISIBLE) {
+                            loadAllData(); // Refresh data if we just came back online
+                        }
+                        binding.offlineOverlay.setVisibility(View.GONE);
+                    }
+                });
+            }
+
+            @Override
+            public void onLost(Network network) {
+                runOnUiThread(() -> {
+                    if (binding.offlineOverlay != null) {
+                        binding.offlineOverlay.setVisibility(View.VISIBLE);
+                    }
+                });
+            }
+        };
+
+        cm.registerNetworkCallback(request, networkCallback);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log.d(TAG, "========== MainActivity onCreate START ==========");
@@ -101,6 +154,8 @@ public class MainActivity extends AppCompatActivity {
             binding = ActivityMainBinding.inflate(getLayoutInflater());
             setContentView(binding.getRoot());
             Log.d(TAG, "Main layout inflated successfully");
+
+            setupNetworkListener();
 
             Log.d(TAG, "Initializing WalletManager...");
             walletManager = WalletManager.getInstance(this);
@@ -164,6 +219,11 @@ public class MainActivity extends AppCompatActivity {
             binding.btnLeaderboard.setOnClickListener(v -> {
                 Log.d(TAG, "btnLeaderboard clicked");
                 startActivity(new Intent(this, LeaderboardActivity.class));
+            });
+
+            binding.btnWeeklyTasks.setOnClickListener(v -> {
+                Log.d(TAG, "btnWeeklyTasks clicked");
+                startActivity(new Intent(this, WeeklyTasksActivity.class));
             });
 
             binding.btnHowToUse.setOnClickListener(v -> {
@@ -832,8 +892,11 @@ public class MainActivity extends AppCompatActivity {
                 Log.e(TAG, "fetchBalance FAILED", e);
                 runOnUiThread(() -> {
                     binding.tvBalance.setText("Error");
-                    Toast.makeText(this, "Failed to fetch balance: " + e.getMessage(),
-                            Toast.LENGTH_LONG).show();
+                    if (e.getMessage() != null && e.getMessage().contains("Unable to resolve host")) {
+                        Log.w(TAG, "Offline: skipping fetchBalance toast");
+                    } else {
+                        Toast.makeText(this, "Failed to fetch balance: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    }
                 });
             }
         }).start();
@@ -844,6 +907,13 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "onDestroy called");
         super.onDestroy();
         web3Helper.shutdown();
+        if (networkCallback != null) {
+            ConnectivityManager cm = (ConnectivityManager) getSystemService(
+                    android.content.Context.CONNECTIVITY_SERVICE);
+            if (cm != null) {
+                cm.unregisterNetworkCallback(networkCallback);
+            }
+        }
     }
 
     // --- Gesture Detection ---
