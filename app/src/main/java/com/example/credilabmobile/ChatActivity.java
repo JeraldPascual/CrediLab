@@ -494,6 +494,21 @@ public class ChatActivity extends AppCompatActivity {
             String path = images.get(position);
             Bitmap bmp = BitmapFactory.decodeFile(path);
             holder.iv.setImageBitmap(bmp);
+
+            holder.iv.setOnClickListener(v -> {
+                android.content.Context context = holder.iv.getContext();
+                android.app.Dialog dialog = new android.app.Dialog(context,
+                        android.R.style.Theme_Black_NoTitleBar_Fullscreen);
+                android.widget.ImageView fullImageView = new android.widget.ImageView(context);
+                fullImageView.setLayoutParams(new android.view.ViewGroup.LayoutParams(
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT));
+                fullImageView.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
+                fullImageView.setImageBitmap(bmp);
+                fullImageView.setOnClickListener(v1 -> dialog.dismiss());
+                dialog.setContentView(fullImageView);
+                dialog.show();
+            });
         }
 
         @Override
