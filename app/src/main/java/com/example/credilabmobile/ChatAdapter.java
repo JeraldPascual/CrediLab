@@ -133,15 +133,33 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                     imageView.setImageBitmap(message.image);
                     imageView.setAlpha(0.5f); // Fade out during load
                     progressBar.setVisibility(View.VISIBLE);
+                    imageView.setOnClickListener(null);
                 } else {
                     imageView.setVisibility(View.VISIBLE);
                     imageView.setImageBitmap(message.image);
                     imageView.setAlpha(1.0f); // Clear when done
                     progressBar.setVisibility(View.GONE);
+
+                    // Add click listener for full-screen view
+                    imageView.setOnClickListener(v -> {
+                        Context context = imageView.getContext();
+                        android.app.Dialog dialog = new android.app.Dialog(context,
+                                android.R.style.Theme_Black_NoTitleBar_Fullscreen);
+                        android.widget.ImageView fullImageView = new android.widget.ImageView(context);
+                        fullImageView.setLayoutParams(new android.view.ViewGroup.LayoutParams(
+                                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                                android.view.ViewGroup.LayoutParams.MATCH_PARENT));
+                        fullImageView.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
+                        fullImageView.setImageBitmap(message.image);
+                        fullImageView.setOnClickListener(v1 -> dialog.dismiss());
+                        dialog.setContentView(fullImageView);
+                        dialog.show();
+                    });
                 }
             } else {
                 imageView.setVisibility(View.GONE);
                 progressBar.setVisibility(View.GONE);
+                imageView.setOnClickListener(null);
             }
         }
     }
