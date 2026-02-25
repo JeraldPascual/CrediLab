@@ -47,8 +47,11 @@ public class ChatRepository {
             "You are offline and private. You answer questions concisely and accurately. " +
             "You can analyze images if the user provides them.";
 
+    private Context appContext;
+
     private ChatRepository(Context context) {
-        this.db = Room.databaseBuilder(context.getApplicationContext(),
+        this.appContext = context.getApplicationContext();
+        this.db = Room.databaseBuilder(appContext,
                 AppDatabase.class, "credilab-db")
                 .fallbackToDestructiveMigration()
                 .build();
@@ -337,10 +340,32 @@ public class ChatRepository {
         executor.execute(() -> {
             String imagePath = null;
             if (image != null) {
-                // Saving image logic should ideally be here or passed in.
-                // Simple implementation:
-                // imagePath = ImageUtils.saveImageToInternalStorage(context, image);
+                try {
+                    File dir = new File(appContext.getFilesDir(), "chat_images");
+                    if (!dir.exists())
+                        dir.mkdirs();
+                    File imgFile = new File(dir, "img_" + System.currentTimeMillis() + ".jpg");
+                    java.io.FileOutputStream fos = new java.io.FileOutputStream(imgFile);
+                    image.compress(Bitmap.CompressFormat.JPEG, 90, fos);
+                    fos.flush();
+                    fos.close();
+                    imagePath = imgFile.getAbsolutePath();
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to save image", e);
+                }
             }
+
+            if (isUser && text != null && !text.isEmpty()) {
+                ChatSession session = chatDao.getSessionById(sessionId);
+                if (session != null && "New Chat".equals(session.title)) {
+                    String newTitle = text;
+                    if (newTitle.length() > 30) {
+                        newTitle = newTitle.substring(0, 27) + "...";
+                    }
+                    chatDao.updateSessionTitle(sessionId, newTitle);
+                }
+            }
+
             ChatMessage msg = new ChatMessage(sessionId, text, isUser, imagePath, System.currentTimeMillis());
             chatDao.insertMessage(msg);
             refreshMessages(sessionId);
