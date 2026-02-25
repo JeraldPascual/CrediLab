@@ -63,9 +63,16 @@ public class CommunityFeedAdapter extends RecyclerView.Adapter<CommunityFeedAdap
         }
 
         if (sub.photoURL != null && !sub.photoURL.isEmpty()) {
-            Glide.with(context).load(sub.photoURL).transform(new CircleCrop()).into(holder.ivProfile);
+            Glide.with(context)
+                    .load(sub.photoURL)
+                    .placeholder(R.drawable.ic_credilab_logo)
+                    .error(R.drawable.ic_credilab_logo)
+                    .transform(new CircleCrop())
+                    .into(holder.ivProfile);
         } else {
-            Glide.with(context).load(R.drawable.ic_launcher_foreground).transform(new CircleCrop())
+            Glide.with(context)
+                    .load(R.drawable.ic_credilab_logo)
+                    .transform(new CircleCrop())
                     .into(holder.ivProfile);
         }
 
