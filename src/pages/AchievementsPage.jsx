@@ -33,6 +33,8 @@ export default function AchievementsPage() {
   const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 });
   const canDownload = totalEarned >= 50;
 
+  const isDeveloper = userData?.role === "developer";
+
   const existingHash = userData?.certHash || null;
   const baseUrl = window.location.origin;
   const verifyUrl = (certHash || existingHash)
@@ -104,7 +106,8 @@ export default function AchievementsPage() {
   return (
     <div className="max-w-3xl mx-auto space-y-8">
 
-      {/* ── DEV: Badge Icon Gallery (remove when done testing) ── */}
+      {/* ── DEV: Badge Icon Gallery (visible to role=developer only) ── */}
+      {isDeveloper && (
       <div className="rounded-xl border-2 border-dashed border-yellow-400/50 bg-yellow-50/50 dark:bg-yellow-900/10 p-5">
         <p className="text-xs font-bold uppercase tracking-widest text-yellow-600 dark:text-yellow-400 mb-4">
           🧪 Dev Preview — Badge Icons (from badges.json)
@@ -128,8 +131,10 @@ export default function AchievementsPage() {
           ))}
         </div>
       </div>
+      )}
 
-      {/* ── DEV: TierFrame Preview (remove when done testing) ── */}
+      {/* ── DEV: TierFrame Preview (visible to role=developer only) ── */}
+      {isDeveloper && (
       <div className="rounded-xl border-2 border-dashed border-cyan-400/50 bg-cyan-50/50 dark:bg-cyan-900/10 p-5">
         <p className="text-xs font-bold uppercase tracking-widest text-cyan-600 dark:text-cyan-400 mb-4">
           🎨 Dev Preview — Tier Frames (animated progression)
@@ -152,6 +157,7 @@ export default function AchievementsPage() {
           ))}
         </div>
       </div>
+      )}
 
       {/* ── Page Header ── */}
       <div>

@@ -8,6 +8,7 @@ import {
   FireIcon,
   ArrowTrendingUpIcon,
   UserGroupIcon,
+  TrophyIcon,
 } from "@heroicons/react/24/outline";
 import {
   ChevronUpIcon as ChevronUpSolid,
@@ -28,7 +29,9 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { db } from "../lib/firebase";
 import { SDG_ICONS, SDG_GOALS } from "../data/weeklyTasks";
+import { getSkillTier } from "../data/achievements";
 import UserProfileCard from "../components/UserProfileCard";
+import TierFrame from "../components/TierFrame";
 
 /**
  * Community Feed — /student/community
@@ -61,9 +64,11 @@ async function resolveProfile(uid) {
     const snap = await getDoc(doc(db, "users", uid));
     if (snap.exists()) {
       const d = snap.data();
+      const clb = d.totalCLBEarned ?? d.credits ?? 0;
       const p = {
         displayName: d.displayName || `${d.firstName || ""} ${d.lastName || ""}`.trim() || "Anonymous",
         photoURL: d.photoURL || null,
+        tier: getSkillTier(clb),
       };
       profileCache.set(uid, p);
       return p;
@@ -71,7 +76,7 @@ async function resolveProfile(uid) {
   } catch (err) {
     console.warn("[CommunityFeed] profile fetch:", err.message);
   }
-  return { displayName: "Anonymous", photoURL: null };
+  return { displayName: "Anonymous", photoURL: null, tier: getSkillTier(0) };
 }
 
 export default function CommunityFeed() {
@@ -80,6 +85,7 @@ export default function CommunityFeed() {
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState("newest");
   const [votingId, setVotingId] = useState(null);
+  const [activeTab, setActiveTab] = useState("feed");
 
   // ── Real-time Firestore listener ──────────────────────────────────
   useEffect(() => {
@@ -100,7 +106,7 @@ export default function CommunityFeed() {
 
       subs = subs.map((s) => {
         const p = profileCache.get(s.uid);
-        return { ...s, _name: p?.displayName || s.displayName || "Anonymous", _photo: p?.photoURL || null };
+        return { ...s, _name: p?.displayName || s.displayName || "Anonymous", _photo: p?.photoURL || null, _tier: p?.tier || getSkillTier(0) };
       });
 
       setSubmissions(subs);
@@ -117,9 +123,12 @@ export default function CommunityFeed() {
   const sorted = [...submissions].sort((a, b) => {
     if (sortBy === "top") return (b.netScore ?? 0) - (a.netScore ?? 0);
     if (sortBy === "hot") {
-      const aT = a.completedAt?.toMillis?.() ?? 0;
-      const bT = b.completedAt?.toMillis?.() ?? 0;
-      return ((b.netScore ?? 0) + bT / 3600000) - ((a.netScore ?? 0) + aT / 3600000);
+      const now = Date.now();
+      const aAge = (now - (a.completedAt?.toMillis?.() ?? 0)) / 3_600_000; // hours
+      const bAge = (now - (b.completedAt?.toMillis?.() ?? 0)) / 3_600_000;
+      const aHot = (a.netScore ?? 0) / Math.pow(aAge + 2, 1.5);
+      const bHot = (b.netScore ?? 0) / Math.pow(bAge + 2, 1.5);
+      return bHot - aHot;
     }
     return (b.completedAt?.toMillis?.() ?? 0) - (a.completedAt?.toMillis?.() ?? 0);
   });
@@ -233,6 +242,10 @@ export default function CommunityFeed() {
 
   const approvedCount = sorted.filter((s) => s.status === "community_approved").length;
 
+  // Separate awarded winners from active feed
+  const activePosts = sorted.filter((s) => !s.clbAwarded);
+  const hallOfFame = sorted.filter((s) => s.clbAwarded).sort((a, b) => (b.weekNumber ?? 0) - (a.weekNumber ?? 0));
+
   return (
     <div className="max-w-2xl mx-auto space-y-5">
       {/* Header */}
@@ -248,49 +261,134 @@ export default function CommunityFeed() {
         </p>
       </div>
 
-      {/* Sort tabs */}
-      <div className="flex items-center gap-2">
-        {SORT_OPTIONS.map((opt) => (
-          <button
-            key={opt.key}
-            onClick={() => setSortBy(opt.key)}
-            className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full transition-all ${
-              sortBy === opt.key
-                ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/30"
-                : "bg-gray-100 dark:bg-dark-surface text-gray-500 dark:text-dark-muted hover:bg-gray-200 dark:hover:bg-dark-border"
-            }`}
-          >
-            <opt.icon className="w-3.5 h-3.5" />
-            {opt.label}
-          </button>
-        ))}
+      {/* ── Primary tabs: Feed / Hall of Fame ── */}
+      <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-dark-surface rounded-xl">
+        <button
+          onClick={() => setActiveTab("feed")}
+          className={`flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg transition-all ${
+            activeTab === "feed"
+              ? "bg-white dark:bg-dark-card text-gray-900 dark:text-white shadow-sm"
+              : "text-gray-500 dark:text-dark-muted hover:text-gray-700 dark:hover:text-white"
+          }`}
+        >
+          <UserGroupIcon className="w-3.5 h-3.5" />
+          Feed
+        </button>
+        <button
+          onClick={() => setActiveTab("hof")}
+          className={`flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg transition-all ${
+            activeTab === "hof"
+              ? "bg-white dark:bg-dark-card text-amber-600 dark:text-amber-400 shadow-sm"
+              : "text-gray-500 dark:text-dark-muted hover:text-gray-700 dark:hover:text-white"
+          }`}
+        >
+          <TrophyIcon className="w-3.5 h-3.5" />
+          Hall of Fame
+          {hallOfFame.length > 0 && (
+            <span className="ml-0.5 text-[9px] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded-full">
+              {hallOfFame.length}
+            </span>
+          )}
+        </button>
       </div>
 
-      {/* Feed */}
-      {loading ? (
-        <div className="flex items-center gap-3 py-16 justify-center">
-          <div className="w-5 h-5 rounded-full border-2 border-emerald-500/40 border-t-emerald-400 animate-spin" />
-          <span className="text-sm text-gray-400">Loading submissions…</span>
+      {/* ── Hall of Fame Tab ── */}
+      {activeTab === "hof" && (
+        <div className="space-y-3">
+          {hallOfFame.length === 0 ? (
+            <div className="text-center py-16">
+              <TrophyIcon className="w-10 h-10 text-gray-300 dark:text-dark-border mx-auto mb-3" />
+              <p className="text-gray-400 dark:text-dark-muted text-sm">No weekly winners yet.</p>
+              <p className="text-gray-400 dark:text-dark-muted text-xs mt-1">Winners appear here after the weekly award is triggered.</p>
+            </div>
+          ) : hallOfFame.map((w) => {
+            const wProfile = profileCache.get(w.uid);
+            const wTier = wProfile?.tier || getSkillTier(0);
+            return (
+              <div key={w.docId} className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-amber-50/80 to-yellow-50/40 dark:from-amber-900/10 dark:to-yellow-900/5 border border-amber-200/60 dark:border-amber-700/20">
+                <UserProfileCard uid={w.uid} name={w._name} photoURL={w._photo}>
+                  <div className="cursor-pointer">
+                    <TierFrame tier={wTier} size="sm">
+                      {w._photo ? (
+                        <img src={w._photo} alt={w._name} className="w-10 h-10 rounded-full object-cover" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-200 to-yellow-300 flex items-center justify-center text-sm font-bold text-amber-800">
+                          {(w._name || "?")[0].toUpperCase()}
+                        </div>
+                      )}
+                    </TierFrame>
+                  </div>
+                </UserProfileCard>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-base">🏆</span>
+                    <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{w._name}</p>
+                  </div>
+                  <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-0.5">
+                    Week {w.weekNumber} · {w.awardedReward ?? w.rewardCLB ?? 35} CLB awarded
+                  </p>
+                  {w.response && (
+                    <p className="text-[11px] text-gray-500 dark:text-dark-muted mt-1 line-clamp-2 leading-snug">{w.response}</p>
+                  )}
+                </div>
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  <span className="text-[10px] font-semibold text-amber-600 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400 px-2 py-0.5 rounded-full">🏅 {w.netScore ?? 0} votes</span>
+                  <span className="text-[9px] text-gray-400 dark:text-dark-muted">{SDG_ICONS[w.sdgGoal ?? 15]} SDG {w.sdgGoal ?? 15}</span>
+                </div>
+              </div>
+            );
+          })}
         </div>
-      ) : sorted.length === 0 ? (
-        <div className="text-center py-20">
-          <PhotoIcon className="w-12 h-12 text-gray-300 dark:text-dark-border mx-auto mb-3" />
-          <p className="text-gray-400 dark:text-dark-muted">
-            No submissions yet. Complete a weekly SDG task to be the first!
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {sorted.map((sub) => (
-            <SubmissionPost
-              key={sub.docId}
-              sub={sub}
-              currentUid={user?.uid}
-              onVote={(dir) => handleVote(sub, dir)}
-              isVoting={votingId === sub.docId}
-            />
-          ))}
-        </div>
+      )}
+
+      {/* ── Feed Tab ── */}
+      {activeTab === "feed" && (
+        <>
+          {/* Sort tabs */}
+          <div className="flex items-center gap-2">
+            {SORT_OPTIONS.map((opt) => (
+              <button
+                key={opt.key}
+                onClick={() => setSortBy(opt.key)}
+                className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full transition-all ${
+                  sortBy === opt.key
+                    ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/30"
+                    : "bg-gray-100 dark:bg-dark-surface text-gray-500 dark:text-dark-muted hover:bg-gray-200 dark:hover:bg-dark-border"
+                }`}
+              >
+                <opt.icon className="w-3.5 h-3.5" />
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Feed */}
+          {loading ? (
+            <div className="flex items-center gap-3 py-16 justify-center">
+              <div className="w-5 h-5 rounded-full border-2 border-emerald-500/40 border-t-emerald-400 animate-spin" />
+              <span className="text-sm text-gray-400">Loading submissions…</span>
+            </div>
+          ) : activePosts.length === 0 ? (
+            <div className="text-center py-20">
+              <PhotoIcon className="w-12 h-12 text-gray-300 dark:text-dark-border mx-auto mb-3" />
+              <p className="text-gray-400 dark:text-dark-muted">
+                No submissions yet. Complete a weekly SDG task to be the first!
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {activePosts.map((sub) => (
+                <SubmissionPost
+                  key={sub.docId}
+                  sub={sub}
+                  currentUid={user?.uid}
+                  onVote={(dir) => handleVote(sub, dir)}
+                  isVoting={votingId === sub.docId}
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
@@ -305,6 +403,7 @@ function SubmissionPost({ sub, currentUid, onVote, isVoting }) {
   const hasDownvoted = currentUid ? downvoters.includes(currentUid) : false;
   const netScore = sub.netScore ?? 0;
   const isApproved = sub.status === "community_approved";
+  const tier = sub._tier || getSkillTier(0);
 
   const completedDate = sub.completedAt?.toDate
     ? sub.completedAt.toDate().toLocaleDateString("en-US", {
@@ -368,17 +467,19 @@ function SubmissionPost({ sub, currentUid, onVote, isVoting }) {
           <div className="flex items-center gap-2 mb-2">
             <UserProfileCard uid={sub.uid} name={displayName} photoURL={photoURL}>
               <button className="flex items-center gap-2 group">
-                {photoURL ? (
-                  <img
-                    src={photoURL}
-                    alt={displayName}
-                    className="w-7 h-7 rounded-full object-cover border-2 border-gray-200 dark:border-dark-border group-hover:border-green-primary transition-colors"
-                  />
-                ) : (
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-green-primary/30 to-emerald-400/30 flex items-center justify-center text-xs font-bold text-green-primary group-hover:ring-2 group-hover:ring-green-primary/30 transition-all">
-                    {(displayName || "?")[0].toUpperCase()}
-                  </div>
-                )}
+                <TierFrame tier={tier} size="xs">
+                  {photoURL ? (
+                    <img
+                      src={photoURL}
+                      alt={displayName}
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-primary/30 to-emerald-400/30 flex items-center justify-center text-xs font-bold text-green-primary">
+                      {(displayName || "?")[0].toUpperCase()}
+                    </div>
+                  )}
+                </TierFrame>
                 <span className="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-green-primary transition-colors">
                   {displayName}
                 </span>

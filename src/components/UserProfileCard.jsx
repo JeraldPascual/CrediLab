@@ -157,7 +157,7 @@ export default function UserProfileCard({ uid, name, photoURL, children }) {
               </div>
             </div>
 
-            {/* Badges — icons only, no label */}
+            {/* Badges — icons with hover expand */}
             {profile.badges.length > 0 && (
               <div>
                 <p className="text-[10px] font-semibold text-gray-500 dark:text-dark-muted uppercase tracking-wider mb-2">
@@ -165,13 +165,28 @@ export default function UserProfileCard({ uid, name, photoURL, children }) {
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {profile.badges.slice(0, 12).map((badge) => (
-                    <span
+                    <div
                       key={badge.id}
-                      title={`${badge.title} · ${badge.criteria}`}
-                      className={`inline-flex items-center justify-center w-8 h-8 rounded-lg ${badge.bg} ${badge.border} border cursor-default badge-tile-shimmer badge-glow-${badge.rarity}`}
+                      className="group/badge relative"
                     >
-                      {badge.Icon && <badge.Icon className={`w-5 h-5 ${badge.color}`} />}
-                    </span>
+                      <span
+                        className={`inline-flex items-center justify-center w-8 h-8 rounded-lg ${badge.bg} ${badge.border} border cursor-default badge-tile-shimmer badge-glow-${badge.rarity} transition-transform group-hover/badge:scale-110`}
+                      >
+                        {badge.Icon && <badge.Icon className={`w-5 h-5 ${badge.color}`} />}
+                      </span>
+                      {/* Hover tooltip — viewport-aware, solid background */}
+                      <div className="pointer-events-none absolute z-[10000] bottom-full left-1/2 -translate-x-1/2 mb-1.5 opacity-0 group-hover/badge:opacity-100 transition-opacity duration-150 w-44">
+                        <div className="rounded-lg bg-gray-900 dark:bg-dark-card border border-gray-700 dark:border-dark-border p-2.5 shadow-xl">
+                          <div className="flex items-center gap-1.5 mb-1">
+                            {badge.Icon && <badge.Icon className={`w-4 h-4 shrink-0 ${badge.color}`} />}
+                            <p className={`text-[11px] font-bold ${badge.color} leading-tight`}>{badge.title}</p>
+                          </div>
+                          <p className="text-[9px] text-gray-300 dark:text-gray-400 leading-snug">{badge.description}</p>
+                          <p className="text-[8px] text-gray-500 mt-1 italic">{badge.criteria}</p>
+                        </div>
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[5px] border-t-gray-900 dark:border-t-dark-card" />
+                      </div>
+                    </div>
                   ))}
                   {profile.badges.length > 12 && (
                     <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 dark:bg-dark-surface text-[10px] font-bold text-gray-400 dark:text-dark-muted">

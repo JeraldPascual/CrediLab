@@ -258,7 +258,7 @@ export default function WalletGuidePage() {
           <InfoCard icon={ShieldCheckIcon} title="How CLB Tokens Work">
             <p><strong className="text-gray-900 dark:text-white">1.</strong> Complete coding challenges or weekly SDG tasks to earn CLB (CrediLab) credits.</p>
             <p><strong className="text-gray-900 dark:text-white">2.</strong> For coding challenges, credits are recorded instantly upon passing all test cases.</p>
-            <p><strong className="text-gray-900 dark:text-white">3.</strong> For weekly SDG tasks, CLB is awarded automatically when your submission receives ≥3 community upvotes.</p>
+            <p><strong className="text-gray-900 dark:text-white">3.</strong> For weekly SDG tasks, your submission must receive ≥3 net upvotes to qualify as Community Approved. CLB is then awarded to the top-voted submission at the end of each week.</p>
             <p><strong className="text-gray-900 dark:text-white">4.</strong> If your MetaMask wallet is connected, CLB tokens are automatically transferred on-chain via the Sepolia testnet.</p>
             <p><strong className="text-gray-900 dark:text-white">5.</strong> If CLB is still showing as "Pending on-chain" in your profile, click the <strong className="text-green-primary">Claim CLB</strong> button to trigger the on-chain transfer.</p>
             <p><strong className="text-gray-900 dark:text-white">6.</strong> To see your CLB balance in MetaMask, add it as a custom token:</p>
@@ -321,7 +321,8 @@ export default function WalletGuidePage() {
               <li>Each week, a new SDG-aligned task is posted (e.g., "Document a local sustainability initiative").</li>
               <li>Go to <strong className="text-green-primary">Activities</strong> to see the current week's task and submit your response.</li>
               <li>Submissions are reviewed by the community through upvoting in the <strong className="text-green-primary">Community Feed</strong>.</li>
-              <li>Once your submission reaches <strong>3 or more upvotes</strong>, it's marked as community-approved and you receive CLB automatically.</li>
+              <li>Once your submission reaches <strong>3 or more net upvotes</strong>, it's marked as <strong>Community Approved</strong>.</li>
+              <li>At the end of each week, the approved submission with the <strong>highest vote score</strong> wins and receives CLB. Only the top submission per week is rewarded.</li>
               <li>You can vote on other students' submissions too — this helps the community and can earn you the <strong>Mentor Spirit</strong> badge.</li>
             </ul>
           </InfoCard>
@@ -343,8 +344,8 @@ export default function WalletGuidePage() {
                   <p className="text-xs font-bold text-purple-800 dark:text-purple-300 mb-1">🌍 Weekly SDG Tasks</p>
                   <ul className="text-[11px] text-purple-700 dark:text-purple-400 space-y-0.5">
                     <li>• Reward varies per task (shown on card)</li>
-                    <li>• Needs ≥3 community upvotes</li>
-                    <li>• Awarded after community approval</li>
+                    <li>• Needs ≥3 net upvotes to qualify</li>
+                    <li>• Top-voted submission wins CLB weekly</li>
                     <li>• One submission per task per student</li>
                   </ul>
                 </div>
@@ -402,7 +403,7 @@ export default function WalletGuidePage() {
                 Hover over any badge on the <strong className="text-green-primary">Achievements</strong> page to see its description and whether you've earned it. Badges with higher rarity have a more intense glow effect.
               </p>
               <p className="text-gray-500 dark:text-dark-muted">
-                There are currently <strong>17 badges</strong> to collect, including coding, community, milestone, and mindset categories.
+                There are currently <strong>20 badges</strong> to collect, including coding, community, milestone, and mindset categories.
               </p>
             </div>
           </InfoCard>
@@ -481,7 +482,7 @@ export default function WalletGuidePage() {
               </Accordion>
 
               <Accordion title="How do weekly SDG task votes work?">
-                <p>After submitting a weekly task, your submission appears in the Community Feed. Other students can upvote it. Once you receive <strong>3 or more upvotes</strong>, the submission is community-approved and CLB is awarded automatically.</p>
+                <p>After submitting a weekly task, your submission appears in the Community Feed. Other students can upvote it. Once you receive <strong>3 or more net upvotes</strong>, your submission is marked as <strong>Community Approved ✅</strong>. At the end of each week, the community-approved submission with the <strong>highest vote score</strong> is selected as the weekly winner and awarded CLB. Lower-voted submissions do not receive CLB that week.</p>
               </Accordion>
 
               <Accordion title="What are badges and how do I earn them?">

@@ -12,7 +12,7 @@
  *   POST /api/weekly-tasks                  — seed/update a task (admin only)
  *
  * Student B Android query equivalent:
- *   fetch("https://credi-lab.vercel.app/api/weekly-tasks")
+ *   fetch("https://credilab.vercel.app/api/weekly-tasks")
  *   // returns { tasks: [...], weekNumber: 9, count: 1 }
  */
 

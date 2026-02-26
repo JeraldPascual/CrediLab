@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Outlet, useNavigate, useLocation } from "react-router-dom";
+import { Outlet, useNavigate, useLocation, Link } from "react-router-dom";
+import { QuestionMarkCircleIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import StudentHeader from "../components/StudentHeader";
 import Sidebar from "../components/Sidebar";
 import CLBBalanceStrip from "../components/CLBBalanceStrip";
@@ -7,6 +8,7 @@ import MobileWarningBanner from "../components/MobileWarningBanner";
 
 export default function StudentDashboard() {
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
+  const [showHelpBanner, setShowHelpBanner] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -42,6 +44,22 @@ export default function StudentDashboard() {
 
         {/* ── Main Content ── */}
         <main className="flex-1 overflow-y-auto px-6 py-8 md:px-10 md:py-10">
+          {/* Help Center Banner */}
+          {showHelpBanner && (
+            <div className="mb-6 flex items-center gap-3 rounded-xl border border-blue-200 dark:border-blue-800/40 bg-blue-50/80 dark:bg-blue-900/10 px-4 py-3">
+              <QuestionMarkCircleIcon className="w-5 h-5 text-blue-500 shrink-0" />
+              <p className="flex-1 text-sm text-blue-800 dark:text-blue-300">
+                New here or feeling lost?{" "}
+                <Link to="/student/help-center" className="font-semibold underline underline-offset-2 hover:text-blue-600 dark:hover:text-blue-200 transition-colors">
+                  Visit the Help Center
+                </Link>{" "}
+                for guides on challenges, wallets, and earning CLB.
+              </p>
+              <button onClick={() => setShowHelpBanner(false)} className="p-1 rounded-lg text-blue-400 hover:bg-blue-200/60 dark:hover:bg-blue-800/40 transition-colors" aria-label="Dismiss">
+                <XMarkIcon className="w-4 h-4" />
+              </button>
+            </div>
+          )}
           <Outlet />
         </main>
       </div>

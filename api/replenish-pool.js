@@ -11,7 +11,7 @@
  * Student B Android / Kotlin usage:
  *   val body = """{"amount":5000,"txHash":"0x...","note":"Month top-up"}"""
  *   val req = Request.Builder()
- *     .url("https://credi-lab.vercel.app/api/replenish-pool")
+ *     .url("https://credilab.vercel.app/api/replenish-pool")
  *     .addHeader("x-admin-secret", ADMIN_SECRET)
  *     .post(body.toRequestBody("application/json".toMediaType()))
  *     .build()
