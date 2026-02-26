@@ -9,7 +9,7 @@
  * Body: { weekNumber?: number }   ← defaults to current ISO week
  *
  * How to test manually:
- *   curl -X POST https://credi-lab.vercel.app/api/award-weekly-winner \
+ *   curl -X POST https://credilab.vercel.app/api/award-weekly-winner \
  *     -H "Content-Type: application/json" \
  *     -H "x-admin-secret: <ADMIN_SECRET>" \
  *     -d '{"weekNumber": 9}'
@@ -78,9 +78,12 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-admin-secret');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== 'POST' && req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
-  if (req.headers['x-admin-secret'] !== process.env.ADMIN_SECRET) {
+  // Accept: admin secret (manual POST) OR Vercel Cron bearer token (scheduled GET)
+  const adminOk = req.headers['x-admin-secret'] === process.env.ADMIN_SECRET;
+  const cronOk  = req.headers['authorization'] === `Bearer ${process.env.CRON_SECRET}`;
+  if (!adminOk && !cronOk) {
     return res.status(403).json({ error: 'Forbidden' });
   }
 
