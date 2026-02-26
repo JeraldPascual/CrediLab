@@ -2,7 +2,7 @@ import {
   ClipboardDocumentListIcon,
   TrophyIcon,
   CodeBracketIcon,
-  WalletIcon,
+  QuestionMarkCircleIcon,
   SparklesIcon,
   BanknotesIcon,
   GlobeAltIcon,
@@ -10,7 +10,7 @@ import {
 
 const NAV_ITEMS = [
   {
-    label: "Activities",
+    label: "Dashboard",
     path: "/student",
     icon: ClipboardDocumentListIcon,
   },
@@ -40,9 +40,9 @@ const NAV_ITEMS = [
     icon: BanknotesIcon,
   },
   {
-    label: "Wallet Guide",
-    path: "/student/wallet-guide",
-    icon: WalletIcon,
+    label: "Help Center",
+    path: "/student/help-center",
+    icon: QuestionMarkCircleIcon,
   },
 ];
 
@@ -90,7 +90,7 @@ export default function Sidebar({ expanded = true, onNavigate, currentPath }) {
         <div className="border-t border-gray-100 dark:border-dark-border p-4">
           {expanded && (
             <div className="text-xs text-gray-400 dark:text-dark-muted text-center">
-              CrediLab v0.1.0
+              CrediLab v1.0.0
             </div>
           )}
         </div>

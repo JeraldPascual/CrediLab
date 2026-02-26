@@ -14,6 +14,7 @@ import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { getSkillTier } from "../data/achievements";
 import { db } from "../lib/firebase";
+import TierFrame from "./TierFrame";
 
 export default function StudentHeader({ onMenuToggle, sidebarExpanded }) {
   const { user, userData, logout } = useAuth();
@@ -221,13 +222,17 @@ export default function StudentHeader({ onMenuToggle, sidebarExpanded }) {
             className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-card transition-colors"
           >
             {(userData?.photoURL || user?.photoURL) ? (
-              <img
-                src={userData?.photoURL || user.photoURL}
-                alt={displayName}
-                className="w-8 h-8 rounded-full object-cover border-2 border-green-primary/30"
-              />
+              <TierFrame tier={tier} size="xs">
+                <img
+                  src={userData?.photoURL || user.photoURL}
+                  alt={displayName}
+                  className="w-8 h-8 rounded-full object-cover"
+                />
+              </TierFrame>
             ) : (
-              <UserCircleIcon className="w-8 h-8 text-gray-400 dark:text-dark-muted" />
+              <TierFrame tier={tier} size="xs">
+                <UserCircleIcon className="w-8 h-8 text-gray-400 dark:text-dark-muted" />
+              </TierFrame>
             )}
             <ChevronDownIcon className="w-3 h-3 text-gray-400 dark:text-dark-muted" />
           </button>

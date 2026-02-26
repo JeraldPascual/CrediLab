@@ -19,6 +19,7 @@ import { useTheme } from "../context/ThemeContext";
 import { db } from "../lib/firebase";
 import { getChallengeById } from "../data/challenges";
 import CHALLENGES from "../data/challenges";
+import { getTestCases } from "../data/testCaseCodec";
 import useAntiCheat from "../hooks/useAntiCheat";
 import { executeCode } from "../utils/executeCode";
 import { getTimeLimitMs, getMinSolveTime, DIFF_COLORS, TIME_LIMIT_SHORT, TIME_LIMIT_LABELS } from "../data/constants";
@@ -503,7 +504,9 @@ export default function CodingPortal() {
       const testResults = [];
       const batchId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-      for (const tc of challenge.testCases) {
+      const testCases = getTestCases(challenge);
+
+      for (const tc of testCases) {
         const data = await executeCode({
           code,
           languageId: challenge.languageId,
@@ -623,6 +626,68 @@ export default function CodingPortal() {
           }
         } catch (apiErr) {
           console.error('Reward API error:', apiErr.message);
+        }
+
+        // ── Step 2.5: Badge-related Firestore field updates ──
+        //    These writes are best-effort — they track fields used by badge check functions.
+        try {
+          const badgeRef = doc(db, 'users', user.uid);
+          const badgeUpdates = {};
+
+          // Speed Demon badge — track fastest solve time ever
+          if (solveTimeSec && solveTimeSec <= 120) {
+            const currentSnap = await getDoc(badgeRef);
+            const currentFastest = currentSnap.data()?.fastestSolveTimeSec ?? Infinity;
+            if (solveTimeSec < currentFastest) {
+              badgeUpdates.fastestSolveTimeSec = solveTimeSec;
+            }
+          }
+
+          // Night Owl badge — completed between midnight and 5 AM
+          const completionHour = new Date().getHours();
+          if (completionHour >= 0 && completionHour < 5) {
+            badgeUpdates.nightOwlUnlocked = true;
+          }
+
+          // Early Bird badge
+          {
+            let createdMs = 0;
+            if (userData?.createdAt) {
+              createdMs =
+                typeof userData.createdAt.toMillis === 'function'
+                  ? userData.createdAt.toMillis()
+                  : typeof userData.createdAt === 'number'
+                    ? userData.createdAt
+                    : new Date(userData.createdAt).getTime();
+            } else if (user?.metadata?.creationTime) {
+              createdMs = new Date(user.metadata.creationTime).getTime();
+            }
+            if (createdMs > 0 && Date.now() - createdMs < 86_400_000) {
+              badgeUpdates.earlyBirdUnlocked = true;
+            }
+          }
+
+          // Triple Threat badge — completed 3+ challenges on the same day
+          if (!userData?.tripleThreadUnlocked) {
+            const todayKey = new Date().toISOString().slice(0, 10);
+            // Increment a daily challenge counter in Firestore
+            const currentSnap2 = await getDoc(badgeRef);
+            const snapData = currentSnap2.data() || {};
+            const lastChallengeDate = snapData.lastChallengeDate || '';
+            const dailyCount = lastChallengeDate === todayKey ? (snapData.dailyChallengeCount || 0) + 1 : 1;
+            badgeUpdates.lastChallengeDate = todayKey;
+            badgeUpdates.dailyChallengeCount = dailyCount;
+            if (dailyCount >= 3) {
+              badgeUpdates.tripleThreadUnlocked = true;
+            }
+          }
+
+          if (Object.keys(badgeUpdates).length > 0) {
+            await updateDoc(badgeRef, badgeUpdates);
+            console.log('🏅 Badge fields updated:', Object.keys(badgeUpdates));
+          }
+        } catch {
+          // Silent — badge tracking is best-effort
         }
 
         // ── Step 3: Refresh userData so all UI reflects the new Firestore state ──
@@ -1002,7 +1067,7 @@ export default function CodingPortal() {
             <div>
               <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-1">{challenge.title}</h2>
               <p className="text-xs text-gray-400 dark:text-dark-muted">
-                by {challenge.author || "CrediLab"} · {challenge.category}
+                {challenge.category}
               </p>
               {/* Difficulty info row */}
               <div className="flex items-center gap-2 mt-2 flex-wrap">
@@ -1173,6 +1238,8 @@ export default function CodingPortal() {
 
 /* ── Test Cases Panel ── */
 function TestCasesPanel({ challenge, customInput, setCustomInput }) {
+  const testCases = getTestCases(challenge);
+
   return (
     <div className="space-y-3">
       <div>
@@ -1190,10 +1257,10 @@ function TestCasesPanel({ challenge, customInput, setCustomInput }) {
 
       <div className="border-t border-gray-100 dark:border-dark-border pt-3">
         <span className="text-xs font-medium text-gray-500 dark:text-dark-muted uppercase tracking-wide">
-          Test Cases ({challenge.testCases.length})
+          Test Cases ({testCases.length})
         </span>
         <div className="mt-2 space-y-2">
-          {challenge.testCases.map((tc, i) => (
+          {testCases.map((tc, i) => (
             <div key={i} className="rounded-lg bg-gray-50 dark:bg-dark-surface p-3 border border-gray-200 dark:border-dark-border">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-xs font-semibold text-gray-600 dark:text-dark-muted">

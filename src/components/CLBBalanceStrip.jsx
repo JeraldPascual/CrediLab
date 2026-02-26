@@ -6,7 +6,7 @@ import { CircleStackIcon } from "@heroicons/react/24/outline";
  * Sits between the header and main content area in StudentDashboard.
  *
  * Displays:
- *  - Quiz Rewards: cumulative CLB earned from coding challenges
+ *  - Challenge Rewards: cumulative CLB earned from coding challenges
  *  - Balance: total spendable CLB (quiz + received − sent)
  *
  * Both values come from userData (real-time Firestore onSnapshot via AuthContext).
@@ -33,11 +33,11 @@ export default function CLBBalanceStrip() {
   return (
     <div className="w-full border-b border-gray-100 dark:border-dark-border bg-white/60 dark:bg-dark-surface/60 backdrop-blur-sm px-6 py-2">
       <div className="max-w-5xl mx-auto flex items-center gap-6 flex-wrap">
-        {/* Quiz Rewards */}
+        {/* Challenge Rewards */}
         <div className="flex items-center gap-1.5">
           <CircleStackIcon className="w-3.5 h-3.5 text-emerald-500" />
           <span className="text-[11px] font-medium text-gray-500 dark:text-dark-muted">
-            Quiz Rewards
+            Challenge Rewards
           </span>
           <span className="text-xs font-bold text-emerald-500 tabular-nums">
             {quizRewards} CLB

@@ -26,6 +26,8 @@ import {
   setDoc,
   doc,
   serverTimestamp,
+  updateDoc,
+  increment,
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { WEEKLY_TASK_CONFIG } from "./constants";
@@ -274,6 +276,12 @@ export async function completeWeeklyTask(uid, taskId, weekNumber, rewardCLB, opt
       reviewedBy: null,
       reviewedAt: null,
       reviewNote: null,
+    });
+
+    // Increment weeklyTasksCompleted counter on user doc for badge check
+    const userDocRef = doc(db, "users", uid);
+    await updateDoc(userDocRef, {
+      weeklyTasksCompleted: increment(1),
     });
 
     return {

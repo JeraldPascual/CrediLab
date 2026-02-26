@@ -94,13 +94,13 @@ export default function LandingPage() {
                 {
                   title: "Java Challenges",
                   description:
-                    "21 curated problems across Easy, Medium, and Hard tiers — auto-assessed in real-time using Judge0. Write, submit, and get instant feedback in a professional code editor.",
+                    "Curated problems across Easy, Medium, and Hard tiers — auto-assessed in real-time using Judge0. Write, submit, and get instant feedback in a professional code editor.",
                   content: (
                     <div className="h-full w-full flex items-center justify-center text-white p-6">
                       <div className="text-center space-y-2">
                         <CodeBracketIcon className="w-10 h-10 mx-auto" />
                         <p className="font-bold text-lg">Code Editor</p>
-                        <p className="text-sm opacity-80">21 Problems · 3 Tiers</p>
+                        <p className="text-sm opacity-80">40 Problems · 3 Tiers</p>
                       </div>
                     </div>
                   ),
@@ -181,7 +181,7 @@ export default function LandingPage() {
 
           {/* Mobile fallback: standard grid */}
           <div className="md:hidden grid gap-6">
-            <FeatureCard title="Java Challenges" description="21 curated problems across Easy, Medium, and Hard tiers — auto-assessed in real-time using Judge0." icon={CodeBracketIcon} />
+            <FeatureCard title="Java Challenges" description="40 curated problems across Easy, Medium, and Hard tiers — auto-assessed in real-time using Judge0." icon={CodeBracketIcon} />
             <FeatureCard title="Earn CLB Tokens" description="CLB tokens prove you wrote the code. Every verified solution mints tamper-proof on-chain credentials to your MetaMask wallet." icon={CurrencyDollarIcon} />
             <FeatureCard title="Leaderboard & Rankings" description="Compete with peers on the live leaderboard. Climb tiers from Bronze to Diamond based on your CLB earnings." icon={ChartBarIcon} />
             <FeatureCard title="Community Voting" description="Submit weekly SDG tasks and get community-validated through Reddit-style upvotes. Top posts earn bonus CLB." icon={UserGroupIcon} />
@@ -274,13 +274,21 @@ export default function LandingPage() {
                     <div className="mt-3 inline-block px-3 py-1 text-[10px] font-bold rounded bg-green-primary/20 text-green-primary">+50 CLB</div>
                   </div>
                 </div>
-                {/* Mobile mockup (overlapping) */}
-                <div className="absolute -right-16 top-8 w-36 bg-dark-card border border-dark-border rounded-xl p-3 shadow-xl">
-                  <div className="space-y-2">
-                    <div className="h-2.5 w-20 rounded bg-green-primary/30" />
-                    <div className="h-2 w-full rounded bg-dark-border" />
-                    <div className="mt-2 inline-block px-2 py-0.5 text-[9px] font-bold rounded bg-green-primary/20 text-green-primary">250 CLB</div>
+                {/* Mobile mockup (phone-shaped, overlapping) */}
+                <div className="absolute -right-14 top-4 w-32 bg-dark-card border-2 border-dark-border rounded-[1.5rem] p-2 shadow-xl">
+                  {/* Notch */}
+                  <div className="mx-auto w-12 h-1.5 rounded-full bg-dark-border mb-2" />
+                  {/* Screen content */}
+                  <div className="bg-dark-bg rounded-xl p-2.5 space-y-2">
+                    <div className="h-2 w-16 rounded bg-green-primary/30" />
+                    <div className="h-1.5 w-full rounded bg-dark-border" />
+                    <div className="h-1.5 w-3/4 rounded bg-dark-border" />
+                    <div className="flex justify-center mt-2">
+                      <span className="px-2.5 py-1 text-[9px] font-bold rounded-lg bg-green-primary/20 text-green-primary">250 CLB</span>
+                    </div>
                   </div>
+                  {/* Home indicator */}
+                  <div className="mx-auto w-10 h-1 rounded-full bg-dark-border mt-2" />
                 </div>
               </div>
             </div>
@@ -467,9 +475,9 @@ function HeroSpotlight() {
               <pre className="text-sm font-mono text-gray-700 dark:text-dark-text leading-relaxed">
 {`public class Challenge {
   public static int solve(int n) {
-    if (n <= 1) return n;
-    return solve(n - 1)
-         + solve(n - 2);
+    // Can you figure out the
+    // pattern? 0, 1, 1, 2, 3, 5...
+    // Your solution goes here
   }
 }`}
               </pre>

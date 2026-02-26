@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { TrophyIcon, UserCircleIcon } from "@heroicons/react/24/outline";
-import { collection, query, getDocs } from "firebase/firestore";
+import { collection, query, onSnapshot } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import { getSkillTier } from "../data/achievements";
+import UserProfileCard from "../components/UserProfileCard";
+import TierFrame from "../components/TierFrame";
 
 export default function LeaderboardView() {
   const { user } = useAuth();
@@ -11,36 +13,33 @@ export default function LeaderboardView() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchLeaderboard() {
-      try {
-        const q = query(collection(db, "users"));
-        const snap = await getDocs(q);
-        const entries = snap.docs
-          .map((doc) => {
-            const d = doc.data();
-            const earned = d.totalCLBEarned ?? d.credits ?? 0;
-            return {
-              uid: doc.id,
-              name: d.displayName || d.email || "Anonymous",
-              credits: earned,
-              challenges: d.completedChallenges?.length || 0,
-              photoURL: d.photoURL || null,
-              tier: getSkillTier(earned),
-            };
-          })
-          .filter((e) => e.challenges > 0 || e.credits > 0)
-          .sort((a, b) => b.credits - a.credits)
-          .slice(0, 20)
-          .map((e, i) => ({ ...e, rank: i + 1 }));
-        setLeaderboard(entries);
-      } catch (err) {
-        console.warn("Leaderboard fetch failed (ad blocker?):", err.message);
-        setLeaderboard([]);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchLeaderboard();
+    const q = query(collection(db, "users"));
+    const unsub = onSnapshot(q, (snap) => {
+      const entries = snap.docs
+        .map((d) => {
+          const data = d.data();
+          const earned = data.totalCLBEarned ?? data.credits ?? 0;
+          return {
+            uid: d.id,
+            name: data.displayName || data.email || "Anonymous",
+            credits: earned,
+            challenges: data.completedChallenges?.length || 0,
+            photoURL: data.photoURL || null,
+            tier: getSkillTier(earned),
+          };
+        })
+        .filter((e) => e.challenges > 0 || e.credits > 0)
+        .sort((a, b) => b.credits - a.credits)
+        .slice(0, 20)
+        .map((e, i) => ({ ...e, rank: i + 1 }));
+      setLeaderboard(entries);
+      setLoading(false);
+    }, (err) => {
+      console.warn("Leaderboard fetch failed (ad blocker?):", err.message);
+      setLeaderboard([]);
+      setLoading(false);
+    });
+    return () => unsub();
   }, []);
 
   return (
@@ -90,30 +89,36 @@ export default function LeaderboardView() {
                     <RankBadge rank={entry.rank} />
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      {entry.photoURL ? (
-                        <img
-                          src={entry.photoURL}
-                          alt={entry.name}
-                          className="w-8 h-8 rounded-full object-cover border-2 border-gray-200 dark:border-dark-border"
-                        />
-                      ) : (
-                        <UserCircleIcon className="w-8 h-8 text-gray-300 dark:text-dark-muted" />
-                      )}
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-sm font-medium text-gray-900 dark:text-white">
-                            {entry.name}
-                          </span>
-                          {entry.uid === user?.uid && (
-                            <span className="text-xs text-green-primary font-semibold">(You)</span>
+                    <UserProfileCard uid={entry.uid} name={entry.name} photoURL={entry.photoURL}>
+                      <div className="flex items-center gap-3 group cursor-pointer">
+                        <TierFrame tier={entry.tier} size="xs">
+                          {entry.photoURL ? (
+                            <img
+                              src={entry.photoURL}
+                              alt={entry.name}
+                              className="w-8 h-8 rounded-full object-cover group-hover:brightness-110 transition"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-primary/30 to-emerald-400/30 flex items-center justify-center text-sm font-bold text-green-primary group-hover:ring-2 group-hover:ring-green-primary/30 transition-all">
+                              {(entry.name || "?")[0].toUpperCase()}
+                            </div>
                           )}
+                        </TierFrame>
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-green-primary transition-colors">
+                              {entry.name}
+                            </span>
+                            {entry.uid === user?.uid && (
+                              <span className="text-xs text-green-primary font-semibold">(You)</span>
+                            )}
+                          </div>
+                          <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-1.5 py-0.5 rounded-full mt-0.5 ${entry.tier.bg} ${entry.tier.color}`}>
+                            {entry.tier.icon} {entry.tier.shortTitle}
+                          </span>
                         </div>
-                        <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-1.5 py-0.5 rounded-full mt-0.5 ${entry.tier.bg} ${entry.tier.color}`}>
-                          {entry.tier.icon} {entry.tier.shortTitle}
-                        </span>
                       </div>
-                    </div>
+                    </UserProfileCard>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500 dark:text-dark-muted text-right">
                     {entry.challenges}

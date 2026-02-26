@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
@@ -21,6 +22,14 @@ import WeeklyTaskPage from "./pages/WeeklyTaskPage";
 import CommunityFeed from "./pages/CommunityFeed";
 
 export default function App() {
+  // Disable right-click context menu site-wide to discourage accidental DevTools access.
+  // Note: this is a UX nudge, not a security measure.
+  useEffect(() => {
+    const block = (e) => e.preventDefault();
+    document.addEventListener("contextmenu", block);
+    return () => document.removeEventListener("contextmenu", block);
+  }, []);
+
   return (
     <ThemeProvider>
       <AuthProvider>
@@ -45,7 +54,7 @@ export default function App() {
               <Route index element={<ActivitiesView />} />
               <Route path="leaderboard" element={<LeaderboardView />} />
               <Route path="information" element={<ProfilePage />} />
-              <Route path="wallet-guide" element={<WalletGuidePage />} />
+              <Route path="help-center" element={<WalletGuidePage />} />
               <Route path="achievements" element={<AchievementsPage />} />
               <Route path="transactions" element={<TransactionsPage />} />
               <Route path="community" element={<CommunityFeed />} />

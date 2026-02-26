@@ -7,6 +7,7 @@ import {
   ArrowRightIcon,
   NoSymbolIcon,
   FunnelIcon,
+  TagIcon,
   SparklesIcon,
   BoltIcon,
   GlobeAltIcon,
@@ -15,13 +16,12 @@ import {
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
 import { db } from "../lib/firebase";
-import CHALLENGES from "../data/challenges";
+import CHALLENGES, { getCategories } from "../data/challenges";
 import { DIFF_COLORS, TIME_LIMIT_SHORT } from "../data/constants";
 import { getActiveWeeklyTasks, hasCompletedWeeklyTask, getCurrentWeekNumber } from "../data/weeklyTasks";
 
 const FILTER_TABS = ["All", "Easy", "Medium", "Hard"];
 
-// Fixed active styles per tab — avoids the invisible Easy (green-on-green) bug
 const TAB_ACTIVE_STYLES = {
   All:    "bg-green-primary text-white shadow-md shadow-green-primary/30",
   Easy:   "bg-emerald-500 text-white shadow-md shadow-emerald-500/30",
@@ -32,6 +32,7 @@ const TAB_ACTIVE_STYLES = {
 export default function ProblemPage() {
   const { userData, user } = useAuth();
   const [diffFilter, setDiffFilter] = useState("All");
+  const [catFilter, setCatFilter] = useState("All");
   const [weeklyTasks, setWeeklyTasks] = useState([]);
   const [weeklyCompletedIds, setWeeklyCompletedIds] = useState([]);
   const [weeklyLoading, setWeeklyLoading] = useState(true);
@@ -62,7 +63,6 @@ export default function ProblemPage() {
   useEffect(() => {
     if (!user) return;
 
-    // Step 1: Read localStorage (instant — gives local device state)
     const terminated = [];
     const started = [];
     const localCompleted = [];
@@ -86,7 +86,6 @@ export default function ProblemPage() {
       } catch { /* ignore */ }
     });
 
-    // Step 2: Also read Firestore challengeSessions (persists across deploys/devices)
     (async () => {
       const fsTerminated = [...terminated];
       const fsStarted = [...started];
@@ -144,19 +143,25 @@ export default function ProblemPage() {
   const firestoreCompletedIds = userData?.completedChallenges || [];
   const completedIds = [...new Set([...firestoreCompletedIds, ...localCompletedIds])];
 
-  // Apply difficulty filter
-  const filteredChallenges = diffFilter === "All"
-    ? CHALLENGES
-    : CHALLENGES.filter((c) => c.difficulty === diffFilter);
+  // Apply difficulty + category filters
+  const filteredChallenges = CHALLENGES
+    .filter((c) => diffFilter === "All" || c.difficulty === diffFilter)
+    .filter((c) => catFilter === "All" || c.category === catFilter);
 
   const completed  = filteredChallenges.filter((c) => completedIds.includes(c.id));
   const terminated = filteredChallenges.filter((c) => !completedIds.includes(c.id) && terminatedIds.includes(c.id));
   const ongoing    = filteredChallenges.filter((c) => !completedIds.includes(c.id) && !terminatedIds.includes(c.id) && startedIds.includes(c.id));
   const notStarted = filteredChallenges.filter((c) => !completedIds.includes(c.id) && !terminatedIds.includes(c.id) && !startedIds.includes(c.id));
 
-  // Stats for filter badge counts
+  // Stats for difficulty filter badge counts (always based on full set)
   const countByDiff = {};
   CHALLENGES.forEach((c) => { countByDiff[c.difficulty] = (countByDiff[c.difficulty] || 0) + 1; });
+
+  // Category filter — counts reflect the active difficulty filter so they stay accurate
+  const CATEGORIES = getCategories();
+  const diffFiltered = diffFilter === "All" ? CHALLENGES : CHALLENGES.filter((c) => c.difficulty === diffFilter);
+  const countByCat = {};
+  diffFiltered.forEach((c) => { countByCat[c.category] = (countByCat[c.category] || 0) + 1; });
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
@@ -271,26 +276,64 @@ export default function ProblemPage() {
         </p>
       </div>
 
-      {/* ─── Difficulty Filter Tabs ─── */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <FunnelIcon className="w-4 h-4 text-gray-400 dark:text-dark-muted" />
-        {FILTER_TABS.map((tab) => {
-          const isActive = diffFilter === tab;
-          const count = tab === "All" ? CHALLENGES.length : (countByDiff[tab] || 0);
-          return (
+      {/* ─── Filters ─── */}
+      <div className="rounded-xl border border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-dark-surface p-3 space-y-2.5">
+        {/* Difficulty row */}
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <FunnelIcon className="w-3.5 h-3.5 text-gray-400 dark:text-dark-muted shrink-0" />
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-dark-muted mr-1 shrink-0">Difficulty</span>
+          {FILTER_TABS.map((tab) => {
+            const isActive = diffFilter === tab;
+            const count = tab === "All" ? CHALLENGES.length : (countByDiff[tab] || 0);
+            return (
+              <button
+                key={tab}
+                onClick={() => { setDiffFilter(tab); setCatFilter("All"); }}
+                className={`text-xs font-semibold px-3 py-1 rounded-full transition-all ${
+                  isActive
+                    ? TAB_ACTIVE_STYLES[tab]
+                    : "bg-white dark:bg-dark-bg text-gray-500 dark:text-dark-muted border border-gray-200 dark:border-dark-border hover:border-gray-300 dark:hover:border-dark-muted"
+                }`}
+              >
+                {tab} ({count})
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Divider */}
+        <div className="h-px bg-gray-200 dark:bg-dark-border" />
+
+        {/* Category row — counts update when a difficulty is selected */}
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <TagIcon className="w-3.5 h-3.5 text-gray-400 dark:text-dark-muted shrink-0" />
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-dark-muted mr-1 shrink-0">Category</span>
+          {CATEGORIES.filter((cat) => (countByCat[cat] || 0) > 0).map((cat) => {
+            const isActive = catFilter === cat;
+            const count = countByCat[cat] || 0;
+            return (
+              <button
+                key={cat}
+                onClick={() => setCatFilter(isActive ? "All" : cat)}
+                className={`text-xs font-semibold px-3 py-1 rounded-full transition-all ${
+                  isActive
+                    ? "bg-indigo-500 text-white shadow-md shadow-indigo-500/30"
+                    : "bg-white dark:bg-dark-bg text-gray-500 dark:text-dark-muted border border-gray-200 dark:border-dark-border hover:border-indigo-300 dark:hover:border-indigo-500/40"
+                }`}
+              >
+                {cat} ({count})
+              </button>
+            );
+          })}
+          {catFilter !== "All" && (
             <button
-              key={tab}
-              onClick={() => setDiffFilter(tab)}
-              className={`text-xs font-semibold px-3 py-1.5 rounded-full transition-all ${
-                isActive
-                  ? TAB_ACTIVE_STYLES[tab]
-                  : "bg-gray-100 dark:bg-dark-surface text-gray-500 dark:text-dark-muted hover:bg-gray-200 dark:hover:bg-dark-border"
-              }`}
+              onClick={() => setCatFilter("All")}
+              className="text-[11px] font-semibold px-2 py-1 rounded-full bg-indigo-50 dark:bg-indigo-500/10 text-indigo-500 border border-indigo-200 dark:border-indigo-500/30 hover:bg-indigo-100 transition-all"
             >
-              {tab} ({count})
+              ✕ Clear
             </button>
-          );
-        })}
+          )}
+        </div>
       </div>
 
       {/* ─── Window Pane Tabs: Available / Completed / Timed Out ─── */}
@@ -302,6 +345,7 @@ export default function ProblemPage() {
         sessionMeta={sessionMeta}
         filteredEmpty={filteredChallenges.length === 0}
         diffFilter={diffFilter}
+        catFilter={catFilter}
       />
     </div>
   );

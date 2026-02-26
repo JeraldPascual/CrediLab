@@ -9,6 +9,7 @@ import {
   CheckIcon,
   ArrowTrendingUpIcon,
   CodeBracketIcon,
+  Squares2X2Icon,
 } from "@heroicons/react/24/outline";
 import { useAuth } from "../context/AuthContext";
 import CHALLENGES from "../data/challenges";
@@ -42,7 +43,8 @@ export default function ActivitiesView() {
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <Squares2X2Icon className="w-7 h-7 text-green-primary" />
           Dashboard
         </h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-dark-muted">

@@ -92,3 +92,99 @@ body.lite-mode * {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* ── Badge Shimmer Animations ── */
+@keyframes shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes badge-glow-common {
+  0%, 100% { box-shadow: 0 0 4px 0 rgba(156, 163, 175, 0); }
+  50%      { box-shadow: 0 0 10px 2px rgba(156, 163, 175, 0.35); }
+}
+
+@keyframes badge-glow-uncommon {
+  0%, 100% { box-shadow: 0 0 4px 0 rgba(34, 197, 94, 0); }
+  50%      { box-shadow: 0 0 12px 3px rgba(34, 197, 94, 0.4); }
+}
+
+@keyframes badge-glow-rare {
+  0%, 100% { box-shadow: 0 0 4px 0 rgba(59, 130, 246, 0); }
+  50%      { box-shadow: 0 0 14px 4px rgba(59, 130, 246, 0.45); }
+}
+
+@keyframes badge-glow-epic {
+  0%, 100% { box-shadow: 0 0 4px 0 rgba(168, 85, 247, 0); }
+  50%      { box-shadow: 0 0 16px 5px rgba(168, 85, 247, 0.5); }
+}
+
+@keyframes badge-glow-legendary {
+  0%, 100% { box-shadow: 0 0 6px 0 rgba(245, 158, 11, 0); }
+  50%      { box-shadow: 0 0 20px 6px rgba(245, 158, 11, 0.55); }
+}
+
+/* Shimmer sweep overlay */
+.animate-shimmer {
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Rarity glow classes — apply on hover */
+.badge-glow-common:hover    { animation: badge-glow-common 1.6s ease-in-out infinite; }
+.badge-glow-uncommon:hover  { animation: badge-glow-uncommon 1.4s ease-in-out infinite; }
+.badge-glow-rare:hover      { animation: badge-glow-rare 1.3s ease-in-out infinite; }
+.badge-glow-epic:hover      { animation: badge-glow-epic 1.2s ease-in-out infinite; }
+.badge-glow-legendary:hover { animation: badge-glow-legendary 1.0s ease-in-out infinite; }
+
+/* Badge tile shimmer on hover (sweep effect) */
+.badge-tile-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.badge-tile-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%);
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+.badge-tile-shimmer:hover::after {
+  opacity: 1;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* ── TierFrame Animations ── */
+@keyframes tier-breathe {
+  0%, 100% { opacity: 0.5; }
+  50%      { opacity: 1; }
+}
+
+@keyframes tier-chase {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes tier-chase-reverse {
+  from { transform: rotate(360deg); }
+  to   { transform: rotate(0deg); }
+}
+
+@keyframes tier-segment-pulse {
+  0%, 100% { opacity: 0.3; stroke-width: 3; }
+  50%      { opacity: 0.85; stroke-width: 4; }
+}
+
+@keyframes tier-sparkle {
+  0%, 100% { opacity: 0; transform: scale(0.4); }
+  50%      { opacity: 1; transform: scale(1.3); }
+}
+
+@keyframes tier-orbit {
+  from { offset-distance: 0%; }
+  to   { offset-distance: 100%; }
+}

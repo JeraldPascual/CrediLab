@@ -16,6 +16,8 @@ import { useAuth } from "../context/AuthContext";
 import { db } from "../lib/firebase";
 import { connectMetaMask } from "../../web3/wallet/metamask";
 import { getCLBBalance } from "../../web3/contracts/clbToken";
+import { getSkillTier } from "../data/achievements";
+import TierFrame from "../components/TierFrame";
 
 
 export default function ProfilePage() {
@@ -232,15 +234,17 @@ export default function ProfilePage() {
       {/* ── Profile Photo ── */}
       <div className="flex items-center gap-6">
         <div className="relative">
-          {(userData?.photoURL || user?.photoURL) ? (
-            <img
-              src={userData?.photoURL || user.photoURL}
-              alt="Profile"
-              className="w-20 h-20 rounded-full object-cover border-4 border-green-primary/20"
-            />
-          ) : (
-            <UserCircleIcon className="w-20 h-20 text-gray-300 dark:text-dark-muted" />
-          )}
+          <TierFrame tier={getSkillTier(userData?.totalCLBEarned ?? userData?.credits ?? 0)} size="lg">
+            {(userData?.photoURL || user?.photoURL) ? (
+              <img
+                src={userData?.photoURL || user.photoURL}
+                alt="Profile"
+                className="w-20 h-20 rounded-full object-cover"
+              />
+            ) : (
+              <UserCircleIcon className="w-20 h-20 text-gray-300 dark:text-dark-muted" />
+            )}
+          </TierFrame>
           <label className="absolute -bottom-1 -right-1 cursor-pointer">
             <PlusCircleIcon className="w-7 h-7 text-green-primary bg-white dark:bg-dark-card rounded-full" />
             <input
