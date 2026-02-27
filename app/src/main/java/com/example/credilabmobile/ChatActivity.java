@@ -154,6 +154,9 @@ public class ChatActivity extends AppCompatActivity {
             public void onClick(ChatSession session) {
                 // Switch Session
                 drawerLayout.close();
+                if (Boolean.TRUE.equals(repository.getIsGenerating().getValue())) {
+                    repository.cancelAndCleanup();
+                }
                 updateUi(UiState.INITIALIZING);
                 // Clear current chat visually immediately
                 adapter.clear();
@@ -179,6 +182,9 @@ public class ChatActivity extends AppCompatActivity {
         btnMenu.setOnClickListener(v -> drawerLayout.open());
         btnNewChat.setOnClickListener(v -> {
             drawerLayout.close();
+            if (Boolean.TRUE.equals(repository.getIsGenerating().getValue())) {
+                repository.cancelAndCleanup();
+            }
             repository.createNewChat();
             adapter.clear();
             setEmptyStateVisible(true);
@@ -813,6 +819,9 @@ public class ChatActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
+        if (Boolean.TRUE.equals(repository.getIsGenerating().getValue())) {
+            repository.cancelAndCleanup();
+        }
         if (tts != null) {
             tts.stop();
             tts.shutdown();

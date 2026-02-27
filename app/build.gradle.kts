@@ -81,6 +81,7 @@ dependencies {
 
     // Image loading
     implementation(libs.glide)
+    implementation(libs.androidsvg)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)

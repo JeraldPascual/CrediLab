@@ -43,6 +43,32 @@ public class EarnActivity extends AppCompatActivity {
         ImageView btnRules = findViewById(R.id.btnRules);
         btnRules.setOnClickListener(v -> showRulesDialog());
 
+        View btnOpenWeb = findViewById(R.id.btnOpenWebPromoEarn);
+        if (btnOpenWeb != null) {
+            btnOpenWeb.setOnClickListener(v -> {
+                Intent intent = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://credilab.vercel.app/"));
+                startActivity(intent);
+            });
+        }
+
+        View cardSdgPromo = findViewById(R.id.cardSdgPromo);
+        if (cardSdgPromo != null) {
+            View header = cardSdgPromo.findViewById(R.id.tvHeaderTitle);
+            if (header instanceof TextView)
+                ((TextView) header).setText("SDG Reminder");
+            View icon = cardSdgPromo.findViewById(R.id.ivHeaderIcon);
+            if (icon != null)
+                icon.setVisibility(View.GONE);
+
+            cardSdgPromo.setOnClickListener(v -> {
+                Intent intent = new Intent(this, MainActivity.class);
+                intent.putExtra("switchToCommunity", true);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                startActivity(intent);
+                finish();
+            });
+        }
+
         rvLanguages = findViewById(R.id.rvLanguages);
         rvLanguages.setLayoutManager(new LinearLayoutManager(this));
 

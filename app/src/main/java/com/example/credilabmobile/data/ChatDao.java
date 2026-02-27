@@ -38,6 +38,9 @@ public interface ChatDao {
     @Query("DELETE FROM chat_messages WHERE sessionId = :sessionId")
     void clearMessages(String sessionId);
 
+    @Query("DELETE FROM chat_messages WHERE id = (SELECT id FROM chat_messages WHERE sessionId = :sessionId ORDER BY timestamp DESC LIMIT 1) AND isUser = 1")
+    void deleteLastMessageIfUser(String sessionId);
+
     // Get all images in a session (for context injection)
     @Query("SELECT imagePath FROM chat_messages WHERE sessionId = :sessionId AND imagePath IS NOT NULL")
     List<String> getImagesBySession(String sessionId);

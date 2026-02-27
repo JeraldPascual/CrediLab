@@ -27,6 +27,8 @@ public class CommunityFeedAdapter extends RecyclerView.Adapter<CommunityFeedAdap
     private final String currentUserId;
     private final OnVoteClickListener voteListener;
     private Context context;
+    private BadgesHelper badgesHelper;
+    private FirestoreHelper firestoreHelper;
 
     public interface OnVoteClickListener {
         void onVote(TaskSubmission submission, boolean isUpvote, boolean isAdding);
@@ -43,6 +45,10 @@ public class CommunityFeedAdapter extends RecyclerView.Adapter<CommunityFeedAdap
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         context = parent.getContext();
+        if (badgesHelper == null)
+            badgesHelper = new BadgesHelper(context);
+        if (firestoreHelper == null)
+            firestoreHelper = new FirestoreHelper();
         View view = LayoutInflater.from(context)
                 .inflate(R.layout.item_community_feed, parent, false);
         return new ViewHolder(view);
@@ -51,6 +57,10 @@ public class CommunityFeedAdapter extends RecyclerView.Adapter<CommunityFeedAdap
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         TaskSubmission sub = submissions.get(position);
+
+        if (holder.tvHeaderTitle != null) {
+            holder.tvHeaderTitle.setText("Submission");
+        }
 
         holder.tvUserName
                 .setText(sub.displayName != null && !sub.displayName.isEmpty() ? sub.displayName : "Anonymous");
@@ -63,17 +73,69 @@ public class CommunityFeedAdapter extends RecyclerView.Adapter<CommunityFeedAdap
         }
 
         if (sub.photoURL != null && !sub.photoURL.isEmpty()) {
-            Glide.with(context)
-                    .load(sub.photoURL)
-                    .placeholder(R.drawable.ic_credilab_logo)
-                    .error(R.drawable.ic_credilab_logo)
-                    .transform(new CircleCrop())
-                    .into(holder.ivProfile);
+            if (sub.photoURL.startsWith("data:image") || sub.photoURL.length() > 500) {
+                try {
+                    String base64String = sub.photoURL;
+                    if (base64String.contains(",")) {
+                        base64String = base64String.split(",")[1];
+                    }
+                    byte[] decodedBytes = Base64.decode(base64String, Base64.DEFAULT);
+                    Bitmap decodedBitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.length);
+                    Glide.with(context).load(decodedBitmap).circleCrop().into(holder.ivProfile);
+                } catch (Exception e) {
+                    Glide.with(context).load(R.drawable.ic_credilab_logo).circleCrop().into(holder.ivProfile);
+                }
+            } else {
+                Glide.with(context)
+                        .load(sub.photoURL)
+                        .placeholder(R.drawable.ic_credilab_logo)
+                        .error(R.drawable.ic_credilab_logo)
+                        .transform(new CircleCrop())
+                        .into(holder.ivProfile);
+            }
         } else {
             Glide.with(context)
                     .load(R.drawable.ic_credilab_logo)
                     .transform(new CircleCrop())
                     .into(holder.ivProfile);
+        }
+
+        if (sub.uid != null && !sub.uid.isEmpty()) {
+            firestoreHelper.getUserData(sub.uid, new FirestoreHelper.UserDataCallback() {
+                @Override
+                public void onSuccess(FirestoreHelper.UserData userData) {
+                    String tier = userData.equippedFrame != null && !userData.equippedFrame.isEmpty()
+                            ? userData.equippedFrame
+                            : "common";
+                    int[] colors = badgesHelper.getTierColors(tier);
+                    holder.tierFrame.setTierColors(colors);
+
+                    holder.llBadgesContainer.removeAllViews();
+                    if (userData.equippedBadges != null) {
+                        for (String badgeId : userData.equippedBadges) {
+                            Badge badge = badgesHelper.getBadgeById(badgeId);
+                            if (badge != null && badgesHelper.isBadgeUnlocked(badge, userData)) {
+                                ImageView badgeIv = new ImageView(context);
+                                android.widget.LinearLayout.LayoutParams params = new android.widget.LinearLayout.LayoutParams(
+                                        (int) (20 * context.getResources().getDisplayMetrics().density),
+                                        (int) (20 * context.getResources().getDisplayMetrics().density));
+                                params.setMarginEnd((int) (4 * context.getResources().getDisplayMetrics().density));
+                                badgeIv.setLayoutParams(params);
+                                badgesHelper.renderBadgeSvg(badgeIv, badge.getSvg(),
+                                        badge.getAccentHex() != null ? badge.getAccentHex()
+                                                : badgesHelper.getTierHexColor(badge.getRarity()));
+                                holder.llBadgesContainer.addView(badgeIv);
+                            }
+                        }
+                    }
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    holder.tierFrame.setTierColors(badgesHelper.getTierColors("common"));
+                    holder.llBadgesContainer.removeAllViews();
+                }
+            });
         }
 
         if (sub.response != null && !sub.response.isEmpty()) {
@@ -146,8 +208,10 @@ public class CommunityFeedAdapter extends RecyclerView.Adapter<CommunityFeedAdap
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView ivProfile, ivSubmissionPhoto, btnUpvote, btnDownvote;
-        TextView tvUserName, tvTime, tvResponse, tvNetScore, tvSubmissionStatus;
+        TextView tvUserName, tvTime, tvResponse, tvNetScore, tvSubmissionStatus, tvHeaderTitle;
         View cardSubmissionPhoto;
+        TierFrameView tierFrame;
+        android.widget.LinearLayout llBadgesContainer;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -161,6 +225,10 @@ public class CommunityFeedAdapter extends RecyclerView.Adapter<CommunityFeedAdap
             btnDownvote = itemView.findViewById(R.id.btnDownvote);
             tvNetScore = itemView.findViewById(R.id.tvNetScore);
             tvSubmissionStatus = itemView.findViewById(R.id.tvSubmissionStatus);
+            tierFrame = itemView.findViewById(R.id.tierFrame);
+            llBadgesContainer = itemView.findViewById(R.id.llBadgesContainer);
+            tvHeaderTitle = itemView.findViewById(R.id.tvHeaderTitle);
         }
+
     }
 }

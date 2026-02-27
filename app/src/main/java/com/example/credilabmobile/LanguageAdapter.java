@@ -53,6 +53,11 @@ public class LanguageAdapter extends RecyclerView.Adapter<LanguageAdapter.ViewHo
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         LanguageItem item = items.get(position);
+
+        if (holder.tvHeaderTitle != null) {
+            holder.tvHeaderTitle.setText(item.name);
+        }
+
         holder.tvIcon.setText(item.icon);
         holder.tvName.setText(item.name);
         holder.tvDesc.setText(item.description);
@@ -84,7 +89,7 @@ public class LanguageAdapter extends RecyclerView.Adapter<LanguageAdapter.ViewHo
 
     static class ViewHolder extends RecyclerView.ViewHolder {
         MaterialCardView card;
-        TextView tvIcon, tvName, tvDesc;
+        TextView tvIcon, tvName, tvDesc, tvHeaderTitle;
         TextView tvEasyProgress, tvMediumProgress, tvHardProgress;
         ProgressBar progressEasy, progressMedium, progressHard;
 
@@ -100,6 +105,7 @@ public class LanguageAdapter extends RecyclerView.Adapter<LanguageAdapter.ViewHo
             progressEasy = itemView.findViewById(R.id.progressEasy);
             progressMedium = itemView.findViewById(R.id.progressMedium);
             progressHard = itemView.findViewById(R.id.progressHard);
+            tvHeaderTitle = itemView.findViewById(R.id.tvHeaderTitle);
         }
     }
 }

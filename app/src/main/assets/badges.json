@@ -1,0 +1,247 @@
+{
+  "version": "2.0.0",
+  "description": "CrediLab badge definitions with inline SVG icons for cross-platform integration (web + mobile). Each badge includes a complete SVG string that can be rendered directly. Colours use hex values for native compatibility.",
+  "colorMap": {
+    "text-red-500": "#ef4444",
+    "text-yellow-500": "#eab308",
+    "text-blue-500": "#3b82f6",
+    "text-purple-500": "#a855f7",
+    "text-indigo-500": "#6366f1",
+    "text-green-500": "#22c55e",
+    "text-emerald-500": "#10b981",
+    "text-orange-500": "#f97316",
+    "text-cyan-500": "#06b6d4",
+    "text-rose-500": "#f43f5e",
+    "text-violet-500": "#8b5cf6",
+    "text-amber-500": "#f59e0b"
+  },
+  "rarityColors": {
+    "common": "#9ca3af",
+    "uncommon": "#22c55e",
+    "rare": "#3b82f6",
+    "epic": "#a855f7",
+    "legendary": "#f59e0b"
+  },
+  "badges": [
+    {
+      "id": "first-blood",
+      "title": "First Blood",
+      "description": "Completed your very first coding challenge. Every journey begins with a single step.",
+      "accentHex": "#ef4444",
+      "rarity": "common",
+      "category": "coding",
+      "criteria": "Complete 1 challenge",
+      "checkField": "completedChallenges.length >= 1",
+      "svg": "<svg viewBox=\"0 0 64 64\" fill=\"currentColor\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M25 8l6-3v40h8v4H21v-4h8V13l-6 3-2-4z\" opacity=\"0.9\"/><path d=\"M44 4c0 0-7 9-7 14a7 7 0 0014 0c0-5-7-14-7-14z\" opacity=\"0.85\"/><ellipse cx=\"42\" cy=\"15\" rx=\"2\" ry=\"3\" opacity=\"0.25\" fill=\"white\"/><line x1=\"10\" y1=\"56\" x2=\"54\" y2=\"56\" stroke=\"currentColor\" stroke-width=\"1.5\" opacity=\"0.3\"/><circle cx=\"18\" cy=\"56\" r=\"3\"/><circle cx=\"32\" cy=\"56\" r=\"2.5\"/><circle cx=\"46\" cy=\"56\" r=\"3\"/><line x1=\"18\" y1=\"56\" x2=\"32\" y2=\"56\" stroke=\"currentColor\" stroke-width=\"1.5\"/><line x1=\"32\" y1=\"56\" x2=\"46\" y2=\"56\" stroke=\"currentColor\" stroke-width=\"1.5\"/><line x1=\"32\" y1=\"49\" x2=\"32\" y2=\"53\" stroke=\"currentColor\" stroke-width=\"1.5\" opacity=\"0.4\"/></svg>"
+    },
+    {
+      "id": "five-streak",
+      "title": "Pentakill",
+      "description": "Solved 5 challenges without breaking a sweat. You're building serious momentum.",
+      "accentHex": "#eab308",
+      "rarity": "common",
+      "category": "coding",
+      "criteria": "Complete 5 challenges",
+      "checkField": "completedChallenges.length >= 5",
+      "svg": "<svg viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" xmlns=\"http://www.w3.org/2000/svg\"><circle cx=\"32\" cy=\"32\" r=\"28\" stroke-width=\"2.5\"/><circle cx=\"32\" cy=\"32\" r=\"25\" stroke-width=\"0.5\" opacity=\"0.2\"/><circle cx=\"26\" cy=\"30\" r=\"9\" fill=\"currentColor\" opacity=\"0.12\"/><circle cx=\"26\" cy=\"30\" r=\"5.5\"/><circle cx=\"26\" cy=\"30\" r=\"2\" fill=\"currentColor\" opacity=\"0.3\"/><line x1=\"26\" y1=\"19\" x2=\"26\" y2=\"23\" stroke-width=\"3\"/><line x1=\"26\" y1=\"37\" x2=\"26\" y2=\"41\" stroke-width=\"3\"/><line x1=\"15\" y1=\"30\" x2=\"19\" y2=\"30\" stroke-width=\"3\"/><line x1=\"33\" y1=\"30\" x2=\"37\" y2=\"30\" stroke-width=\"3\"/><line x1=\"19\" y1=\"23\" x2=\"22\" y2=\"26\" stroke-width=\"2.5\"/><line x1=\"30\" y1=\"23\" x2=\"33\" y2=\"20\" stroke-width=\"2.5\"/><line x1=\"19\" y1=\"37\" x2=\"22\" y2=\"34\" stroke-width=\"2.5\"/><line x1=\"30\" y1=\"37\" x2=\"33\" y2=\"40\" stroke-width=\"2.5\"/><circle cx=\"42\" cy=\"40\" r=\"7\" fill=\"currentColor\" opacity=\"0.12\"/><circle cx=\"42\" cy=\"40\" r=\"4\"/><circle cx=\"42\" cy=\"40\" r=\"1.5\" fill=\"currentColor\" opacity=\"0.3\"/><line x1=\"42\" y1=\"32\" x2=\"42\" y2=\"35\" stroke-width=\"2.5\"/><line x1=\"42\" y1=\"45\" x2=\"42\" y2=\"48\" stroke-width=\"2.5\"/><line x1=\"34\" y1=\"40\" x2=\"37\" y2=\"40\" stroke-width=\"2.5\"/><line x1=\"47\" y1=\"40\" x2=\"50\" y2=\"40\" stroke-width=\"2.5\"/><path d=\"M48 12l2 5 5 2-5 2-2 5-2-5-5-2 5-2z\" fill=\"currentColor\"/><path d=\"M40 8l1 2.5 2.5 1-2.5 1L40 15l-1-2.5-2.5-1 2.5-1z\" fill=\"currentColor\" opacity=\"0.5\"/><circle cx=\"54\" cy=\"18\" r=\"1\" fill=\"currentColor\" opacity=\"0.4\"/></svg>"
+    },
+    {
+      "id": "ten-complete",
+      "title": "Double Digits",
+      "description": "10 challenges solved. You've entered the top percentile of active learners.",
+      "accentHex": "#3b82f6",
+      "rarity": "uncommon",
+      "category": "coding",
+      "criteria": "Complete 10 challenges",
+      "checkField": "completedChallenges.length >= 10",
+      "svg": "<svg viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" xmlns=\"http://www.w3.org/2000/svg\"><rect x=\"6\" y=\"10\" width=\"42\" height=\"44\" rx=\"4\" fill=\"currentColor\" opacity=\"0.06\"/><path d=\"M15 14v14\" stroke-width=\"4.5\"/><path d=\"M15 34v14\" stroke-width=\"4.5\"/><path d=\"M26 14h14\" stroke-width=\"4\"/><path d=\"M26 14v14\" stroke-width=\"4\"/><path d=\"M40 14v14\" stroke-width=\"4\"/><path d=\"M26 28h14\" stroke-width=\"2.5\" opacity=\"0.25\"/><path d=\"M26 28v20\" stroke-width=\"4\"/><path d=\"M40 28v20\" stroke-width=\"4\"/><path d=\"M26 48h14\" stroke-width=\"4\"/><line x1=\"46\" y1=\"20\" x2=\"54\" y2=\"20\" stroke-width=\"2\"/><line x1=\"46\" y1=\"32\" x2=\"54\" y2=\"32\" stroke-width=\"2\"/><line x1=\"46\" y1=\"44\" x2=\"54\" y2=\"44\" stroke-width=\"2\"/><line x1=\"54\" y1=\"20\" x2=\"54\" y2=\"44\" stroke-width=\"1.5\"/><circle cx=\"54\" cy=\"20\" r=\"2.5\" fill=\"currentColor\"/><circle cx=\"54\" cy=\"32\" r=\"2\" fill=\"currentColor\"/><circle cx=\"54\" cy=\"44\" r=\"2.5\" fill=\"currentColor\"/><circle cx=\"10\" cy=\"54\" r=\"1.5\" fill=\"currentColor\" opacity=\"0.4\"/><line x1=\"10\" y1=\"54\" x2=\"15\" y2=\"48\" stroke-width=\"1\" opacity=\"0.3\"/></svg>"
+    },
+    {
+      "id": "all-clear",
+      "title": "Completionist",
+      "description": "Cleared every challenge on the platform. Nothing left to prove — you are the benchmark.",
+      "accentHex": "#a855f7",
+      "rarity": "epic",
+      "category": "milestone",
+      "criteria": "Complete all 40 challenges",
+      "checkField": "completedChallenges.length >= 40",
+      "svg": "<svg viewBox=\"0 0 64 64\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><circle cx=\"32\" cy=\"32\" r=\"27\" stroke=\"currentColor\" stroke-width=\"1.5\" opacity=\"0.15\"/><path d=\"M32 5 A27 27 0 0 1 59 32\" stroke=\"currentColor\" stroke-width=\"3.5\" stroke-linecap=\"round\" fill=\"none\"/><path d=\"M59 32 A27 27 0 0 1 51.1 51.1\" stroke=\"currentColor\" stroke-width=\"3.5\" stroke-linecap=\"round\" fill=\"none\"/><path d=\"M51.1 51.1 A27 27 0 0 1 32 59\" stroke=\"currentColor\" stroke-width=\"3.5\" stroke-linecap=\"round\" fill=\"none\"/><path d=\"M32 59 A27 27 0 0 1 12.9 51.1\" stroke=\"currentColor\" stroke-width=\"3.5\" stroke-linecap=\"round\" fill=\"none\"/><path d=\"M12.9 51.1 A27 27 0 0 1 5 32\" stroke=\"currentColor\" stroke-width=\"3.5\" stroke-linecap=\"round\" fill=\"none\"/><path d=\"M5 32 A27 27 0 0 1 12.9 12.9\" stroke=\"currentColor\" stroke-width=\"3.5\" stroke-linecap=\"round\" fill=\"none\"/><path d=\"M12.9 12.9 A27 27 0 0 1 32 5\" stroke=\"currentColor\" stroke-width=\"3.5\" stroke-linecap=\"round\" fill=\"none\"/><circle cx=\"32\" cy=\"32\" r=\"19\" fill=\"currentColor\" opacity=\"0.1\"/><circle cx=\"32\" cy=\"32\" r=\"19\" stroke=\"currentColor\" stroke-width=\"1.5\" opacity=\"0.3\"/><path d=\"M21 33l7 7 15-16\" stroke=\"currentColor\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" fill=\"none\"/><circle cx=\"54\" cy=\"10\" r=\"1\" fill=\"currentColor\" opacity=\"0.5\"/><path d=\"M54 10l-3 3\" stroke=\"currentColor\" stroke-width=\"1\" opacity=\"0.35\"/><path d=\"M54 10l3-3\" stroke=\"currentColor\" stroke-width=\"1\" opacity=\"0.35\"/><path d=\"M54 10l0 4\" stroke=\"currentColor\" stroke-width=\"1\" opacity=\"0.35\"/><path d=\"M54 10l0-4\" stroke=\"currentColor\" stroke-width=\"1\" opacity=\"0.35\"/></svg>"
+    },
+    {
+      "id": "wallet-linked",
+      "title": "Chain Connected",
+      "description": "Linked a MetaMask wallet to your account. You're officially on-chain and earning real tokens.",
+      "accentHex": "#6366f1",
+      "rarity": "uncommon",
+      "category": "blockchain",
+      "criteria": "Connect a MetaMask wallet",
+      "checkField": "walletAddress != null",
+      "svg": "<svg viewBox=\"0 0 64 64\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect x=\"6\" y=\"18\" width=\"22\" height=\"12\" rx=\"6\" stroke=\"currentColor\" stroke-width=\"3\" fill=\"currentColor\" fill-opacity=\"0.12\"/><rect x=\"6\" y=\"18\" width=\"22\" height=\"12\" rx=\"6\" stroke=\"currentColor\" stroke-width=\"3\" fill=\"none\"/><line x1=\"17\" y1=\"21\" x2=\"17\" y2=\"27\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" opacity=\"0.35\"/><rect x=\"36\" y=\"18\" width=\"22\" height=\"12\" rx=\"6\" stroke=\"currentColor\" stroke-width=\"3\" fill=\"currentColor\" fill-opacity=\"0.12\"/><rect x=\"36\" y=\"18\" width=\"22\" height=\"12\" rx=\"6\" stroke=\"currentColor\" stroke-width=\"3\" fill=\"none\"/><line x1=\"47\" y1=\"21\" x2=\"47\" y2=\"27\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" opacity=\"0.35\"/><line x1=\"28\" y1=\"24\" x2=\"36\" y2=\"24\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\"/><rect x=\"6\" y=\"34\" width=\"22\" height=\"12\" rx=\"6\" stroke=\"currentColor\" stroke-width=\"3\" fill=\"currentColor\" fill-opacity=\"0.12\"/><rect x=\"6\" y=\"34\" width=\"22\" height=\"12\" rx=\"6\" stroke=\"currentColor\" stroke-width=\"3\" fill=\"none\"/><line x1=\"17\" y1=\"37\" x2=\"17\" y2=\"43\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" opacity=\"0.35\"/><rect x=\"36\" y=\"34\" width=\"22\" height=\"12\" rx=\"6\" stroke=\"currentColor\" stroke-width=\"3\" fill=\"currentColor\" fill-opacity=\"0.12\"/><rect x=\"36\" y=\"34\" width=\"22\" height=\"12\" rx=\"6\" stroke=\"currentColor\" stroke-width=\"3\" fill=\"none\"/><line x1=\"47\" y1=\"37\" x2=\"47\" y2=\"43\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" opacity=\"0.35\"/><line x1=\"28\" y1=\"40\" x2=\"36\" y2=\"40\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\"/><line x1=\"17\" y1=\"30\" x2=\"17\" y2=\"34\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\"/><line x1=\"47\" y1=\"30\" x2=\"47\" y2=\"34\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\"/></svg>"
+    },
+    {
+      "id": "century-club",
+      "title": "Century Club",
+      "description": "Earned 100 CLB tokens — your hard work is now permanently recorded on the blockchain.",
+      "accentHex": "#22c55e",
+      "rarity": "uncommon",
+      "category": "blockchain",
+      "criteria": "Earn 100+ CLB lifetime",
+      "checkField": "totalCLBEarned >= 100",
+      "svg": "<svg viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" xmlns=\"http://www.w3.org/2000/svg\"><rect x=\"10\" y=\"18\" width=\"30\" height=\"30\" rx=\"2\" fill=\"currentColor\" opacity=\"0.1\"/><rect x=\"10\" y=\"18\" width=\"30\" height=\"30\" rx=\"2\"/><path d=\"M10 18l8-10h30l-8 10\" fill=\"currentColor\" opacity=\"0.06\"/><path d=\"M10 18l8-10h30l-8 10\"/><path d=\"M40 18l8-10v30l-8 10\" fill=\"currentColor\" opacity=\"0.06\"/><path d=\"M40 18l8-10v30l-8 10\"/><line x1=\"48\" y1=\"38\" x2=\"40\" y2=\"48\" stroke-width=\"1\" opacity=\"0.3\"/><text x=\"25\" y=\"36\" text-anchor=\"middle\" fill=\"currentColor\" stroke=\"none\" font-size=\"13\" font-weight=\"bold\" font-family=\"monospace\">100</text><rect x=\"14\" y=\"40\" width=\"4\" height=\"5\" rx=\"1\" fill=\"currentColor\" opacity=\"0.3\"/><rect x=\"20\" y=\"37\" width=\"4\" height=\"8\" rx=\"1\" fill=\"currentColor\" opacity=\"0.4\"/><rect x=\"26\" y=\"34\" width=\"4\" height=\"11\" rx=\"1\" fill=\"currentColor\" opacity=\"0.55\"/><rect x=\"32\" y=\"31\" width=\"4\" height=\"14\" rx=\"1\" fill=\"currentColor\" opacity=\"0.7\"/><path d=\"M52 44v-12\" stroke-width=\"2.5\"/><path d=\"M48 36l4-4 4 4\" stroke-width=\"2.5\"/><circle cx=\"52\" cy=\"30\" r=\"1.5\" fill=\"currentColor\" opacity=\"0.4\"/></svg>"
+    },
+    {
+      "id": "eco-warrior",
+      "title": "Eco Warrior",
+      "description": "Submitted a weekly SDG task and contributed to real-world sustainability. Code meets planet.",
+      "accentHex": "#10b981",
+      "rarity": "uncommon",
+      "category": "environmental",
+      "criteria": "Submit 1 weekly SDG task",
+      "checkField": "weeklyTasksCompleted >= 1",
+      "svg": "<svg viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" xmlns=\"http://www.w3.org/2000/svg\"><circle cx=\"32\" cy=\"42\" r=\"15\" fill=\"currentColor\" opacity=\"0.1\"/><circle cx=\"32\" cy=\"42\" r=\"15\"/><ellipse cx=\"32\" cy=\"38\" rx=\"12\" ry=\"3\" stroke-width=\"1\" opacity=\"0.25\"/><ellipse cx=\"32\" cy=\"46\" rx=\"10\" ry=\"2.5\" stroke-width=\"1\" opacity=\"0.25\"/><ellipse cx=\"32\" cy=\"42\" rx=\"5\" ry=\"14\" stroke-width=\"1\" opacity=\"0.2\"/><path d=\"M23 37c2-1 5 0 7 1s4 0 6-2\" stroke-width=\"1.5\" opacity=\"0.4\"/><path d=\"M26 47c3 1 6 0 9-1\" stroke-width=\"1.5\" opacity=\"0.35\"/><path d=\"M32 27V10\" stroke-width=\"2.5\"/><path d=\"M32 16c-10-2-14-7-11-13 5 0 11 5 11 13z\" fill=\"currentColor\" opacity=\"0.3\" stroke-width=\"1.5\"/><path d=\"M32 16c-4-1-7-3-8-6\" stroke-width=\"1\" opacity=\"0.4\"/><path d=\"M32 22c8-4 12-2 12 3-5 2-10 0-12-3z\" fill=\"currentColor\" opacity=\"0.25\" stroke-width=\"1.5\"/><path d=\"M32 22c4-1 7-1 9 0\" stroke-width=\"1\" opacity=\"0.3\"/><path d=\"M26 57c-3 2-6 4-8 4\" stroke-width=\"1.5\"/><path d=\"M32 57v5\" stroke-width=\"1.5\"/><path d=\"M38 57c3 2 6 4 8 4\" stroke-width=\"1.5\"/><path d=\"M22 59c-1 1-2 2-4 2\" stroke-width=\"1\" opacity=\"0.4\"/><path d=\"M42 59c1 1 2 2 4 2\" stroke-width=\"1\" opacity=\"0.4\"/></svg>"
+    },
+    {
+      "id": "community-voice",
+      "title": "Community Voice",
+      "description": "Your submission earned 3+ net upvotes from peers. The community trusts your code.",
+      "accentHex": "#f97316",
+      "rarity": "uncommon",
+      "category": "community",
+      "criteria": "Get a submission community-approved (3+ net upvotes)",
+      "checkField": "communityApprovals >= 1 (set when submission is community_approved)",
+      "svg": "<svg viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" xmlns=\"http://www.w3.org/2000/svg\"><rect x=\"18\" y=\"18\" width=\"16\" height=\"26\" rx=\"8\" fill=\"currentColor\" opacity=\"0.15\"/><rect x=\"18\" y=\"18\" width=\"16\" height=\"26\" rx=\"8\"/><line x1=\"22\" y1=\"24\" x2=\"30\" y2=\"24\" stroke-width=\"1\" opacity=\"0.3\"/><line x1=\"22\" y1=\"28\" x2=\"30\" y2=\"28\" stroke-width=\"1\" opacity=\"0.3\"/><line x1=\"22\" y1=\"32\" x2=\"30\" y2=\"32\" stroke-width=\"1\" opacity=\"0.3\"/><path d=\"M14 36c0 8 6 12 12 12s12-4 12-12\" stroke-width=\"2\" fill=\"none\"/><path d=\"M26 48v6\" stroke-width=\"2.5\"/><path d=\"M20 54h12\" stroke-width=\"2.5\"/><path d=\"M18 56h16\" stroke-width=\"1.5\" opacity=\"0.4\"/><path d=\"M38 26c3 3 3 10 0 13\" stroke-width=\"2\"/><path d=\"M43 22c5 5 5 18 0 22\" stroke-width=\"2\"/><path d=\"M48 18c7 8 7 24 0 30\" stroke-width=\"1.5\" opacity=\"0.5\"/><path d=\"M44 16l8-8\" stroke-width=\"2.5\"/><path d=\"M48 8h4v4\" stroke-width=\"2.5\"/><circle cx=\"54\" cy=\"6\" r=\"1.5\" fill=\"currentColor\"/><circle cx=\"50\" cy=\"4\" r=\"1\" fill=\"currentColor\" opacity=\"0.5\"/></svg>"
+    },
+    {
+      "id": "speed-demon",
+      "title": "Speed Demon",
+      "description": "Solved a challenge in under 2 minutes clean. No hints, no copy-paste — pure instinct.",
+      "accentHex": "#06b6d4",
+      "rarity": "rare",
+      "category": "speed",
+      "criteria": "Solve any challenge in under 2 minutes",
+      "checkField": "fastestSolveTimeSec <= 120",
+      "svg": "<svg viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M32 2c-7 10-12 24-12 36h24c0-12-5-26-12-36z\" fill=\"currentColor\" opacity=\"0.1\"/><path d=\"M32 2c-7 10-12 24-12 36h24c0-12-5-26-12-36z\"/><path d=\"M28 20c0-4 2-10 4-14\" stroke-width=\"1\" opacity=\"0.2\"/><path d=\"M20 34l-8 12h8\" fill=\"currentColor\" opacity=\"0.2\" stroke-width=\"1.5\"/><path d=\"M44 34l8 12h-8\" fill=\"currentColor\" opacity=\"0.2\" stroke-width=\"1.5\"/><circle cx=\"32\" cy=\"22\" r=\"7\" fill=\"currentColor\" opacity=\"0.12\"/><circle cx=\"32\" cy=\"22\" r=\"7\" stroke-width=\"2\"/><line x1=\"32\" y1=\"16\" x2=\"32\" y2=\"17.5\" stroke-width=\"1.5\"/><line x1=\"32\" y1=\"26.5\" x2=\"32\" y2=\"28\" stroke-width=\"1.5\"/><line x1=\"26\" y1=\"22\" x2=\"27.5\" y2=\"22\" stroke-width=\"1.5\"/><line x1=\"36.5\" y1=\"22\" x2=\"38\" y2=\"22\" stroke-width=\"1.5\"/><path d=\"M32 22v-4\" stroke-width=\"2\"/><path d=\"M32 22l3 2\" stroke-width=\"2\"/><circle cx=\"32\" cy=\"22\" r=\"1.2\" fill=\"currentColor\"/><path d=\"M26 46l6 12 6-12\" fill=\"currentColor\" opacity=\"0.25\" stroke-width=\"1.5\"/><path d=\"M28 46l4 8 4-8\" fill=\"currentColor\" opacity=\"0.4\"/><path d=\"M30 46l2 5 2-5\" fill=\"currentColor\" opacity=\"0.6\"/><line x1=\"8\" y1=\"30\" x2=\"14\" y2=\"30\" stroke-width=\"1.5\" opacity=\"0.3\"/><line x1=\"6\" y1=\"36\" x2=\"14\" y2=\"36\" stroke-width=\"1.5\" opacity=\"0.3\"/><line x1=\"50\" y1=\"30\" x2=\"56\" y2=\"30\" stroke-width=\"1.5\" opacity=\"0.3\"/><line x1=\"50\" y1=\"36\" x2=\"58\" y2=\"36\" stroke-width=\"1.5\" opacity=\"0.3\"/></svg>"
+    },
+    {
+      "id": "hard-hitter",
+      "title": "Hard Hitter",
+      "description": "Conquered a Hard difficulty challenge graded by Judge0. Only the brave attempt these.",
+      "accentHex": "#f43f5e",
+      "rarity": "rare",
+      "category": "coding",
+      "criteria": "Complete a Hard difficulty challenge",
+      "checkField": "completedChallenges includes a Hard challenge",
+      "svg": "<svg viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M16 14c0 0 2-4 6-4 3 0 4 3 4 3s1-3 4-3c3 0 4 3 4 3s1-3 4-3c3 0 4 3 4 3s1-3 4-3c3 0 5 4 5 4v12c0 5-3 9-9 9H22c-4 0-6-4-6-9V14z\" fill=\"currentColor\" opacity=\"0.15\"/><path d=\"M16 14c0 0 2-4 6-4 3 0 4 3 4 3s1-3 4-3c3 0 4 3 4 3s1-3 4-3c3 0 4 3 4 3s1-3 4-3c3 0 4 3 4 3s1-3 4-3c3 0 5 4 5 4v12c0 5-3 9-9 9H22c-4 0-6-4-6-9V14z\"/><path d=\"M22 14v5\" stroke-width=\"1.5\" opacity=\"0.5\"/><path d=\"M26 12v7\" stroke-width=\"1.5\" opacity=\"0.5\"/><path d=\"M30 12v7\" stroke-width=\"1.5\" opacity=\"0.5\"/><path d=\"M34 12v7\" stroke-width=\"1.5\" opacity=\"0.5\"/><path d=\"M38 14v5\" stroke-width=\"1.5\" opacity=\"0.5\"/><path d=\"M16 20c-2 1-3 3-3 5s1 4 3 4\" stroke-width=\"1.5\" opacity=\"0.5\"/><path d=\"M22 42h20l-4 4-6 10-6-10z\" fill=\"currentColor\" opacity=\"0.25\"/><path d=\"M22 42h20l-4 4-6 10-6-10z\"/><path d=\"M26 42l6 14\" stroke-width=\"1.5\" opacity=\"0.4\"/><path d=\"M38 42l-6 14\" stroke-width=\"1.5\" opacity=\"0.4\"/><path d=\"M30 42v4\" stroke-width=\"1\" opacity=\"0.3\"/><path d=\"M34 42v4\" stroke-width=\"1\" opacity=\"0.3\"/><path d=\"M26 46h12\" stroke-width=\"1\" opacity=\"0.3\"/><line x1=\"12\" y1=\"36\" x2=\"6\" y2=\"38\" stroke-width=\"2.5\"/><line x1=\"10\" y1=\"28\" x2=\"4\" y2=\"26\" stroke-width=\"2.5\"/><line x1=\"12\" y1=\"20\" x2=\"6\" y2=\"18\" stroke-width=\"2\"/><line x1=\"48\" y1=\"36\" x2=\"54\" y2=\"38\" stroke-width=\"2.5\"/><line x1=\"50\" y1=\"28\" x2=\"56\" y2=\"26\" stroke-width=\"2.5\"/><line x1=\"48\" y1=\"20\" x2=\"54\" y2=\"18\" stroke-width=\"2\"/></svg>"
+    },
+    {
+      "id": "scholar",
+      "title": "Scholar",
+      "description": "Reached Junior Programmer tier at 130 CLB. Your foundational skills are employer-verified.",
+      "accentHex": "#8b5cf6",
+      "rarity": "rare",
+      "category": "milestone",
+      "criteria": "Reach Junior Programmer tier (130+ CLB)",
+      "checkField": "totalCLBEarned >= 130",
+      "svg": "<svg viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" xmlns=\"http://www.w3.org/2000/svg\"><rect x=\"12\" y=\"6\" width=\"30\" height=\"52\" rx=\"4\" fill=\"currentColor\" opacity=\"0.08\"/><rect x=\"12\" y=\"6\" width=\"30\" height=\"52\" rx=\"4\"/><rect x=\"16\" y=\"12\" width=\"22\" height=\"38\" rx=\"2\" fill=\"currentColor\" opacity=\"0.05\"/><rect x=\"16\" y=\"12\" width=\"22\" height=\"38\" rx=\"2\" stroke-width=\"0.8\" opacity=\"0.3\"/><circle cx=\"27\" cy=\"54\" r=\"2\" stroke-width=\"1.5\" opacity=\"0.3\"/><path d=\"M27 24l-10 5 10 5 10-5z\" fill=\"currentColor\" opacity=\"0.3\" stroke-width=\"1.5\"/><rect x=\"23\" y=\"22\" width=\"8\" height=\"2\" rx=\"0.5\" fill=\"currentColor\" opacity=\"0.2\"/><path d=\"M37 29v8\" stroke-width=\"1.5\"/><circle cx=\"37\" cy=\"38\" r=\"1.5\" fill=\"currentColor\"/><path d=\"M21 32v6c0 2 6 4 6 4s6-2 6-4v-6\" stroke-width=\"1.5\"/><line x1=\"19\" y1=\"44\" x2=\"30\" y2=\"44\" stroke-width=\"1\" opacity=\"0.25\"/><line x1=\"19\" y1=\"46.5\" x2=\"26\" y2=\"46.5\" stroke-width=\"1\" opacity=\"0.2\"/><circle cx=\"50\" cy=\"18\" r=\"2.5\" fill=\"currentColor\"/><circle cx=\"54\" cy=\"30\" r=\"2\" fill=\"currentColor\"/><circle cx=\"50\" cy=\"42\" r=\"2.5\" fill=\"currentColor\"/><line x1=\"42\" y1=\"18\" x2=\"50\" y2=\"18\" stroke-width=\"1.5\"/><line x1=\"50\" y1=\"18\" x2=\"54\" y2=\"30\" stroke-width=\"1\"/><line x1=\"54\" y1=\"30\" x2=\"50\" y2=\"42\" stroke-width=\"1\"/><line x1=\"42\" y1=\"42\" x2=\"50\" y2=\"42\" stroke-width=\"1.5\"/><line x1=\"42\" y1=\"30\" x2=\"54\" y2=\"30\" stroke-width=\"1\" opacity=\"0.4\"/></svg>"
+    },
+    {
+      "id": "expert-coder",
+      "title": "Legendary",
+      "description": "Reached Expert Engineer tier — the highest rank on the platform. You are the benchmark.",
+      "accentHex": "#f59e0b",
+      "rarity": "legendary",
+      "category": "milestone",
+      "criteria": "Reach Expert Engineer tier (730+ CLB)",
+      "checkField": "totalCLBEarned >= 730",
+      "svg": "<svg viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M32 4L6 14v18c0 16 12 24 26 28 14-4 26-12 26-28V14L32 4z\" fill=\"currentColor\" opacity=\"0.1\"/><path d=\"M32 4L6 14v18c0 16 12 24 26 28 14-4 26-12 26-28V14L32 4z\" stroke-width=\"2.5\"/><path d=\"M32 10L12 18v14c0 12 8 20 20 24 12-4 20-12 20-24V18L32 10z\" stroke-width=\"1\" opacity=\"0.3\"/><path d=\"M22 20l2-5 3 3 3-4 2 4 3-4 3 3 2-2 2 5H22z\" fill=\"currentColor\" opacity=\"0.5\" stroke-width=\"1.5\"/><rect x=\"22\" y=\"20\" width=\"20\" height=\"3\" rx=\"1\" fill=\"currentColor\" opacity=\"0.3\"/><circle cx=\"27\" cy=\"21\" r=\"1\" fill=\"currentColor\" opacity=\"0.7\"/><circle cx=\"32\" cy=\"21\" r=\"1.2\" fill=\"currentColor\" opacity=\"0.8\"/><circle cx=\"37\" cy=\"21\" r=\"1\" fill=\"currentColor\" opacity=\"0.7\"/><path d=\"M32 28l3 6 6.5 1-4.7 4.6 1.1 6.5L32 43l-5.9 3.1 1.1-6.5L22.5 35l6.5-1z\" fill=\"currentColor\"/><circle cx=\"32\" cy=\"37\" r=\"10\" stroke-width=\"0.8\" opacity=\"0.15\"/><path d=\"M16 36l1 2 2 .5-2 .5-1 2-1-2-2-.5 2-.5z\" fill=\"currentColor\" opacity=\"0.45\"/><path d=\"M48 36l1 2 2 .5-2 .5-1 2-1-2-2-.5 2-.5z\" fill=\"currentColor\" opacity=\"0.45\"/><path d=\"M26 52l6 6 6-6\" stroke-width=\"1\" opacity=\"0.2\"/></svg>"
+    },
+    {
+      "id": "resilience-builds-strength",
+      "title": "Night Owl",
+      "description": "Submitted a challenge solution between midnight and 5 AM. Dedication knows no bedtime.",
+      "accentHex": "#ec4899",
+      "rarity": "uncommon",
+      "category": "mindset",
+      "criteria": "Complete a challenge between 12 AM and 5 AM",
+      "checkField": "nightOwlUnlocked === true",
+      "svg": "<svg viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" xmlns=\"http://www.w3.org/2000/svg\"><circle cx=\"32\" cy=\"32\" r=\"26\" fill=\"currentColor\" opacity=\"0.08\"/><circle cx=\"32\" cy=\"32\" r=\"26\"/><path d=\"M32 18 L40 28 L32 38 L24 28 Z\" fill=\"currentColor\" opacity=\"0.2\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linejoin=\"round\"/><path d=\"M32 10 L42 25 L32 32 L22 25 Z\" fill=\"currentColor\" opacity=\"0.4\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linejoin=\"round\"/><path d=\"M32 38 L40 48 L32 55 L24 48 Z\" fill=\"currentColor\" opacity=\"0.25\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linejoin=\"round\"/><circle cx=\"32\" cy=\"28\" r=\"2.5\" fill=\"currentColor\"/><circle cx=\"32\" cy=\"48\" r=\"2.5\" fill=\"currentColor\"/><path d=\"M28 32 L36 32\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" opacity=\"0.3\"/></svg>"
+    },
+    {
+      "id": "debug-detective",
+      "title": "Explorer",
+      "description": "Attempted challenges across 3+ different categories. Curiosity is your superpower.",
+      "accentHex": "#3b82f6",
+      "rarity": "common",
+      "category": "coding",
+      "criteria": "Complete challenges in 3+ different categories",
+      "checkField": "completedChallenges covers 3+ categories",
+      "svg": "<svg viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" xmlns=\"http://www.w3.org/2000/svg\"><rect x=\"10\" y=\"10\" width=\"44\" height=\"44\" rx=\"4\" fill=\"currentColor\" opacity=\"0.08\" stroke-width=\"2.5\"/><path d=\"M20 24 L44 24\" stroke-width=\"2.5\" stroke-linecap=\"round\"/><path d=\"M20 32 L44 32\" stroke-width=\"2.5\" stroke-linecap=\"round\"/><path d=\"M20 40 L36 40\" stroke-width=\"2.5\" stroke-linecap=\"round\"/><circle cx=\"48\" cy=\"32\" r=\"7\" stroke-width=\"2\" fill=\"currentColor\" opacity=\"0.15\"/><circle cx=\"48\" cy=\"32\" r=\"7\"/><path d=\"M46 30 L50 34\" stroke-width=\"2.5\" stroke-linecap=\"round\"/><path d=\"M50 30 L46 34\" stroke-width=\"2.5\" stroke-linecap=\"round\"/><circle cx=\"17\" cy=\"54\" r=\"1.5\" fill=\"currentColor\" opacity=\"0.4\"/><circle cx=\"27\" cy=\"56\" r=\"1.5\" fill=\"currentColor\" opacity=\"0.4\"/><circle cx=\"37\" cy=\"55\" r=\"1.5\" fill=\"currentColor\" opacity=\"0.4\"/></svg>"
+    },
+    {
+      "id": "fifteen-streak",
+      "title": "Streak Warrior",
+      "description": "Completed 15 challenges total. Your consistency is unmatched.",
+      "accentHex": "#f59e0b",
+      "rarity": "rare",
+      "category": "milestone",
+      "criteria": "Complete 15 challenges total",
+      "checkField": "completedChallenges.length >= 15",
+      "svg": "<svg viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M32 6 L38 20 L52 22 L42 31 L45 46 L32 40 L19 46 L22 31 L12 22 L26 20 Z\" fill=\"currentColor\" opacity=\"0.2\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linejoin=\"round\"/><path d=\"M32 10 L37 21 L48 23 L40 29 L42 42 L32 37 L22 42 L24 29 L16 23 L27 21 Z\" fill=\"currentColor\" opacity=\"0.4\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linejoin=\"round\"/><circle cx=\"32\" cy=\"32\" r=\"3\" fill=\"currentColor\"/><path d=\"M8 54 L20 52 L28 56\" stroke-width=\"2\" stroke-linecap=\"round\" opacity=\"0.3\"/><path d=\"M56 54 L44 52 L36 56\" stroke-width=\"2\" stroke-linecap=\"round\" opacity=\"0.3\"/></svg>"
+    },
+    {
+      "id": "all-difficulty-master",
+      "title": "All-Round Master",
+      "description": "Solved challenges at Easy, Medium, and Hard levels. You're well-rounded.",
+      "accentHex": "#8b5cf6",
+      "rarity": "rare",
+      "category": "skill",
+      "criteria": "Complete 1 Easy, 1 Medium, and 1 Hard challenge",
+      "checkField": "completedChallenges covers Easy + Medium + Hard",
+      "svg": "<svg viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" xmlns=\"http://www.w3.org/2000/svg\"><circle cx=\"20\" cy=\"28\" r=\"12\" fill=\"currentColor\" opacity=\"0.1\" stroke-width=\"2.5\"/><circle cx=\"44\" cy=\"28\" r=\"12\" fill=\"currentColor\" opacity=\"0.1\" stroke-width=\"2.5\"/><circle cx=\"32\" cy=\"45\" r=\"12\" fill=\"currentColor\" opacity=\"0.1\" stroke-width=\"2.5\"/><circle cx=\"20\" cy=\"28\" r=\"12\" stroke-width=\"2.5\"/><circle cx=\"44\" cy=\"28\" r=\"12\" stroke-width=\"2.5\"/><circle cx=\"32\" cy=\"45\" r=\"12\" stroke-width=\"2.5\"/><text x=\"20\" y=\"33\" text-anchor=\"middle\" fill=\"currentColor\" font-size=\"12\" font-weight=\"bold\">E</text><text x=\"44\" y=\"33\" text-anchor=\"middle\" fill=\"currentColor\" font-size=\"12\" font-weight=\"bold\">M</text><text x=\"32\" y=\"50\" text-anchor=\"middle\" fill=\"currentColor\" font-size=\"12\" font-weight=\"bold\">H</text><path d=\"M29 20 L35 20\" stroke=\"currentColor\" stroke-width=\"1.5\" opacity=\"0.3\" stroke-linecap=\"round\"/><path d=\"M41 37 L41 43\" stroke=\"currentColor\" stroke-width=\"1.5\" opacity=\"0.3\" stroke-linecap=\"round\"/><path d=\"M23 37 L23 43\" stroke=\"currentColor\" stroke-width=\"1.5\" opacity=\"0.3\" stroke-linecap=\"round\"/></svg>"
+    },
+    {
+      "id": "mentor-guide",
+      "title": "Mentor Spirit",
+      "description": "Voted to help validate another student's work. Leadership through support.",
+      "accentHex": "#06b6d4",
+      "rarity": "common",
+      "category": "community",
+      "criteria": "Vote on 1 peer community submission",
+      "checkField": "communityVotesGiven >= 1",
+      "svg": "<svg viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" xmlns=\"http://www.w3.org/2000/svg\"><circle cx=\"22\" cy=\"18\" r=\"8\" fill=\"currentColor\" opacity=\"0.15\" stroke-width=\"2.5\"/><circle cx=\"22\" cy=\"18\" r=\"8\"/><path d=\"M22 26 L22 36 M16 32 L28 32\" stroke-width=\"2.5\" stroke-linecap=\"round\"/><circle cx=\"42\" cy=\"22\" r=\"7\" fill=\"currentColor\" opacity=\"0.12\"/><circle cx=\"42\" cy=\"22\" r=\"7\"/><path d=\"M42 29 L42 37 M38 33 L46 33\" stroke-width=\"2\" stroke-linecap=\"round\" opacity=\"0.7\"/><circle cx=\"32\" cy=\"45\" r=\"10\" fill=\"currentColor\" opacity=\"0.1\" stroke-width=\"2.5\"/><circle cx=\"32\" cy=\"45\" r=\"10\"/><path d=\"M32 53 V56 M28 54.5 L36 54.5\" stroke-width=\"2\" stroke-linecap=\"round\" opacity=\"0.6\"/><path d=\"M22 26 L32 35\" stroke-width=\"1.5\" opacity=\"0.3\" stroke-dasharray=\"2,2\"/><path d=\"M42 29 L32 35\" stroke-width=\"1.5\" opacity=\"0.3\" stroke-dasharray=\"2,2\"/></svg>"
+    },
+    {
+      "id": "early-bird",
+      "title": "Early Bird",
+      "description": "Completed a challenge within 24 hours of account creation. No time to waste!",
+      "accentHex": "#f97316",
+      "rarity": "rare",
+      "category": "speed",
+      "criteria": "Complete a challenge within 24h of account creation",
+      "checkField": "earlyBirdUnlocked === true",
+      "svg": "<svg viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" xmlns=\"http://www.w3.org/2000/svg\"><circle cx=\"32\" cy=\"20\" r=\"12\" fill=\"currentColor\" opacity=\"0.12\"/><circle cx=\"32\" cy=\"20\" r=\"12\" stroke-width=\"2.5\"/><path d=\"M32 8v4\" stroke-width=\"2.5\" stroke-linecap=\"round\"/><path d=\"M32 28v4\" stroke-width=\"2.5\" stroke-linecap=\"round\"/><path d=\"M20 20h4\" stroke-width=\"2.5\" stroke-linecap=\"round\"/><path d=\"M40 20h4\" stroke-width=\"2.5\" stroke-linecap=\"round\"/><path d=\"M32 20v-6\" stroke-width=\"3\" stroke-linecap=\"round\"/><path d=\"M32 20l4 3\" stroke-width=\"2.5\" stroke-linecap=\"round\"/><circle cx=\"32\" cy=\"20\" r=\"1.5\" fill=\"currentColor\"/><path d=\"M20 36c0 6 5 10 12 14 7-4 12-8 12-14\" stroke-width=\"2\" fill=\"currentColor\" opacity=\"0.1\"/><path d=\"M20 36c0 6 5 10 12 14 7-4 12-8 12-14\" stroke-width=\"2\"/><path d=\"M28 40l4 4 4-4\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"10\" y1=\"12\" x2=\"16\" y2=\"16\" stroke-width=\"1.5\" opacity=\"0.4\"/><line x1=\"54\" y1=\"12\" x2=\"48\" y2=\"16\" stroke-width=\"1.5\" opacity=\"0.4\"/><path d=\"M8 22h6\" stroke-width=\"1.5\" opacity=\"0.3\"/><path d=\"M50 22h6\" stroke-width=\"1.5\" opacity=\"0.3\"/></svg>"
+    },
+    {
+      "id": "triple-thread",
+      "title": "Triple Threat",
+      "description": "Completed 3 challenges in a single day. A true coding marathon.",
+      "accentHex": "#f43f5e",
+      "rarity": "rare",
+      "category": "speed",
+      "criteria": "Complete 3 challenges in one day",
+      "checkField": "tripleThreadUnlocked === true",
+      "svg": "<svg viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M12 8h40v48H12z\" rx=\"4\" fill=\"currentColor\" opacity=\"0.08\" stroke-width=\"2.5\"/><path d=\"M12 8h40v12H12z\" fill=\"currentColor\" opacity=\"0.15\" stroke-width=\"0\"/><path d=\"M12 8h40v12H12z\" stroke-width=\"2.5\" rx=\"4\"/><text x=\"32\" y=\"17\" text-anchor=\"middle\" fill=\"currentColor\" font-size=\"8\" font-weight=\"bold\" stroke=\"none\">TODAY</text><rect x=\"20\" y=\"26\" width=\"24\" height=\"6\" rx=\"2\" fill=\"currentColor\" opacity=\"0.2\"/><path d=\"M22 29l2 2 4-4\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><text x=\"34\" y=\"31\" fill=\"currentColor\" font-size=\"6\" stroke=\"none\" opacity=\"0.6\">#1</text><rect x=\"20\" y=\"36\" width=\"24\" height=\"6\" rx=\"2\" fill=\"currentColor\" opacity=\"0.2\"/><path d=\"M22 39l2 2 4-4\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><text x=\"34\" y=\"41\" fill=\"currentColor\" font-size=\"6\" stroke=\"none\" opacity=\"0.6\">#2</text><rect x=\"20\" y=\"46\" width=\"24\" height=\"6\" rx=\"2\" fill=\"currentColor\" opacity=\"0.2\"/><path d=\"M22 49l2 2 4-4\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><text x=\"34\" y=\"51\" fill=\"currentColor\" font-size=\"6\" stroke=\"none\" opacity=\"0.6\">#3</text><path d=\"M50 10l4-4\" stroke-width=\"2.5\" stroke-linecap=\"round\"/><path d=\"M54 6l-2 4 4-2\" stroke-width=\"1.5\" fill=\"currentColor\"/></svg>"
+    },
+    {
+      "id": "clb-hoarder",
+      "title": "CLB Hoarder",
+      "description": "Accumulated 300+ lifetime CLB. Your dedication is paying off — literally.",
+      "accentHex": "#84cc16",
+      "rarity": "epic",
+      "category": "milestone",
+      "criteria": "Earn 300+ CLB lifetime",
+      "checkField": "totalCLBEarned >= 300",
+      "svg": "<svg viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" xmlns=\"http://www.w3.org/2000/svg\"><ellipse cx=\"32\" cy=\"48\" rx=\"20\" ry=\"6\" fill=\"currentColor\" opacity=\"0.1\" stroke-width=\"2\"/><ellipse cx=\"32\" cy=\"42\" rx=\"20\" ry=\"6\" fill=\"currentColor\" opacity=\"0.1\" stroke-width=\"2\"/><ellipse cx=\"32\" cy=\"36\" rx=\"20\" ry=\"6\" fill=\"currentColor\" opacity=\"0.1\" stroke-width=\"2\"/><ellipse cx=\"32\" cy=\"30\" rx=\"18\" ry=\"5\" fill=\"currentColor\" opacity=\"0.15\" stroke-width=\"2\"/><ellipse cx=\"32\" cy=\"24\" rx=\"16\" ry=\"4.5\" fill=\"currentColor\" opacity=\"0.2\" stroke-width=\"2\"/><ellipse cx=\"32\" cy=\"18\" rx=\"14\" ry=\"4\" fill=\"currentColor\" opacity=\"0.25\" stroke-width=\"2\"/><ellipse cx=\"32\" cy=\"12\" rx=\"10\" ry=\"3\" fill=\"currentColor\" opacity=\"0.35\" stroke-width=\"2\"/><text x=\"32\" y=\"15\" text-anchor=\"middle\" fill=\"currentColor\" font-size=\"6\" font-weight=\"bold\" stroke=\"none\">CLB</text><path d=\"M12 36v12\" stroke-width=\"2\"/><path d=\"M52 36v12\" stroke-width=\"2\"/><path d=\"M14 30v12\" stroke-width=\"1.5\" opacity=\"0.5\"/><path d=\"M50 30v12\" stroke-width=\"1.5\" opacity=\"0.5\"/><circle cx=\"8\" cy=\"14\" r=\"2\" fill=\"currentColor\" opacity=\"0.4\"/><circle cx=\"56\" cy=\"14\" r=\"2\" fill=\"currentColor\" opacity=\"0.4\"/><path d=\"M8 14l6 4\" stroke-width=\"1\" opacity=\"0.3\"/><path d=\"M56 14l-6 4\" stroke-width=\"1\" opacity=\"0.3\"/></svg>"
+    }
+  ]
+}

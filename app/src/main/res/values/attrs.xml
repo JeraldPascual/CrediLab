@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="MacCardHeaderView">
+        <attr name="headerTitle" format="string" />
+        <attr name="headerIcon" format="reference" />
+        <attr name="headerIconTint" format="color" />
+    </declare-styleable>
+</resources>

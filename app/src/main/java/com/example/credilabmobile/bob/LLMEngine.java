@@ -37,6 +37,16 @@ public class LLMEngine {
     private Map<String, OnnxTensor> conversationPastKeyValues = null; // Persisted between runInference calls
     private int conversationSeqLength = 0; // Track total tokens in history
 
+    private volatile boolean isCancelled = false;
+
+    public void cancelGeneration() {
+        this.isCancelled = true;
+    }
+
+    public boolean isCancelled() {
+        return this.isCancelled;
+    }
+
     public LLMEngine() {
         this.env = OrtEnvironment.getEnvironment();
     }
@@ -226,6 +236,7 @@ public class LLMEngine {
     }
 
     public String runInference(String prompt, TokenCallback callback, boolean saveState) {
+        this.isCancelled = false;
         if (llmSession == null || tokenizer == null) {
             return "Error: Engines not initialized.";
         }
@@ -257,6 +268,13 @@ public class LLMEngine {
                 buffer.put(systemIds);
                 buffer.put(32007);
                 buffer.put(13);
+            } else if (!isFirstTurn) {
+                // Fix: The previous turn stopped at the EOS token and skipped feeding it into
+                // the KV cache.
+                // We must inject it here to structurally close the previous assistant's
+                // response in history.
+                buffer.put(32007);
+                buffer.put(13);
             }
             buffer.put(32010);
             buffer.put(13);
@@ -279,6 +297,7 @@ public class LLMEngine {
     }
 
     public String runInference(long[] inputIds, TokenCallback callback) {
+        this.isCancelled = false;
         if (llmSession == null || tokenizer == null)
             return "Error: Engines not initialized.";
         try {
@@ -303,6 +322,10 @@ public class LLMEngine {
         boolean isFirstRun = true;
 
         for (int i = 0; i < MAX_GEN_LEN; i++) {
+            if (isCancelled) {
+                Log.d(TAG, "Inference Cancelled by set flag.");
+                break;
+            }
             int inputLen = currentInputIds.length;
             int totalSeqLen = currentSeqLength + inputLen;
 
@@ -569,6 +592,16 @@ public class LLMEngine {
         }
 
         if (saveState) {
+            if (conversationPastKeyValues != null && conversationPastKeyValues != currentPastKeyValues) {
+                for (OnnxTensor t : conversationPastKeyValues.values()) {
+                    if (initialPastKeyValues == null || !initialPastKeyValues.containsValue(t)) {
+                        try {
+                            t.close();
+                        } catch (Exception e) {
+                        }
+                    }
+                }
+            }
             conversationPastKeyValues = currentPastKeyValues;
             conversationSeqLength = currentSeqLength;
             Log.d(TAG, "Inference Complete. State Saved. SeqLen: " + conversationSeqLength);

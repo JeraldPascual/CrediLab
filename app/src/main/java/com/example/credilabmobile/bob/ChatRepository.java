@@ -386,10 +386,33 @@ public class ChatRepository {
                 llmEngine.loadVisionModel(visionEmbedPath, visionLlmPath, textEmbedPath);
             }
 
-            // Context injection?
-            String finalPrompt = text;
+            // Reconstruct full chat history to pass into the stateless LLM Engine (prevents
+            // ONNX KV cache hallucination)
+            llmEngine.resetState();
+
+            List<ChatMessage> history = chatDao.getMessagesBySession(sessionId);
+            StringBuilder historyBuilder = new StringBuilder();
+
+            // The LLMEngine wraps the final prompt in `<|user|>\n` ...
+            // `<|end|>\n<|assistant|>\n`.
+            // So we inject the older history directly into the start of the user's string
+            // text,
+            // relying on the tokenizer to properly parse our injected `<|end|>` tags.
+            if (history != null) {
+                for (ChatMessage msg : history) {
+                    if (msg.isUser) {
+                        historyBuilder.append(msg.text).append("<|end|>\n<|assistant|>\n");
+                    } else {
+                        historyBuilder.append(msg.text).append("<|end|>\n<|user|>\n");
+                    }
+                }
+            }
+
+            String finalPrompt = historyBuilder.toString();
             if (context != null && !context.isEmpty()) {
-                finalPrompt = "Context: " + context + "\n\nUser: " + text;
+                finalPrompt += "Context: " + context + "\n\nUser: " + text;
+            } else {
+                finalPrompt += text;
             }
 
             // 2. Generate Response
@@ -407,6 +430,11 @@ public class ChatRepository {
             // NOT the bitmap again for inference.
             // So we use runInference (text only) here.
             response = llmEngine.runInference(finalPrompt, tokenCallback);
+
+            if (llmEngine.isCancelled()) {
+                mainHandler.post(() -> isGenerating.setValue(false));
+                return;
+            }
 
             // 3. Save Bot Message is done by ChatActivity callback onResponse?
             // ChatActivity: onResponse -> repository.saveMessage(response, false, null);
@@ -469,6 +497,18 @@ public class ChatRepository {
         if (sessionId != null) {
             executor.execute(() -> {
                 chatDao.clearMessages(sessionId);
+                llmEngine.resetState();
+                refreshMessages(sessionId);
+            });
+        }
+    }
+
+    public void cancelAndCleanup() {
+        llmEngine.cancelGeneration();
+        String sessionId = currentSessionId.getValue();
+        if (sessionId != null) {
+            executor.execute(() -> {
+                chatDao.deleteLastMessageIfUser(sessionId);
                 llmEngine.resetState();
                 refreshMessages(sessionId);
             });

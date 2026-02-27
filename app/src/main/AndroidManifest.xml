@@ -59,9 +59,9 @@
             android:screenOrientation="portrait"
             android:theme="@style/Theme.MaterialComponents.NoActionBar" />
             
-        <activity android:name=".WeeklyTasksActivity" />
         <activity android:name=".SubmitTaskActivity" />
         <activity android:name=".CommunityFeedActivity" />
+        <activity android:name=".AchievementsActivity" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

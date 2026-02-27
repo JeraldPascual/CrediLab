@@ -48,6 +48,9 @@ public class WeeklyTaskAdapter extends RecyclerView.Adapter<WeeklyTaskAdapter.Vi
         WeeklyTask task = tasks.get(position);
         boolean isCompleted = completedStatus.containsKey(task.id) && completedStatus.get(task.id);
 
+        if (holder.tvHeaderTitle != null) {
+            holder.tvHeaderTitle.setText("Weekly Task");
+        }
         holder.tvTaskTitle.setText(task.title);
         holder.tvTaskDesc.setText(task.description);
         holder.tvReward.setText("+" + task.rewardCLB + " CLB");
@@ -103,7 +106,7 @@ public class WeeklyTaskAdapter extends RecyclerView.Adapter<WeeklyTaskAdapter.Vi
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView tvTaskIcon, tvTaskTitle, tvTaskDesc, tvReward;
+        TextView tvTaskIcon, tvTaskTitle, tvTaskDesc, tvReward, tvHeaderTitle;
         ImageView ivStatus;
 
         public ViewHolder(@NonNull View itemView) {
@@ -113,6 +116,7 @@ public class WeeklyTaskAdapter extends RecyclerView.Adapter<WeeklyTaskAdapter.Vi
             tvTaskDesc = itemView.findViewById(R.id.tvTaskDesc);
             tvReward = itemView.findViewById(R.id.tvReward);
             ivStatus = itemView.findViewById(R.id.ivStatus);
+            tvHeaderTitle = itemView.findViewById(R.id.tvHeaderTitle);
         }
     }
 }

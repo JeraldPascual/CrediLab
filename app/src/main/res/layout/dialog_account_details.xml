@@ -1,20 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="320dp"
     android:layout_height="wrap_content"
-    android:background="@drawable/bg_dialog_rounded"
-    android:orientation="vertical"
-    android:padding="24dp"
-    android:gravity="center_horizontal">
+    app:cardBackgroundColor="@color/card_dark"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="8dp"
+    app:strokeColor="@color/divider"
+    app:strokeWidth="1dp">
 
-    <!-- PFP and Title -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:gravity="center_horizontal"
-        android:layout_marginBottom="24dp">
+        android:orientation="vertical">
+
+        <include layout="@layout/view_mac_header" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="24dp"
+            android:gravity="center_horizontal">
+
+            <!-- PFP and Title -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:layout_marginBottom="24dp">
         
         <FrameLayout
             android:layout_width="80dp"
@@ -30,14 +45,30 @@
                 android:importantForAccessibility="no" />
         </FrameLayout>
         
-        <TextView
-            android:id="@+id/tvDialogDisplayName"
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Account Details"
-            android:textColor="@color/text_primary"
-            android:textSize="20sp"
-            android:textStyle="bold" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+            <TextView
+                android:id="@+id/tvDialogDisplayName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Account Details"
+                android:textColor="@color/text_primary"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+            <ImageView
+                android:id="@+id/btnDialogEditProfile"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_marginStart="8dp"
+                android:src="@android:drawable/ic_menu_edit"
+                app:tint="@color/text_primary"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"/>
+        </LinearLayout>
     </LinearLayout>
 
     <!-- Email -->
@@ -109,10 +140,10 @@
     </LinearLayout>
 
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnDialogEditProfile"
+        android:id="@+id/btnDialogAchievements"
         android:layout_width="match_parent"
         android:layout_height="48dp"
-        android:text="Edit Account"
+        android:text="Achievements &amp; Rank"
         android:textColor="@color/background_dark"
         app:backgroundTint="@color/primary"
         app:cornerRadius="8dp"
@@ -123,19 +154,19 @@
         android:layout_width="match_parent"
         android:layout_height="48dp"
         android:text="Sign Out"
-        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-        android:textColor="@color/error"
-        app:strokeColor="@color/error"
+        android:textColor="@color/white"
+        app:backgroundTint="@color/error"
         app:cornerRadius="8dp" />
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnDialogClose"
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:text="Close"
-        style="@style/Widget.MaterialComponents.Button.TextButton"
-        android:textColor="@color/text_secondary"
-        app:cornerRadius="8dp"
-        android:layout_marginTop="8dp" />
-
-</LinearLayout>
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDialogClose"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="Close"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:textColor="@color/text_secondary"
+            app:cornerRadius="8dp"
+            android:layout_marginTop="8dp" />
+        </LinearLayout>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>
