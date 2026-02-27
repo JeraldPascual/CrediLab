@@ -136,6 +136,7 @@ export default async function handler(req, res) {
     const winnerDocRef = db.collection('weekly_completions').doc(winner.docId);
     await winnerDocRef.update({
       clbAwarded: true,
+      status: 'weekly_winner',
       awardedAt: timestamp,
       awardedReward: rewardAmount,
     });

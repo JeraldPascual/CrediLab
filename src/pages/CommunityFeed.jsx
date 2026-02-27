@@ -28,7 +28,7 @@ import {
 } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
 import { db } from "../lib/firebase";
-import { SDG_ICONS, SDG_GOALS } from "../data/weeklyTasks";
+import { SDG_ICONS, SDG_GOALS, getCurrentWeekNumber } from "../data/weeklyTasks";
 import { getSkillTier } from "../data/achievements";
 import UserProfileCard from "../components/UserProfileCard";
 import TierFrame from "../components/TierFrame";
@@ -95,6 +95,7 @@ export default function CommunityFeed() {
       "pending_review",
       "community_approved",
       "completed",
+      "weekly_winner",
     ]));
 
     const unsub = onSnapshot(q, async (snap) => {
@@ -240,11 +241,16 @@ export default function CommunityFeed() {
     }
   }
 
-  const approvedCount = sorted.filter((s) => s.status === "community_approved").length;
+  const approvedCount = sorted.filter((s) => s.status === "community_approved" && !s.clbAwarded).length;
+  const currentWeek = getCurrentWeekNumber();
 
-  // Separate awarded winners from active feed
-  const activePosts = sorted.filter((s) => !s.clbAwarded);
-  const hallOfFame = sorted.filter((s) => s.clbAwarded).sort((a, b) => (b.weekNumber ?? 0) - (a.weekNumber ?? 0));
+  // A submission is a winner if: clbAwarded is set (any truthy value) OR status is weekly_winner
+  // Using truthy check (not strict ===) to handle manual Firestore edits where type may vary
+  const isWinner = (s) => !!s.clbAwarded || s.status === "weekly_winner";
+  // Feed shows only current week, non-winner posts
+  const activePosts = sorted.filter((s) => !isWinner(s) && (s.weekNumber ?? currentWeek) === currentWeek);
+  // Hall of Fame shows all weeks' winners
+  const hallOfFame = sorted.filter(isWinner).sort((a, b) => (b.weekNumber ?? 0) - (a.weekNumber ?? 0));
 
   return (
     <div className="max-w-2xl mx-auto space-y-5">
