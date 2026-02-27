@@ -32,7 +32,7 @@ The community feed, peer voting, and weekly SDG-themed tasks embed cross-SDG awa
 | Backend | Vercel Serverless Functions, Firebase Admin SDK |
 | Database | Cloud Firestore |
 | Blockchain | CLB ERC-20 token on Sepolia testnet, ethers.js 6, MetaMask |
-| Code Execution | Piston API (sandboxed remote judge, Docker-isolated) |
+| Code Execution | Judge0 CE API  |
 | Mobile | Android companion app (Kotlin), shared Firebase backend |
 
 ---
@@ -61,7 +61,7 @@ npm install
 npm run dev
 ```
 
-Local development uses the Piston API directly from the browser. No Vercel deployment is required for local testing. See [DEV-SETUP.md](DEV-SETUP.md) for full environment setup instructions.
+Local development calls the Judge0 CE public API directly from the browser. No Vercel deployment is required for local testing. See [CONTRIBUTING.md](CONTRIBUTING.md) for full environment setup instructions.
 
 ---
 
@@ -69,7 +69,7 @@ Local development uses the Piston API directly from the browser. No Vercel deplo
 
 | Endpoint | Method | Purpose |
 | --- | --- | --- |
-| `/api/execute-code` | POST | Run user code via Piston (production proxy) |
+| `/api/execute-code` | POST | Run user code via Judge0 CE (production proxy with auth and rate limiting) |
 | `/api/reward-student` | POST | Award CLB credits for challenge completion |
 | `/api/claim-tokens` | POST | Transfer Firestore credits to on-chain CLB |
 | `/api/claim-pending-clb` | POST | Sync all pending CLB transfers to the blockchain |
@@ -121,8 +121,7 @@ See `.env.example` for the full list with descriptions.
 
 | Document | Description |
 | --- | --- |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Git workflow, code conventions, and contribution process |
-| [DEV-SETUP.md](DEV-SETUP.md) | Local vs production environment setup details |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Git workflow, code conventions, contribution process, and local environment setup |
 | [project_context/HACKATHON_RULES.md](project_context/HACKATHON_RULES.md) | BSU Hackathon 2026 scoring rubric, timeline, and code of conduct |
 
 ---
