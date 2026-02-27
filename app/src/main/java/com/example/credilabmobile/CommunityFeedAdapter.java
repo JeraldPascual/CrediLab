@@ -54,6 +54,35 @@ public class CommunityFeedAdapter extends RecyclerView.Adapter<CommunityFeedAdap
         return new ViewHolder(view);
     }
 
+    private void loadProfilePicture(String photoUrlString, ImageView imageView) {
+        if (photoUrlString != null && !photoUrlString.isEmpty()) {
+            if (photoUrlString.startsWith("data:image") || photoUrlString.length() > 500) {
+                try {
+                    String cleanBase64 = photoUrlString;
+                    if (cleanBase64.contains(",")) {
+                        cleanBase64 = cleanBase64.split(",", 2)[1];
+                    }
+                    byte[] decodedBytes = Base64.decode(cleanBase64, Base64.DEFAULT);
+                    Glide.with(context).asBitmap().load(decodedBytes).circleCrop().into(imageView);
+                } catch (Exception e) {
+                    Glide.with(context).load(R.drawable.ic_credilab_logo).circleCrop().into(imageView);
+                }
+            } else {
+                Glide.with(context)
+                        .load(photoUrlString)
+                        .placeholder(R.drawable.ic_credilab_logo)
+                        .error(R.drawable.ic_credilab_logo)
+                        .transform(new CircleCrop())
+                        .into(imageView);
+            }
+        } else {
+            Glide.with(context)
+                    .load(R.drawable.ic_credilab_logo)
+                    .transform(new CircleCrop())
+                    .into(imageView);
+        }
+    }
+
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         TaskSubmission sub = submissions.get(position);
@@ -72,38 +101,17 @@ public class CommunityFeedAdapter extends RecyclerView.Adapter<CommunityFeedAdap
             holder.tvTime.setText("Just now");
         }
 
-        if (sub.photoURL != null && !sub.photoURL.isEmpty()) {
-            if (sub.photoURL.startsWith("data:image") || sub.photoURL.length() > 500) {
-                try {
-                    String base64String = sub.photoURL;
-                    if (base64String.contains(",")) {
-                        base64String = base64String.split(",")[1];
-                    }
-                    byte[] decodedBytes = Base64.decode(base64String, Base64.DEFAULT);
-                    Bitmap decodedBitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.length);
-                    Glide.with(context).load(decodedBitmap).circleCrop().into(holder.ivProfile);
-                } catch (Exception e) {
-                    Glide.with(context).load(R.drawable.ic_credilab_logo).circleCrop().into(holder.ivProfile);
-                }
-            } else {
-                Glide.with(context)
-                        .load(sub.photoURL)
-                        .placeholder(R.drawable.ic_credilab_logo)
-                        .error(R.drawable.ic_credilab_logo)
-                        .transform(new CircleCrop())
-                        .into(holder.ivProfile);
-            }
-        } else {
-            Glide.with(context)
-                    .load(R.drawable.ic_credilab_logo)
-                    .transform(new CircleCrop())
-                    .into(holder.ivProfile);
-        }
+        // Load initially with submission's stored photo
+        loadProfilePicture(sub.photoURL, holder.ivProfile);
 
         if (sub.uid != null && !sub.uid.isEmpty()) {
             firestoreHelper.getUserData(sub.uid, new FirestoreHelper.UserDataCallback() {
                 @Override
                 public void onSuccess(FirestoreHelper.UserData userData) {
+                    // Update fresh user data (displayName and PFP)
+                    holder.tvUserName.setText(userData.getBestName());
+                    loadProfilePicture(userData.photoURL, holder.ivProfile);
+
                     String tier = userData.equippedFrame != null && !userData.equippedFrame.isEmpty()
                             ? userData.equippedFrame
                             : "common";
@@ -150,11 +158,10 @@ public class CommunityFeedAdapter extends RecyclerView.Adapter<CommunityFeedAdap
             try {
                 String base64String = sub.photoBase64;
                 if (base64String.contains(",")) {
-                    base64String = base64String.split(",")[1];
+                    base64String = base64String.split(",", 2)[1];
                 }
                 byte[] decodedBytes = Base64.decode(base64String, Base64.DEFAULT);
-                Bitmap decodedBitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.length);
-                Glide.with(context).load(decodedBitmap).into(holder.ivSubmissionPhoto);
+                Glide.with(context).asBitmap().load(decodedBytes).into(holder.ivSubmissionPhoto);
 
                 // Add click listener for full-screen view
                 holder.ivSubmissionPhoto.setOnClickListener(v -> {
@@ -165,7 +172,7 @@ public class CommunityFeedAdapter extends RecyclerView.Adapter<CommunityFeedAdap
                             android.view.ViewGroup.LayoutParams.MATCH_PARENT,
                             android.view.ViewGroup.LayoutParams.MATCH_PARENT));
                     fullImageView.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
-                    fullImageView.setImageBitmap(decodedBitmap);
+                    Glide.with(context).asBitmap().load(decodedBytes).into(fullImageView);
                     fullImageView.setOnClickListener(v1 -> dialog.dismiss());
                     dialog.setContentView(fullImageView);
                     dialog.show();
