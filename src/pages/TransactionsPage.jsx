@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   ArrowPathIcon,
   CheckCircleIcon,
@@ -6,6 +7,7 @@ import {
   ArrowTopRightOnSquareIcon,
   BanknotesIcon,
   ExclamationTriangleIcon,
+  ArrowRightIcon,
 } from "@heroicons/react/24/outline";
 import {
   collection,
@@ -76,6 +78,7 @@ function formatDate(iso) {
 
 export default function TransactionsPage() {
   const { user, userData } = useAuth();
+  const navigate = useNavigate();
   const [txs, setTxs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -198,6 +201,26 @@ export default function TransactionsPage() {
         </div>
       </div>
 
+      {/* ── Claim CLB Banner ── */}
+      <div className="flex items-center justify-between gap-4 p-4 rounded-xl border border-orange-200 dark:border-orange-700 bg-orange-50 dark:bg-orange-900/10">
+        <div className="flex items-start gap-3">
+          <ExclamationTriangleIcon className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-bold text-orange-800 dark:text-orange-300">CLB not reflected in your wallet?</p>
+            <p className="text-xs text-orange-700 dark:text-orange-400 mt-0.5">
+              If a completed challenge or task reward didn't transfer on-chain, use the <strong>Claim CLB</strong> button on your account page to trigger it manually.
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={() => navigate("/student/information")}
+          className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold transition-colors"
+        >
+          Go to My Account
+          <ArrowRightIcon className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
       {/* ── On-Chain Balance & Mismatch ── */}
       {walletAddress && (
         <div className={`rounded-xl border p-5 ${
@@ -253,8 +276,9 @@ export default function TransactionsPage() {
                   <p className="text-xs text-gray-500 dark:text-dark-muted leading-relaxed">
                     This can happen for several reasons: <strong>1)</strong> An on-chain transfer completed
                     but Firestore wasn't updated (network timing). <strong>2)</strong> CLB was sent or received
-                    directly via MetaMask outside of CrediLab. <strong>3)</strong> A pending reward hasn't
-                    been claimed yet — check your Profile page for a "Claim CLB" option.
+                    directly via MetaMask outside of CrediLab. <strong>3)</strong> A pending reward hasn't been
+                    claimed yet — click your <strong>avatar in the top-right header → My Account</strong>, scroll to
+                    <strong> Wallet Connection</strong>, and click <strong>Claim CLB</strong>.
                     The on-chain balance is the source of truth for your actual token holdings.
                   </p>
                 </div>

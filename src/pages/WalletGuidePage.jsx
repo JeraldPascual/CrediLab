@@ -160,6 +160,26 @@ export default function WalletGuidePage() {
             </ul>
           </div>
 
+          {/* ⚠️ Claim CLB Reminder — CRUCIAL */}
+          <div className="flex items-start gap-3 p-4 rounded-xl border border-orange-300 dark:border-orange-600 bg-orange-50 dark:bg-orange-900/10">
+            <ExclamationTriangleIcon className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
+            <div className="text-sm space-y-1.5">
+              <p className="font-bold text-orange-800 dark:text-orange-300">🔔 Didn't receive your CLB? You may need to claim it manually.</p>
+              <p className="text-xs text-orange-700 dark:text-orange-400">
+                When you complete a challenge or win a weekly task, CLB is credited to your account but the on-chain transfer isn't always automatic. If your wallet balance didn't update:
+              </p>
+              <ol className="list-decimal list-inside text-xs text-orange-700 dark:text-orange-400 space-y-0.5 ml-1">
+                <li>Click the <strong>user icon (👤)</strong> in the <strong>top-right corner</strong> of the header.</li>
+                <li>Select <strong className="text-orange-800 dark:text-orange-300">My Account</strong> from the dropdown.</li>
+                <li>Scroll down to the <strong>Wallet Connection</strong> section.</li>
+                <li>Click the <strong className="text-orange-800 dark:text-orange-300">Claim CLB</strong> button to trigger the on-chain transfer.</li>
+              </ol>
+              <p className="text-[11px] text-orange-600 dark:text-orange-500 mt-1">
+                Your pending CLB is safely stored in our system — it won't be lost. The button appears whenever there's a transferable balance waiting.
+              </p>
+            </div>
+          </div>
+
           {/* Safety Warning */}
           <div className="flex items-start gap-3 p-4 rounded-xl border border-yellow-300 dark:border-yellow-700 bg-yellow-50 dark:bg-yellow-900/10">
             <ExclamationTriangleIcon className="w-5 h-5 text-yellow-500 shrink-0 mt-0.5" />
@@ -337,7 +357,7 @@ export default function WalletGuidePage() {
                     <li>• Easy: <strong>5 CLB</strong></li>
                     <li>• Medium: <strong>10 CLB</strong></li>
                     <li>• Hard: <strong>20 CLB</strong></li>
-                    <li>• Awarded instantly on submission pass</li>
+                    <li>• Credited on submission pass — may need <strong>Claim CLB</strong> if auto-transfer fails</li>
                   </ul>
                 </div>
                 <div className="p-3 rounded-lg bg-purple-50 dark:bg-purple-900/10 border border-purple-200 dark:border-purple-800/40">
@@ -453,7 +473,19 @@ export default function WalletGuidePage() {
               </div>
             </div>
             <div className="px-5 pt-2">
-              <Accordion title="What is CLB and is it real cryptocurrency?" defaultOpen>
+              <Accordion title="I completed a challenge or task but didn't receive CLB — what do I do?" defaultOpen>
+                <p>Your CLB is almost certainly sitting as a <strong>pending balance</strong> in our system, waiting to be transferred on-chain. Here's what to do:</p>
+                <ol className="list-decimal list-inside mt-2 space-y-1 text-xs">
+                  <li>Click the <strong className="text-green-primary">user icon (👤)</strong> in the <strong>top-right corner</strong> of the header.</li>
+                  <li>Click <strong className="text-green-primary">My Account</strong> from the dropdown menu.</li>
+                  <li>Scroll down to the <strong>Wallet Connection</strong> section on the page.</li>
+                  <li>Click <strong className="text-green-primary">Claim CLB</strong> — this button appears when you have a pending transferable balance.</li>
+                  <li>If you haven't connected a wallet yet, connect MetaMask first using the button in that same section.</li>
+                </ol>
+                <p className="mt-2 text-xs">This is expected behavior — the system stores your earned CLB safely and lets you claim it on demand rather than triggering an on-chain transaction for every single action.</p>
+              </Accordion>
+
+              <Accordion title="What is CLB and is it real cryptocurrency?">
                 <p>CLB (CrediLab) is an ERC-20 token deployed on the Ethereum <strong>Sepolia testnet</strong>. It has <strong>no real monetary value</strong> — it's an educational token used to gamify learning and reward students for completing challenges and SDG tasks.</p>
               </Accordion>
 
@@ -524,6 +556,10 @@ export default function WalletGuidePage() {
               </div>
             </div>
             <div className="p-5 space-y-3 text-sm text-gray-600 dark:text-dark-muted">
+              <div className="p-3 rounded-lg border border-orange-200 dark:border-orange-700 bg-orange-50 dark:bg-orange-900/10">
+                <p className="font-semibold text-orange-800 dark:text-orange-300 text-xs mb-1">⚠️ Completed a task or challenge but CLB wasn't transferred to your wallet?</p>
+                <p className="text-xs text-orange-700 dark:text-orange-400">This is the most common issue. On-chain transfers are not always instant or automatic. Click the <strong>user icon (👤)</strong> in the top-right header → <strong>My Account</strong> → scroll to <strong>Wallet Connection</strong> → click <strong className="text-orange-800 dark:text-orange-300">Claim CLB</strong> to manually trigger the transfer. Your pending balance is safe.</p>
+              </div>
               <div>
                 <p className="font-semibold text-gray-900 dark:text-white text-xs mb-1">CLB balance shows 0 in MetaMask?</p>
                 <p className="text-xs">Make sure you've added the CLB token contract address and switched to the Sepolia network. Token balances only appear after importing the custom token.</p>
