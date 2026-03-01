@@ -1,7 +1,7 @@
 import { useRef, useCallback } from "react";
 import { Link, Navigate } from "react-router-dom";
 // eslint-disable-next-line no-unused-vars
-import { useScroll, useTransform, motion } from "motion/react";
+import { useScroll, useTransform, motion, useInView } from "motion/react";
 import {
   ArrowRightIcon,
   CodeBracketIcon,
@@ -136,14 +136,14 @@ export default function LandingPage() {
       {/* ── Features ── */}
       <section ref={featuresRef} className="relative z-10 bg-slate-50 dark:bg-dark-bg">
         <div className="max-w-7xl mx-auto px-8 md:px-16 py-20">
-          <div className="text-center mb-16">
+          <FadeUp className="text-center mb-16">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
               Everything You Need to <span className="text-green-primary">Learn & Earn</span>
             </h2>
             <p className="mt-3 text-gray-500 dark:text-dark-muted max-w-xl mx-auto">
               CrediLab combines coding education, blockchain-verified rewards, and SDG-driven community action into one seamless platform.
             </p>
-          </div>
+          </FadeUp>
 
           {/* Desktop: sticky scroll reveal */}
           <div className="hidden md:block">
@@ -252,28 +252,28 @@ export default function LandingPage() {
       {/* ── How It Works ── */}
       <section ref={howItWorksRef} id="how-it-works" className="bg-white dark:bg-dark-surface">
         <div className="max-w-7xl mx-auto px-8 md:px-16 py-20">
-          <div className="text-center mb-12">
+          <FadeUp className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
               How It Works
             </h2>
             <p className="mt-3 text-gray-500 dark:text-dark-muted max-w-lg mx-auto">
               From sign-up to earning tokens — it's simple, transparent, and verifiable on the blockchain.
             </p>
-          </div>
+          </FadeUp>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
               { step: "01", title: "Create an Account", desc: "Sign up with your email and set up your student profile in seconds." },
               { step: "02", title: "Connect Wallet", desc: "Install MetaMask and link your wallet to receive CLB tokens on-chain." },
               { step: "03", title: "Solve Challenges", desc: "Pick a Java problem, write your solution, and submit it for auto-grading." },
               { step: "04", title: "Earn & Track", desc: "Correct solutions earn CLB. Track rewards, rank up, and compete on the leaderboard." },
-            ].map((item) => (
-              <div key={item.step} className="text-center space-y-3">
+            ].map((item, i) => (
+              <FadeUp key={item.step} delay={i * 0.1} className="text-center space-y-3">
                 <div className="mx-auto w-12 h-12 rounded-full bg-green-primary/10 flex items-center justify-center">
                   <span className="text-lg font-bold text-green-primary">{item.step}</span>
                 </div>
                 <h3 className="font-semibold text-gray-900 dark:text-white">{item.title}</h3>
                 <p className="text-sm text-gray-500 dark:text-dark-muted">{item.desc}</p>
-              </div>
+              </FadeUp>
             ))}
           </div>
         </div>
@@ -284,7 +284,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-8 md:px-16 py-20">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             {/* Left — text + platform list */}
-            <div>
+            <FadeUp>
               <div className="inline-block px-3 py-1 text-xs font-medium rounded-full bg-green-primary/10 text-green-primary border border-green-primary/20 mb-4">
                 Multi-Platform
               </div>
@@ -300,8 +300,8 @@ export default function LandingPage() {
                   { icon: ComputerDesktopIcon, title: "Web Application", desc: "Full IDE, code editor with syntax highlighting, leaderboard, achievements, and complete dashboard." },
                   { icon: DevicePhoneMobileIcon, title: "Mobile App (Android)", desc: "Built with Kotlin — manage your wallet, submit weekly SDG tasks with photos, and track CLB on the go." },
                   { icon: GlobeAltIcon, title: "Shared Blockchain Layer", desc: "Both platforms connect to the same Sepolia smart contract — your CLB balance syncs everywhere." },
-                ].map((item) => (
-                  <div key={item.title} className="flex items-start gap-3">
+                ].map((item, i) => (
+                  <FadeUp key={item.title} delay={i * 0.12} className="flex items-start gap-3">
                     <div className="w-9 h-9 rounded-lg bg-green-primary/10 flex items-center justify-center shrink-0 mt-0.5">
                       <item.icon className="w-5 h-5 text-green-primary" />
                     </div>
@@ -309,13 +309,13 @@ export default function LandingPage() {
                       <p className="text-sm font-bold text-gray-900 dark:text-white">{item.title}</p>
                       <p className="text-sm text-gray-500 dark:text-dark-muted">{item.desc}</p>
                     </div>
-                  </div>
+                  </FadeUp>
                 ))}
               </div>
-            </div>
+            </FadeUp>
 
             {/* Right — app mockup */}
-            <div className="hidden md:flex justify-center items-center">
+            <FadeUp delay={0.15} className="hidden md:flex justify-center items-center">
               <div className="relative pr-20">
                 {/* Web mockup */}
                 <div className="w-72 bg-dark-card border border-dark-border rounded-xl p-4 shadow-xl">
@@ -349,7 +349,7 @@ export default function LandingPage() {
                   <div className="mx-auto w-10 h-1 rounded-full bg-dark-border mt-2" />
                 </div>
               </div>
-            </div>
+            </FadeUp>
           </div>
         </div>
       </section>
@@ -357,29 +357,31 @@ export default function LandingPage() {
       {/* ── SDG Alignment ── */}
       <section className="bg-white dark:bg-dark-surface">
         <div className="max-w-7xl mx-auto px-8 md:px-16 py-20 text-center">
-          <div className="inline-block px-3 py-1 text-xs font-medium rounded-full bg-green-primary/10 text-green-primary border border-green-primary/20 mb-4">
-            UN Sustainable Development Goals
-          </div>
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">
-            Learning with <span className="text-green-primary">Purpose</span>
-          </h2>
-          <p className="text-gray-500 dark:text-dark-muted max-w-2xl mx-auto mb-10">
-            CrediLab integrates weekly SDG-aligned tasks that encourage students to take
-            real-world action — from tree planting to community clean-ups — validated by
-            peer voting and rewarded with CLB tokens.
-          </p>
+          <FadeUp>
+            <div className="inline-block px-3 py-1 text-xs font-medium rounded-full bg-green-primary/10 text-green-primary border border-green-primary/20 mb-4">
+              UN Sustainable Development Goals
+            </div>
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">
+              Learning with <span className="text-green-primary">Purpose</span>
+            </h2>
+            <p className="text-gray-500 dark:text-dark-muted max-w-2xl mx-auto mb-10">
+              CrediLab integrates weekly SDG-aligned tasks that encourage students to take
+              real-world action — from tree planting to community clean-ups — validated by
+              peer voting and rewarded with CLB tokens.
+            </p>
+          </FadeUp>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-2xl mx-auto">
             {[
               { icon: "🌳", label: "SDG 15", desc: "Life on Land", accent: "border-green-400" },
               { icon: "🎓", label: "SDG 4", desc: "Quality Education", accent: "border-purple-400" },
               { icon: "💡", label: "SDG 9", desc: "Innovation", accent: "border-yellow-400" },
               { icon: "🤝", label: "SDG 17", desc: "Partnerships", accent: "border-orange-400" },
-            ].map((sdg) => (
-              <div key={sdg.label} className={`rounded-xl border-2 ${sdg.accent} bg-gray-50 dark:bg-dark-card p-4 space-y-1 hover:scale-105 transition-transform`}>
+            ].map((sdg, i) => (
+              <FadeUp key={sdg.label} delay={i * 0.1} className={`rounded-xl border-2 ${sdg.accent} bg-gray-50 dark:bg-dark-card p-4 space-y-1 hover:scale-105 transition-transform`}>
                 <span className="text-2xl">{sdg.icon}</span>
                 <p className="text-xs font-bold text-gray-900 dark:text-white">{sdg.label}</p>
                 <p className="text-[11px] text-gray-500 dark:text-dark-muted">{sdg.desc}</p>
-              </div>
+              </FadeUp>
             ))}
           </div>
         </div>
@@ -387,7 +389,7 @@ export default function LandingPage() {
 
       {/* ── CTA Banner ── */}
       <section className="bg-slate-50 dark:bg-dark-bg">
-        <div className="max-w-7xl mx-auto px-8 md:px-16 py-16 text-center space-y-6">
+        <FadeUp className="max-w-7xl mx-auto px-8 md:px-16 py-16 text-center space-y-6">
           <h2 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white">
             Ready to{" "}
             <CanvasText
@@ -416,7 +418,7 @@ export default function LandingPage() {
             Create Free Account
             <ArrowRightIcon className="w-4 h-4" />
           </Link>
-        </div>
+        </FadeUp>
       </section>
 
       {/* ── Footer ── */}
@@ -556,6 +558,23 @@ function HeroSpotlight() {
 }
 
 /* ── Feature Card (mobile fallback) ── */
+/* ── Scroll-triggered fade-up wrapper ── */
+function FadeUp({ children, delay = 0, className = "" }) {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: false, margin: "-80px" });
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 32 }}
+      animate={isInView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
 function FeatureCard({ title, description, icon: Icon }) {
   return (
     <div className="flex gap-4 items-start p-5 rounded-xl bg-white dark:bg-dark-card border border-gray-100 dark:border-dark-border hover:border-green-primary/30 transition-colors">
