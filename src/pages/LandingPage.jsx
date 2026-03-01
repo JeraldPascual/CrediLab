@@ -316,7 +316,7 @@ export default function LandingPage() {
 
             {/* Right — app mockup */}
             <FadeUp delay={0.15} className="hidden md:flex justify-center items-center">
-              <div className="relative pr-20">
+              <div className="relative pr-24 pb-4">
                 {/* Web mockup */}
                 <div className="w-72 bg-dark-card border border-dark-border rounded-xl p-4 shadow-xl">
                   <div className="flex items-center gap-2 mb-3">
@@ -333,20 +333,24 @@ export default function LandingPage() {
                   </div>
                 </div>
                 {/* Mobile mockup (phone-shaped, overlapping) */}
-                <div className="absolute -right-14 top-4 w-32 bg-dark-card border-2 border-dark-border rounded-[1.5rem] p-2 shadow-xl">
-                  {/* Notch */}
-                  <div className="mx-auto w-12 h-1.5 rounded-full bg-dark-border mb-2" />
-                  {/* Screen content */}
-                  <div className="bg-dark-bg rounded-xl p-2.5 space-y-2">
-                    <div className="h-2 w-16 rounded bg-green-primary/30" />
-                    <div className="h-1.5 w-full rounded bg-dark-border" />
-                    <div className="h-1.5 w-3/4 rounded bg-dark-border" />
-                    <div className="flex justify-center mt-2">
-                      <span className="px-2.5 py-1 text-[9px] font-bold rounded-lg bg-green-primary/20 text-green-primary">250 CLB</span>
+                <div className="absolute -right-16 -top-6 w-36 h-64 bg-dark-card border-2 border-dark-border rounded-[2rem] p-2.5 shadow-xl flex flex-col">
+                  {/* Dynamic island / notch */}
+                  <div className="mx-auto w-10 h-2 rounded-full bg-dark-border mb-2.5" />
+                  {/* Screen content — fills remaining height */}
+                  <div className="bg-dark-bg rounded-2xl p-3 flex flex-col flex-1 gap-2">
+                    <div className="h-2 w-20 rounded bg-green-primary/30" />
+                    <div className="flex justify-center my-1">
+                      <span className="px-3 py-1.5 text-[9px] font-bold rounded-xl bg-green-primary/20 text-green-primary">250 CLB</span>
                     </div>
+                    <div className="h-1.5 w-full rounded bg-dark-border" />
+                    <div className="h-1.5 w-5/6 rounded bg-dark-border" />
+                    <div className="h-1.5 w-4/6 rounded bg-dark-border" />
+                    <div className="flex-1" />
+                    <div className="h-1.5 w-full rounded bg-dark-border/50" />
+                    <div className="h-1.5 w-3/4 rounded bg-dark-border/50" />
                   </div>
                   {/* Home indicator */}
-                  <div className="mx-auto w-10 h-1 rounded-full bg-dark-border mt-2" />
+                  <div className="mx-auto w-12 h-1 rounded-full bg-dark-border mt-2.5" />
                 </div>
               </div>
             </FadeUp>
