@@ -451,7 +451,7 @@ function HeroSpotlight() {
       ref={containerRef}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className="relative flex-1 flex items-center overflow-hidden"
+      className="relative flex-1 flex items-center overflow-hidden -mt-20 pt-20"
     >
       {/* Spotlight overlay */}
       <div
