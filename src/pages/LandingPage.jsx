@@ -25,6 +25,19 @@ export default function LandingPage() {
   const { dark, toggleDark } = useTheme();
   const { user, loading } = useAuth();
 
+  /* ── Refs for smooth scroll targets ── */
+  const howItWorksRef = useRef(null);
+  const featuresRef = useRef(null);
+  const scrollToHowItWorks = () => {
+    howItWorksRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+  const scrollToFeatures = () => {
+    featuresRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
   /* ── Parallax: hero fades / scales as user scrolls into features ── */
   const heroRef = useRef(null);
   const { scrollYProgress: heroProgress } = useScroll({
@@ -43,32 +56,69 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-dark-bg">
-      {/* ── Header ── */}
-      <header className="sticky top-0 z-50 w-full bg-slate-50/90 dark:bg-dark-bg/80 backdrop-blur-md shadow-[0_1px_0_0] shadow-gray-200/50 dark:shadow-white/5 transition-colors">
-        <div className="max-w-7xl mx-auto px-8 md:px-16 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl font-bold text-green-primary">CrediLab</span>
-            <span className="hidden sm:inline text-sm text-gray-500 dark:text-dark-muted">
-              Learn to earn.
+      {/* ── Header — pill floating nav (Unflustered-style) ── */}
+      <header className="sticky top-0 z-50 w-full flex justify-center pt-4 pb-2 px-4">
+        {/* Pill container */}
+        <div className="w-full max-w-4xl flex items-center justify-between gap-6 px-7 py-3.5 rounded-full bg-white/90 dark:bg-dark-card/90 backdrop-blur-md border border-gray-200 dark:border-dark-border shadow-sm shadow-gray-200/60 dark:shadow-black/30 transition-colors">
+
+          {/* ── Brand + slogan ── */}
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={scrollToTop}
+              className="text-lg font-bold tracking-tight text-green-primary hover:opacity-80 transition-opacity"
+            >
+              CrediLab.
+            </button>
+            <span className="hidden md:inline text-[11px] font-medium text-gray-400 dark:text-dark-muted border-l border-gray-200 dark:border-dark-border pl-2">
+              Learn &amp; Earn
             </span>
           </div>
-          <div className="flex items-center gap-3">
+
+          {/* ── Centre nav ── */}
+          <nav className="hidden sm:flex items-center gap-1">
+            <button
+              onClick={scrollToFeatures}
+              className="px-4 py-1.5 text-sm font-medium text-gray-600 dark:text-dark-muted hover:text-gray-900 dark:hover:text-white rounded-full hover:bg-gray-100 dark:hover:bg-dark-surface transition-colors"
+            >
+              Everything You Need
+            </button>
+            <button
+              onClick={scrollToHowItWorks}
+              className="px-4 py-1.5 text-sm font-medium text-gray-600 dark:text-dark-muted hover:text-gray-900 dark:hover:text-white rounded-full hover:bg-gray-100 dark:hover:bg-dark-surface transition-colors"
+            >
+              How it works
+            </button>
+          </nav>
+
+          {/* ── Right actions ── */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Dark mode toggle */}
             <button
               onClick={toggleDark}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-card transition-colors"
+              className="p-1.5 rounded-full text-gray-500 dark:text-dark-muted hover:bg-gray-100 dark:hover:bg-dark-surface transition-colors"
               aria-label="Toggle dark mode"
             >
               {dark ? (
-                <SunIcon className="w-5 h-5 text-yellow-400" />
+                <SunIcon className="w-4 h-4 text-yellow-400" />
               ) : (
-                <MoonIcon className="w-5 h-5 text-gray-600" />
+                <MoonIcon className="w-4 h-4" />
               )}
             </button>
+
+            {/* Log in */}
             <Link
               to="/login"
-              className="relative px-5 py-2 text-sm font-semibold rounded-lg bg-green-primary text-dark-bg hover:bg-green-dark shadow-[2px_2px_0px_0px] shadow-green-dark/60 dark:shadow-green-dark/40 hover:shadow-[1px_1px_0px_0px] hover:translate-x-[1px] hover:translate-y-[1px] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all duration-150"
+              className="hidden sm:inline-flex px-4 py-1.5 text-sm font-medium text-gray-700 dark:text-dark-text hover:text-gray-900 dark:hover:text-white rounded-full hover:bg-gray-100 dark:hover:bg-dark-surface transition-colors"
             >
-              Get Started
+              Log in
+            </Link>
+
+            {/* Get started — matches existing landing page CTA button style */}
+            <Link
+              to="/register"
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold rounded-lg bg-green-primary text-dark-bg hover:bg-green-dark shadow-[2px_2px_0px_0px] shadow-green-dark/60 hover:shadow-[1px_1px_0px_0px] hover:translate-x-[1px] hover:translate-y-[1px] active:shadow-none transition-all duration-150"
+            >
+              Get started
             </Link>
           </div>
         </div>
@@ -84,7 +134,7 @@ export default function LandingPage() {
       </motion.div>
 
       {/* ── Features ── */}
-      <section className="relative z-10 bg-slate-50 dark:bg-dark-bg">
+      <section ref={featuresRef} className="relative z-10 bg-slate-50 dark:bg-dark-bg">
         <div className="max-w-7xl mx-auto px-8 md:px-16 py-20">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -200,7 +250,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── How It Works ── */}
-      <section className="bg-white dark:bg-dark-surface">
+      <section ref={howItWorksRef} id="how-it-works" className="bg-white dark:bg-dark-surface">
         <div className="max-w-7xl mx-auto px-8 md:px-16 py-20">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
