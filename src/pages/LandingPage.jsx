@@ -70,7 +70,7 @@ export default function LandingPage() {
               CrediLab.
             </button>
             <span className="hidden md:inline text-[11px] font-medium text-gray-400 dark:text-dark-muted border-l border-gray-200 dark:border-dark-border pl-2">
-              Learn &amp; Earn
+              Learn to Earn
             </span>
           </div>
 
