@@ -467,24 +467,24 @@ function HeroSpotlight() {
 
       {/* Grid pattern — light mode (with bottom fade) */}
       <div
-        className="pointer-events-none absolute top-20 inset-x-0 bottom-0 z-0 opacity-[0.06] dark:hidden"
+        className="pointer-events-none absolute inset-0 z-0 opacity-[0.06] dark:hidden"
         style={{
           backgroundImage:
             "linear-gradient(rgb(0 0 0) 1px, transparent 1px), linear-gradient(90deg, rgb(0 0 0) 1px, transparent 1px)",
           backgroundSize: "48px 48px",
-          maskImage: "linear-gradient(to bottom, black 50%, transparent 100%)",
-          WebkitMaskImage: "linear-gradient(to bottom, black 50%, transparent 100%)",
+          maskImage: "linear-gradient(to bottom, black 0%, black 60%, transparent 100%)",
+          WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 60%, transparent 100%)",
         }}
       />
       {/* Grid pattern — dark mode (with bottom fade) */}
       <div
-        className="pointer-events-none absolute top-20 inset-x-0 bottom-0 z-0 opacity-0 dark:opacity-[0.08] hidden dark:block"
+        className="pointer-events-none absolute inset-0 z-0 opacity-0 dark:opacity-[0.08] hidden dark:block"
         style={{
           backgroundImage:
             "linear-gradient(rgb(255 255 255) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255) 1px, transparent 1px)",
           backgroundSize: "48px 48px",
-          maskImage: "linear-gradient(to bottom, black 50%, transparent 100%)",
-          WebkitMaskImage: "linear-gradient(to bottom, black 50%, transparent 100%)",
+          maskImage: "linear-gradient(to bottom, black 0%, black 60%, transparent 100%)",
+          WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 60%, transparent 100%)",
         }}
       />
 
