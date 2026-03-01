@@ -15,8 +15,8 @@
  */
 
 const SIZE_MAP = {
-  xs: { outer: "w-10 h-10",  ring: 2,   avatar: 32, spark: 4  },
-  sm: { outer: "w-12 h-12",  ring: 2.5, avatar: 40, spark: 5  },
+  xs: { outer: "w-10 h-10",  ring: 3.5, avatar: 32, spark: 4  },
+  sm: { outer: "w-12 h-12",  ring: 3.5, avatar: 40, spark: 5  },
   md: { outer: "w-14 h-14",  ring: 3,   avatar: 48, spark: 6  },
   lg: { outer: "w-24 h-24",  ring: 4,   avatar: 80, spark: 8  },
 };
@@ -98,7 +98,7 @@ export default function TierFrame({ tier, size = "sm", children, className = "" 
             stroke={config.colors[0]}
             strokeWidth={dim.ring}
             strokeDasharray="4 3"
-            opacity="0.6"
+            opacity="0.85"
           />
         )}
 
