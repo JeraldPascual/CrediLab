@@ -486,7 +486,7 @@ export default function WalletGuidePage() {
               </Accordion>
 
               <Accordion title="What are badges and how do I earn them?">
-                <p>Badges are achievements awarded automatically when you meet specific criteria — like completing your first challenge, maintaining a streak, or voting on community submissions. There are 17 badges across 5 rarity tiers. Visit <strong>Achievements → Badges</strong> to see all available badges.</p>
+                <p>Badges are achievements awarded automatically when you meet specific criteria — like completing your first challenge, maintaining a streak, or voting on community submissions. There are 20 badges across 5 rarity tiers. Visit <strong>Achievements → Badges</strong> to see all available badges.</p>
               </Accordion>
 
               <Accordion title="What is the downloadable certificate?">
@@ -499,6 +499,11 @@ export default function WalletGuidePage() {
 
               <Accordion title="Who can see my profile and achievements?">
                 <p>Your name, tier, and badges are visible on the leaderboard. Other students can hover over your name to see your profile card. Your wallet address is only visible on your own profile page.</p>
+              </Accordion>
+
+              <Accordion title="How does the anti-cheat system work?">
+                <p>During coding challenges, CrediLab monitors for tab switches, DevTools usage, and keyboard shortcuts that could indicate cheating. Each violation is logged in real-time to both your browser and our database (Firestore). After <strong>3 violations</strong>, your challenge session is automatically terminated. Violation history persists across sessions and devices — clearing your browser data will not reset it.</p>
+                <p className="mt-2">You can review every recorded violation in the <strong className="text-green-primary">Cheating Logs</strong> page (accessible from the sidebar). Logs are grouped by challenge and show the violation type, count, and exact timestamp — so you always know what was flagged and when.</p>
               </Accordion>
             </div>
           </div>

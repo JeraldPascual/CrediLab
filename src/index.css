@@ -8,12 +8,15 @@
   --color-green-primary: #00e89f;
   --color-green-dark: #00c987;
   --color-green-light: #33edaf;
+  --color-green-readable: #059669;  /* Darker green for light-mode text readability */
   --color-dark-bg: #000009;
   --color-dark-surface: #0a0a13;
   --color-dark-card: #12121f;
   --color-dark-border: #1e1e2e;
   --color-dark-text: #e4e4ed;
   --color-dark-muted: #8888a0;
+  --color-light-bg: #f8f9fa;       /* Softer warm white for light mode */
+  --color-light-card: #ffffff;      /* Pure white kept for card surfaces */
   --font-family-figtree: "Figtree", sans-serif;
 }
 
@@ -30,9 +33,21 @@ body {
 
 /* ── Light mode (default) ── */
 body {
-  background-color: #ffffff;
+  background-color: var(--color-light-bg);
   color: #1a1a2e;
 }
+
+/* ── Light-mode green text override for readability ──
+   In light mode, swap the bright mint green for a darker emerald.
+   In dark mode, the original bright green stays. */
+:where(:not(.dark, .dark *)) .text-green-primary {
+  color: var(--color-green-readable);
+}
+:where(:not(.dark, .dark *)) .border-green-primary {
+  border-color: var(--color-green-readable);
+}
+
+/* Keep bg-green-primary unchanged (buttons, badges look fine with bright green) */
 
 /* ── Dark mode ── */
 body.dark {

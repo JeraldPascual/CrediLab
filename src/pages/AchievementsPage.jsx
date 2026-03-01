@@ -235,7 +235,7 @@ export default function AchievementsPage() {
         {(() => {
           const earned = getEarnedBadges(userData);
           return earned.length > 0 ? (
-            <div className="mt-4 flex flex-wrap gap-1.5">
+            <div className="mt-4 flex flex-wrap gap-1.5 overflow-hidden">
               {earned.map((b) => (
                 <span
                   key={b.id}
@@ -353,7 +353,7 @@ export default function AchievementsPage() {
                 {getEarnedBadges(userData).length}/{BADGES.length} earned
               </span>
             </div>
-            <div className="grid sm:grid-cols-2 gap-2 relative">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 relative overflow-x-hidden">
               {BADGES.map((badge) => {
                 const earned = badge.check(userData);
                 return (

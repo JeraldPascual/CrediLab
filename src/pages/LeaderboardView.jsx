@@ -66,13 +66,14 @@ export default function LeaderboardView() {
             <p className="text-xs mt-1">Complete challenges to appear here!</p>
           </div>
         ) : (
-          <table className="w-full">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[520px]">
             <thead>
               <tr className="bg-gray-50 dark:bg-dark-surface text-left text-xs font-medium text-gray-500 dark:text-dark-muted uppercase tracking-wider">
-                <th className="px-6 py-3">Rank</th>
-                <th className="px-6 py-3">Student</th>
-                <th className="px-6 py-3 text-right">Challenges</th>
-                <th className="px-6 py-3 text-right">Credits</th>
+                <th className="px-4 sm:px-6 py-3">Rank</th>
+                <th className="px-4 sm:px-6 py-3">Student</th>
+                <th className="px-4 sm:px-6 py-3 text-right">Challenges</th>
+                <th className="px-4 sm:px-6 py-3 text-right">Credits</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-dark-border">
@@ -85,10 +86,10 @@ export default function LeaderboardView() {
                       : ""
                   }`}
                 >
-                  <td className="px-6 py-4">
+                  <td className="px-4 sm:px-6 py-4">
                     <RankBadge rank={entry.rank} />
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-4 sm:px-6 py-4">
                     <UserProfileCard uid={entry.uid} name={entry.name} photoURL={entry.photoURL}>
                       <div className="flex items-center gap-3 group cursor-pointer">
                         <TierFrame tier={entry.tier} size="xs">
@@ -120,10 +121,10 @@ export default function LeaderboardView() {
                       </div>
                     </UserProfileCard>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500 dark:text-dark-muted text-right">
+                  <td className="px-4 sm:px-6 py-4 text-sm text-gray-500 dark:text-dark-muted text-right">
                     {entry.challenges}
                   </td>
-                  <td className="px-6 py-4 text-right">
+                  <td className="px-4 sm:px-6 py-4 text-right">
                     <span className="text-sm font-bold text-green-primary">
                       {entry.credits} CLB
                     </span>
@@ -132,6 +133,7 @@ export default function LeaderboardView() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 

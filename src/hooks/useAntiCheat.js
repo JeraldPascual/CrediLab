@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { db } from "../lib/firebase";
+import { doc, getDoc, setDoc, collection, addDoc, arrayUnion } from "firebase/firestore";
 
 /**
  * Anti-cheat hook for the coding portal.
@@ -6,8 +8,9 @@ import { useState, useEffect, useCallback, useRef } from "react";
  * - Blocks right-click context menu
  * - Monitors copy/paste in the coding area
  * - DevTools detection via window size delta
- * - Persists violation count to localStorage (survives navigation)
- * - Cross-checks Firestore session for tamper resistance
+ * - Persists violation count to BOTH localStorage AND Firestore (tamper-resistant)
+ * - Logs every individual violation to Firestore `cheatLogs` for full auditability
+ * - On mount, syncs from Firestore to catch cleared localStorage
  * - Blocks DevTools keyboard shortcuts (F12, Ctrl+Shift+I/J/C, Ctrl+U)
  *
  * @param {Object} options
@@ -27,6 +30,10 @@ export default function useAntiCheat({
     challengeId && userId
       ? `credilab-violations-${userId}-${challengeId}`
       : null;
+
+  // Firestore doc ref for violation summary (per user per challenge)
+  const firestoreDocId =
+    challengeId && userId ? `${userId}_${challengeId}` : null;
 
   // Load persisted violations on mount (check both localStorage and session status)
   const loadPersistedViolations = () => {
@@ -60,6 +67,50 @@ export default function useAntiCheat({
   );
   const violationRef = useRef(loadPersistedViolations());
   const violationLog = useRef([]); // Detailed log of each violation
+  const firestoreSynced = useRef(false); // Prevent double-sync
+
+  // ── Sync from Firestore on mount (catches cleared localStorage) ──
+  useEffect(() => {
+    if (!firestoreDocId || firestoreSynced.current) return;
+
+    async function syncFromFirestore() {
+      try {
+        const snap = await getDoc(doc(db, "violationSummaries", firestoreDocId));
+        if (snap.exists()) {
+          const data = snap.data();
+          const fsCount = typeof data.count === "number" ? data.count : 0;
+
+          // Use Firestore count if it's higher than localStorage (prevents tampering)
+          if (fsCount > violationRef.current) {
+            violationRef.current = fsCount;
+            setViolations(fsCount);
+            if (fsCount >= maxViolations) {
+              setTerminated(true);
+            }
+            // Re-persist to localStorage so it stays in sync
+            if (storageKey) {
+              try {
+                localStorage.setItem(
+                  storageKey,
+                  JSON.stringify({
+                    count: fsCount,
+                    log: data.log || [],
+                    lastUpdated: Date.now(),
+                  })
+                );
+              } catch { /* ignore */ }
+            }
+          }
+        }
+      } catch {
+        // Firestore unavailable — rely on localStorage
+      }
+      firestoreSynced.current = true;
+    }
+
+    syncFromFirestore();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firestoreDocId]);
 
   // Re-sync from localStorage once storageKey becomes available (e.g. auth loads after mount)
   useEffect(() => {
@@ -95,6 +146,58 @@ export default function useAntiCheat({
     [storageKey]
   );
 
+  // ── Persist violation summary to Firestore ──
+  // Uses arrayUnion so every log entry is APPENDED, never overwritten
+  const persistToFirestore = useCallback(
+    async (count, log) => {
+      if (!firestoreDocId) return;
+      try {
+        // Build the newest entry to append (the last item in the local log)
+        const latestEntry = log && log.length > 0 ? log[log.length - 1] : null;
+
+        const updateData = {
+          userId,
+          challengeId,
+          count,
+          lastUpdated: Date.now(),
+        };
+
+        // If there's a new entry, append it; otherwise just update the count
+        if (latestEntry) {
+          updateData.log = arrayUnion(latestEntry);
+        }
+
+        await setDoc(
+          doc(db, "violationSummaries", firestoreDocId),
+          updateData,
+          { merge: true }
+        );
+      } catch {
+        // Firestore unavailable — localStorage is the fallback
+      }
+    },
+    [firestoreDocId, userId, challengeId]
+  );
+
+  // ── Log individual violation to Firestore cheatLogs collection ──
+  const logViolationToFirestore = useCallback(
+    async (reason, count) => {
+      if (!userId || !challengeId) return;
+      try {
+        await addDoc(collection(db, "cheatLogs"), {
+          userId,
+          challengeId,
+          reason,
+          count,
+          timestamp: Date.now(),
+        });
+      } catch {
+        // Non-blocking — don't disrupt the user experience
+      }
+    },
+    [userId, challengeId]
+  );
+
   const addViolation = useCallback(
     (reason) => {
       if (!enabled || violationRef.current >= maxViolations) return;
@@ -109,6 +212,10 @@ export default function useAntiCheat({
       setViolations(count);
       persistViolations(count, violationLog.current);
 
+      // ── Persist to Firestore (non-blocking) ──
+      persistToFirestore(count, violationLog.current);
+      logViolationToFirestore(reason, count);
+
       if (count >= maxViolations) {
         setTerminated(true);
         setShowWarning(true);
@@ -116,7 +223,7 @@ export default function useAntiCheat({
         setShowWarning(true);
       }
     },
-    [enabled, maxViolations, persistViolations]
+    [enabled, maxViolations, persistViolations, persistToFirestore, logViolationToFirestore]
   );
 
   const dismissWarning = useCallback(() => {

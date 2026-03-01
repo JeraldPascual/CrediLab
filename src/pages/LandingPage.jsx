@@ -1,5 +1,5 @@
 import { useRef, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 // eslint-disable-next-line no-unused-vars
 import { useScroll, useTransform, motion } from "motion/react";
 import {
@@ -17,11 +17,13 @@ import {
   SparklesIcon,
 } from "@heroicons/react/24/outline";
 import { useTheme } from "../context/ThemeContext";
+import { useAuth } from "../context/AuthContext";
 import { StickyScroll } from "../components/ui/StickyScrollReveal";
 import { CanvasText } from "../components/ui/CanvasText";
 
 export default function LandingPage() {
   const { dark, toggleDark } = useTheme();
+  const { user, loading } = useAuth();
 
   /* ── Parallax: hero fades / scales as user scrolls into features ── */
   const heroRef = useRef(null);
@@ -32,6 +34,12 @@ export default function LandingPage() {
   const heroOpacity = useTransform(heroProgress, [0, 0.8], [1, 0]);
   const heroScale = useTransform(heroProgress, [0, 0.8], [1, 0.96]);
   const heroBlur = useTransform(heroProgress, [0, 0.8], [0, 8]);
+  const heroFilter = useTransform(heroBlur, (v) => `blur(${v}px)`);
+
+  // Redirect logged-in users to dashboard (after all hooks)
+  if (!loading && user) {
+    return <Navigate to="/student" replace />;
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-dark-bg">
@@ -69,7 +77,7 @@ export default function LandingPage() {
       {/* ── Hero Section (parallax: fades + scales on scroll) ── */}
       <motion.div
         ref={heroRef}
-        style={{ opacity: heroOpacity, scale: heroScale, filter: useTransform(heroBlur, (v) => `blur(${v}px)`) }}
+        style={{ opacity: heroOpacity, scale: heroScale, filter: heroFilter }}
         className="relative"
       >
         <HeroSpotlight />
@@ -83,7 +91,7 @@ export default function LandingPage() {
               Everything You Need to <span className="text-green-primary">Learn & Earn</span>
             </h2>
             <p className="mt-3 text-gray-500 dark:text-dark-muted max-w-xl mx-auto">
-              CrediLab combines coding education, blockchain rewards, and community-driven learning into one seamless platform.
+              CrediLab combines coding education, blockchain-verified rewards, and SDG-driven community action into one seamless platform.
             </p>
           </div>
 
@@ -108,7 +116,7 @@ export default function LandingPage() {
                 {
                   title: "Earn CLB Tokens",
                   description:
-                    "A transcript says you passed. CLB tokens prove you wrote the code. Every verified solution mints tamper-proof on-chain credentials to your MetaMask wallet.",
+                    "A transcript says you passed. CLB tokens prove you wrote the code. Every verified solution earns tamper-proof on-chain credentials sent to your MetaMask wallet.",
                   content: (
                     <div className="h-full w-full flex items-center justify-center text-white p-6">
                       <div className="text-center space-y-2">
@@ -150,7 +158,7 @@ export default function LandingPage() {
                 {
                   title: "Anti-Cheat Verified",
                   description:
-                    "Focus-loss detection and copy-paste tracking ensure every token earned is legitimate. No shortcuts — your credentials mean something.",
+                    "Focus-loss detection, DevTools blocking, and Firestore-synced violation tracking ensure every token earned is legitimate. No shortcuts — your credentials mean something.",
                   content: (
                     <div className="h-full w-full flex items-center justify-center text-white p-6">
                       <div className="text-center space-y-2">
@@ -185,7 +193,7 @@ export default function LandingPage() {
             <FeatureCard title="Earn CLB Tokens" description="CLB tokens prove you wrote the code. Every verified solution mints tamper-proof on-chain credentials to your MetaMask wallet." icon={CurrencyDollarIcon} />
             <FeatureCard title="Leaderboard & Rankings" description="Compete with peers on the live leaderboard. Climb tiers from Bronze to Diamond based on your CLB earnings." icon={ChartBarIcon} />
             <FeatureCard title="Community Voting" description="Submit weekly SDG tasks and get community-validated through Reddit-style upvotes. Top posts earn bonus CLB." icon={UserGroupIcon} />
-            <FeatureCard title="Anti-Cheat Verified" description="Focus-loss detection and copy-paste tracking ensure every token earned is legitimate. No shortcuts — your credentials mean something." icon={ShieldCheckIcon} />
+            <FeatureCard title="Anti-Cheat Verified" description="Focus-loss detection, DevTools blocking, and Firestore-synced violation tracking ensure every token earned is legitimate. No shortcuts — your credentials mean something." icon={ShieldCheckIcon} />
             <FeatureCard title="Achievement System" description="Unlock skill-based achievements as you progress. Track your growth from beginner to expert coder." icon={SparklesIcon} />
           </div>
         </div>
@@ -199,7 +207,7 @@ export default function LandingPage() {
               How It Works
             </h2>
             <p className="mt-3 text-gray-500 dark:text-dark-muted max-w-lg mx-auto">
-              From sign-up to earning tokens — it's simple, transparent, and decentralized.
+              From sign-up to earning tokens — it's simple, transparent, and verifiable on the blockchain.
             </p>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -348,8 +356,8 @@ export default function LandingPage() {
             />
           </h2>
           <p className="text-gray-500 dark:text-dark-muted max-w-lg mx-auto">
-            Join CrediLab today, solve your first Java challenge, and earn CLB tokens
-            on the blockchain. It&apos;s free to start.
+            Join CrediLab today, solve your first Java challenge, and earn verifiable
+            CLB tokens on the blockchain. It&apos;s free to start.
           </p>
           <Link
             to="/register"
@@ -432,15 +440,15 @@ function HeroSpotlight() {
             Decentralized Learning Platform
           </div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight text-gray-900 dark:text-white">
-            Earn Crypto by{" "}
-            <span className="text-green-primary">Solving Code</span>{" "}
-            Challenges
+            Learn Code,{" "}
+            <span className="text-green-primary">Earn Rewards</span>,{" "}
+            Make Impact
           </h1>
           <p className="text-lg text-gray-600 dark:text-dark-muted max-w-lg">
-            A blockchain-powered coding platform where students solve Java
-            challenges, earn CLB tokens on the Ethereum Sepolia testnet, and
-            build real-world programming skills — bridging education with
-            Web3 technology.
+            CrediLab is an SDG-aligned coding platform where students solve
+            Java challenges, earn CLB tokens on the blockchain, and take
+            real-world action for sustainable development — turning education
+            into verifiable, on-chain credentials.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 pt-1">
             <Link

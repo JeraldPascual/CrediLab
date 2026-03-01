@@ -17,6 +17,7 @@ import CodingPortal from "./pages/CodingPortal";
 import WalletGuidePage from "./pages/WalletGuidePage";
 import AchievementsPage from "./pages/AchievementsPage";
 import TransactionsPage from "./pages/TransactionsPage";
+import CheatingLogsPage from "./pages/CheatingLogsPage";
 import VerifyCertPage from "./pages/VerifyCertPage";
 import WeeklyTaskPage from "./pages/WeeklyTaskPage";
 import CommunityFeed from "./pages/CommunityFeed";
@@ -57,6 +58,7 @@ export default function App() {
               <Route path="help-center" element={<WalletGuidePage />} />
               <Route path="achievements" element={<AchievementsPage />} />
               <Route path="transactions" element={<TransactionsPage />} />
+              <Route path="cheating-logs" element={<CheatingLogsPage />} />
               <Route path="community" element={<CommunityFeed />} />
             </Route>
 

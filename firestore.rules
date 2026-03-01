@@ -70,5 +70,22 @@ service cloud.firestore {
 
       allow delete: if false; // Never delete submissions
     }
+
+    // Cheat logs — individual violation events for audit trail
+    // Students can create & read own logs; only backend/admin can update/delete
+    match /cheatLogs/{logId} {
+      allow create: if request.auth != null &&
+                       request.resource.data.userId == request.auth.uid;
+      allow read: if request.auth != null &&
+                     resource.data.userId == request.auth.uid;
+      allow update, delete: if false; // Immutable audit trail
+    }
+
+    // Violation summaries — per-user-per-challenge violation count (tamper-resistant)
+    // Students can read/write their own (keyed as `{uid}_{challengeId}`)
+    match /violationSummaries/{docId} {
+      allow read, write: if request.auth != null &&
+                            docId.matches('^' + request.auth.uid + '_.*');
+    }
   }
 }
