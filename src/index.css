@@ -55,18 +55,29 @@ body.dark {
   color: var(--color-dark-text);
 }
 
-/* ── Scrollbar (light mode / global) ── */
+/* ── Scrollbar (global default — dark to match landing page) ── */
 ::-webkit-scrollbar {
   width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: var(--color-dark-surface);
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--color-dark-border);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
+  background: #4b5563;
+}
+
+/* ── Scrollbar (light mode — inside dashboard light panels) ── */
+body:not(.dark) .light-scrollbar::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+body:not(.dark) .light-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+body:not(.dark) .light-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
 
