@@ -69,6 +69,7 @@ dependencies {
     implementation(platform(libs.reown.bom))
     implementation(libs.reown.core)
     implementation(libs.reown.appkit)
+    implementation(libs.reown.sign)
     implementation(libs.timber)
     implementation(libs.core.ktx)
 

@@ -26,21 +26,21 @@ public class BadgesHelper {
 
     public BadgesHelper(Context context) {
         rarityColors = new HashMap<>();
-        // These are for the SweepGradient on TierFrameView
-        rarityColors.put("common", new int[] { Color.parseColor("#CD7F32"), Color.parseColor("#8B4513") }); // Bronze
-        rarityColors.put("uncommon", new int[] { Color.parseColor("#C0C0C0"), Color.parseColor("#808080") }); // Silver
-        rarityColors.put("rare", new int[] { Color.parseColor("#FFD700"), Color.parseColor("#DAA520") }); // Gold
-        rarityColors.put("epic", new int[] { Color.parseColor("#9C27B0"), Color.parseColor("#E1BEE7") }); // Purple
-        rarityColors.put("legendary",
-                new int[] { Color.parseColor("#FFD700"), Color.parseColor("#FF8C00"), Color.parseColor("#FF1493") }); // Multi-color
+        // These are for the SweepGradient on TierFrameView (we use two identical colors
+        // so it looks solid but can still spin)
+        rarityColors.put("common", new int[] { Color.parseColor("#9ca3af"), Color.parseColor("#9ca3af") });
+        rarityColors.put("uncommon", new int[] { Color.parseColor("#22c55e"), Color.parseColor("#22c55e") });
+        rarityColors.put("rare", new int[] { Color.parseColor("#3b82f6"), Color.parseColor("#3b82f6") });
+        rarityColors.put("epic", new int[] { Color.parseColor("#a855f7"), Color.parseColor("#a855f7") });
+        rarityColors.put("legendary", new int[] { Color.parseColor("#f59e0b"), Color.parseColor("#f59e0b") });
 
         rarityHexColors = new HashMap<>();
         // These are for the SVGs (accentHex)
-        rarityHexColors.put("common", "#CD7F32");
-        rarityHexColors.put("uncommon", "#C0C0C0");
-        rarityHexColors.put("rare", "#FFD700");
-        rarityHexColors.put("epic", "#9C27B0");
-        rarityHexColors.put("legendary", "#FF8C00");
+        rarityHexColors.put("common", "#9ca3af");
+        rarityHexColors.put("uncommon", "#22c55e");
+        rarityHexColors.put("rare", "#3b82f6");
+        rarityHexColors.put("epic", "#a855f7");
+        rarityHexColors.put("legendary", "#f59e0b");
 
         loadBadgesJson(context);
     }

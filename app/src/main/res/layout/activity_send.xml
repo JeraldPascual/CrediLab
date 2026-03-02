@@ -94,7 +94,7 @@
             android:id="@+id/tvCurrentBalance"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Your balance: --"
+            android:text="Your balance: -- (send up to 999 CLB)"
             android:textColor="@color/text_tertiary"
             android:textSize="13sp"
             android:layout_marginTop="12dp" />

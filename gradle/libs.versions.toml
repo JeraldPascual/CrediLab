@@ -35,6 +35,7 @@ gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 reown-bom = { group = "com.reown", name = "android-bom", version = "1.6.2" }
 reown-core = { group = "com.reown", name = "android-core" }
 reown-appkit = { group = "com.reown", name = "appkit" }
+reown-sign = { group = "com.reown", name = "sign" }
 core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 # explicitly defined for better compatibility
 timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }

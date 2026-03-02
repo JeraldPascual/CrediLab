@@ -66,9 +66,10 @@ public class SendActivity extends AppCompatActivity {
                 BigDecimal balance = web3Helper.getCLBBalance(
                         walletManager.getWalletAddress());
                 String formatted = balance.stripTrailingZeros().toPlainString();
-                runOnUiThread(() -> binding.tvCurrentBalance.setText("Your balance: " + formatted + " CLB"));
+                runOnUiThread(() -> binding.tvCurrentBalance
+                        .setText("Your balance: " + formatted + " CLB (send up to 999 CLB)"));
             } catch (Exception e) {
-                runOnUiThread(() -> binding.tvCurrentBalance.setText("Your balance: unavailable"));
+                runOnUiThread(() -> binding.tvCurrentBalance.setText("Your balance: unavailable (send up to 999 CLB)"));
             }
         }).start();
     }
@@ -94,6 +95,10 @@ public class SendActivity extends AppCompatActivity {
                 Toast.makeText(this, "Amount must be greater than 0", Toast.LENGTH_SHORT).show();
                 return;
             }
+            if (amount.compareTo(new BigDecimal("999")) > 0) {
+                Toast.makeText(this, "Maximum 999 CLB per transaction", Toast.LENGTH_SHORT).show();
+                return;
+            }
         } catch (NumberFormatException e) {
             Toast.makeText(this, "Invalid amount", Toast.LENGTH_SHORT).show();
             return;
@@ -115,43 +120,84 @@ public class SendActivity extends AppCompatActivity {
         binding.tvStatus.setText("Sending request to MetaMask...");
         binding.tvStatus.setVisibility(View.VISIBLE);
 
-        // Send via WalletConnect session
-        // Deep Link Implementation (V2 - HTTPS Format)
-        // Calculate raw amount (18 decimals)
-        java.math.BigInteger rawAmount = amount.multiply(java.math.BigDecimal.TEN.pow(18)).toBigInteger();
+        // --- Deep Link Approach ---
+        // We are using the HEX format (0xaa36a7) for the Chain ID because MetaMask's
+        // decimal parser trunkates 11155111 to 1115511. Passing it as hex might bypass
+        // the bug and correctly tell it to switch to Sepolia.
+        java.math.BigInteger rawAmount = amount
+                .multiply(java.math.BigDecimal.TEN.pow(Constants.TOKEN_DECIMALS))
+                .toBigInteger();
 
-        // Use
-        // https://metamask.app.link/send/{contract}@{chain}/transfer?address={recipient}&uint256={amount}
-        // Sepolia Chain ID: 11155111
-        String uriString = "https://metamask.app.link/send/" +
-                Constants.CLB_CONTRACT_ADDRESS +
-                "@11155111" +
-                "/transfer?address=" + recipient +
-                "&uint256=" + rawAmount.toString();
+        String chainIdHex = "0xaa36a7";
 
-        Log.d(TAG, "Opening Deep Link: " + uriString);
+        // Use a timestamp nonce so MetaMask never sees the exact same deep link twice
+        // in a row.
+        // MetaMask is aggressively caching or ignoring identical deep links sent in
+        // the same background session, leading to its broken parsing fallback.
+        long nonce = System.currentTimeMillis();
 
-        try {
-            Intent intent = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(uriString));
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(intent);
+        String transferPath = Constants.CLB_CONTRACT_ADDRESS
+                + "@" + chainIdHex
+                + "/transfer?address=" + recipient
+                + "&uint256=" + rawAmount.toString()
+                + "&nonce=" + nonce;
 
-            // Assume success in launching intent
-            runOnUiThread(() -> {
-                binding.tvStatus.setText("Request sent to MetaMask. Please check your wallet.");
-                binding.tvStatus.setVisibility(View.VISIBLE);
-                binding.btnSendToken.setText("Check Wallet");
-                binding.btnSendToken.setEnabled(true);
-            });
-        } catch (android.content.ActivityNotFoundException e) {
-            runOnUiThread(() -> {
-                binding.tvStatus.setText("MetaMask not found!");
-                binding.tvStatus.setVisibility(View.VISIBLE);
-                binding.btnSendToken.setText("Send via MetaMask");
-                binding.btnSendToken.setEnabled(true);
-                Toast.makeText(this, "MetaMask app not found", Toast.LENGTH_LONG).show();
-            });
+        // The user reported the deep link parsing worked when they spammed the Send
+        // button twice.
+        // This is a classic React Native "cold start" bug: when the app is fully
+        // closed,
+        // the first intent gets swallowed while the UI thread initializes, and the
+        // transaction is lost.
+        // The second tap worked because MetaMask was already running in memory.
+
+        // Fix 1: Add Intent.FLAG_ACTIVITY_NEW_TASK so Android routes the intent to the
+        // root activity properly.
+        // Fix 2: Prioritize link.metamask.io. Android App Links (HTTPS) are buffered by
+        // the OS
+        // differently than custom URI schemes (metamask://), which often survives the
+        // cold-start drops.
+
+        String[] urls = {
+                "https://link.metamask.io/send/" + transferPath,
+                "metamask://send/" + transferPath,
+                "https://metamask.app.link/send/" + transferPath
+        };
+
+        boolean launched = false;
+        for (String url : urls) {
+            try {
+                Intent intent = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url));
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+
+                if (url.startsWith("metamask://")) {
+                    intent.setPackage("io.metamask");
+                }
+
+                if (intent.resolveActivity(getPackageManager()) != null) {
+                    startActivity(intent);
+                    launched = true;
+                    break;
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "Failed URL: " + url + " / " + e.getMessage());
+            }
         }
+
+        if (!launched) {
+            try {
+                startActivity(new Intent(Intent.ACTION_VIEW,
+                        android.net.Uri.parse("https://link.metamask.io/send/" + transferPath)));
+                launched = true;
+            } catch (Exception e) {
+                Toast.makeText(this, "MetaMask not installed", Toast.LENGTH_LONG).show();
+            }
+        }
+
+        binding.tvStatus.setText(launched
+                ? "MetaMask opened — check the transaction."
+                : "Could not open MetaMask.");
+        binding.btnSendToken.setText("Send CLB");
+        binding.btnSendToken.setEnabled(true);
     }
 
     @Override

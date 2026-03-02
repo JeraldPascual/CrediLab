@@ -15,6 +15,8 @@ public class TierFrameView extends View {
     private Paint paint;
     private int[] colors = { Color.TRANSPARENT, Color.TRANSPARENT }; // Default transparent
     private float strokeWidth = 8f; // Adjustable stroke width
+    private float currentRotation = 0f;
+    private android.animation.ValueAnimator animator;
 
     public TierFrameView(Context context) {
         super(context);
@@ -41,10 +43,45 @@ public class TierFrameView extends View {
     public void setTierColors(int[] newColors) {
         if (newColors != null && newColors.length > 0) {
             this.colors = newColors;
+            startAnimationIfNeeded();
         } else {
             this.colors = new int[] { Color.TRANSPARENT, Color.TRANSPARENT };
+            stopAnimation();
         }
         invalidate(); // Request redraw
+    }
+
+    private void startAnimationIfNeeded() {
+        if (animator == null && colors.length > 1 && colors[0] != Color.TRANSPARENT) {
+            animator = android.animation.ValueAnimator.ofFloat(0f, 360f);
+            animator.setDuration(3000); // 3 seconds per rotation
+            animator.setRepeatCount(android.animation.ValueAnimator.INFINITE);
+            animator.setInterpolator(new android.view.animation.LinearInterpolator());
+            animator.addUpdateListener(animation -> {
+                currentRotation = (float) animation.getAnimatedValue();
+                invalidate();
+            });
+            animator.start();
+        }
+    }
+
+    private void stopAnimation() {
+        if (animator != null) {
+            animator.cancel();
+            animator = null;
+        }
+    }
+
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        startAnimationIfNeeded();
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        stopAnimation();
     }
 
     @Override
@@ -59,10 +96,6 @@ public class TierFrameView extends View {
         float cy = height / 2f;
 
         if (colors.length > 1) {
-            // SweepGradient needs to be recreated on layout size changes if we depended on
-            // bounds,
-            // but cx, cy inside onDraw is fine. It's better to cache it, but for simplicity
-            // we recreate.
             SweepGradient sweepGradient = new SweepGradient(cx, cy, colors, null);
             paint.setShader(sweepGradient);
         } else if (colors.length == 1) {
@@ -70,6 +103,9 @@ public class TierFrameView extends View {
             paint.setColor(colors[0]);
         }
 
+        canvas.save();
+        canvas.rotate(currentRotation, cx, cy);
         canvas.drawCircle(cx, cy, radius, paint);
+        canvas.restore();
     }
 }

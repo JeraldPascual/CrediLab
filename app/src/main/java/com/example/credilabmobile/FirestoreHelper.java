@@ -307,7 +307,7 @@ public class FirestoreHelper {
                         t.weekNumber = (int) safeLong(doc, "weekNumber");
                         t.title = doc.getString("title");
                         t.description = doc.getString("description");
-                        t.rewardCLB = (int) safeLong(doc, "rewardCLB");
+                        t.rewardCLB = (int) safeLong(doc, "reward");
                         t.isActive = Boolean.TRUE.equals(doc.getBoolean("isActive"));
                         t.type = doc.getString("type");
                         t.sdgGoal = (int) safeLong(doc, "sdgGoal");
