@@ -96,7 +96,27 @@ public class SendActivity extends AppCompatActivity {
                 return;
             }
             if (amount.compareTo(new BigDecimal("999")) > 0) {
-                Toast.makeText(this, "Maximum 999 CLB per transaction", Toast.LENGTH_SHORT).show();
+                View customView = getLayoutInflater().inflate(R.layout.dialog_custom, null);
+                TextView tvTitle = customView.findViewById(R.id.tvDialogTitle);
+                TextView tvMessage = customView.findViewById(R.id.tvDialogMessage);
+                com.google.android.material.button.MaterialButton btnConfirm = customView.findViewById(R.id.btnConfirm);
+                com.google.android.material.button.MaterialButton btnCancel = customView.findViewById(R.id.btnCancel);
+
+                tvTitle.setText("Transaction Limit Exceeded");
+                tvMessage.setText("Maximum limit is 999 CLB per transaction.");
+                btnConfirm.setText("Close");
+                btnCancel.setVisibility(View.GONE);
+
+                AlertDialog dialog = new AlertDialog.Builder(this)
+                        .setView(customView)
+                        .create();
+
+                if (dialog.getWindow() != null) {
+                    dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+                }
+
+                btnConfirm.setOnClickListener(d -> dialog.dismiss());
+                dialog.show();
                 return;
             }
         } catch (NumberFormatException e) {

@@ -6,6 +6,29 @@
     android:padding="24dp"
     android:background="@drawable/dialog_background">
 
+    <!-- macOS Window Dots -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="16dp"
+        android:gravity="start|center_vertical">
+        <View
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/mac_dot_red" />
+        <View
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/mac_dot_yellow" />
+        <View
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:background="@drawable/mac_dot_green" />
+    </LinearLayout>
+
     <TextView
         android:id="@+id/tvDialogTitle"
         android:layout_width="match_parent"

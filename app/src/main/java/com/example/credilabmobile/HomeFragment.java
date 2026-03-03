@@ -684,7 +684,7 @@ public class HomeFragment extends Fragment {
                 .create();
 
         if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(0));
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
         }
 
         btnConfirm.setOnClickListener(v -> {
