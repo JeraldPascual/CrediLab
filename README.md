@@ -39,7 +39,7 @@ Built on three core principles:
 
 ---
 
-## -SDG Alignment
+## SDG Alignment
 
 ### Primary: SDG 4 — Quality Education
 **Target 4.4**: Increase the number of youth with relevant technical and vocational skills for employment and entrepreneurship. 
