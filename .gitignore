@@ -30,3 +30,6 @@ dist-ssr
 *.sw?
 
 DEV-SETUP.md
+
+# Local phase summaries (keep out of git)
+local-notes/

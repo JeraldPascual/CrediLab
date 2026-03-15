@@ -30,7 +30,6 @@ function _makeIcon(id, displayName) {
   const Comp = ({ className = "w-6 h-6" }) => (
     <span
       className={`inline-flex items-center justify-center shrink-0 ${className}`}
-      // eslint-disable-next-line react/no-danger
       dangerouslySetInnerHTML={{ __html: svg }}
       aria-hidden="true"
     />

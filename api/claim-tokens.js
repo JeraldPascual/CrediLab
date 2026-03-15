@@ -27,6 +27,10 @@ import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { ethers } from 'ethers';
 
+// In-memory rate limit map (resets on cold start — acceptable for now)
+const rateLimitMap = new Map();
+const COOLDOWN_MS = 10000;
+
 function getDB() {
   if (getApps().length === 0) {
     let serviceAccount;
@@ -125,7 +129,18 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: 'Token verification failed' });
     }
 
-    // ── 2. Validate request body ──────────────────────────────────────────
+    // ── 2. Rate limit (10s cooldown per user) ─────────────────────────────
+    const now = Date.now();
+    const lastCall = rateLimitMap.get(uid);
+    if (lastCall && now - lastCall < COOLDOWN_MS) {
+      const waitSec = Math.ceil((COOLDOWN_MS - (now - lastCall)) / 1000);
+      return res.status(429).json({
+        error: `Rate limited. Please wait ${waitSec} seconds before claiming again.`,
+      });
+    }
+    rateLimitMap.set(uid, now);
+
+    // ── 3. Validate request body ──────────────────────────────────────────
     const { amount } = req.body || {};
 
     if (!amount || typeof amount !== 'number' || !Number.isInteger(amount) || amount <= 0) {
